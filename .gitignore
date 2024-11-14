@@ -1,0 +1,14 @@
+customer-frontend/build
+customer-frontend/node_modules
+**/__pycache__
+**/*.pyc
+**/venv
+node_modules/
+.env
+**/service_account.json
+logs
+*.log
+npm-debug.log*
+firebase-debug.log*
+firebase-debug.*.log*
+.firebase/

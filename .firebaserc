@@ -1,0 +1,18 @@
+{
+  "projects": {
+    "default": "shomron-tights"
+  },
+  "targets": {
+    "shomron-tights": {
+      "hosting": {
+        "customer-frontend": [
+          "shomron-tights"
+        ],
+        "admin-frontend": [
+          "shomron-tights-admin"
+        ]
+      }
+    }
+  },
+  "etags": {}
+}
