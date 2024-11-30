@@ -24,9 +24,9 @@ interface LaceProductFormValues {
 
 const LaceProductPage: React.FC = () => {
   const dispatch = useAppDispatch();
+  const { state } = useLocation();
   const { products } = useLaceProducts();
   const { data: colors } = useColors();
-  const { state } = useLocation();
 
   const initialProductAndAmount = useMemo(() => {
     const passedData = state;
@@ -64,6 +64,14 @@ const LaceProductPage: React.FC = () => {
     );
   };
 
+  const initialValues = useMemo(() => {
+    return {
+      lace: initialProductAndAmount.product.lace,
+      color: initialProductAndAmount.product.color,
+      count: initialProductAndAmount.amount,
+    };
+  }, [initialProductAndAmount]);
+
   const {
     values,
     isSubmitting,
@@ -73,44 +81,32 @@ const LaceProductPage: React.FC = () => {
     errors,
     setFieldValue,
   } = useFormik<LaceProductFormValues>({
-    initialValues: {
-      lace: initialProductAndAmount.product.lace,
-      color: initialProductAndAmount.product.color,
-      count: initialProductAndAmount.amount,
-    },
+    initialValues,
     validationSchema,
     onSubmit,
   });
 
-  const [selectedProduct, setSelectedProduct] = useState<
-    ProductLace | undefined
-  >(initialProductAndAmount.product);
+  const availableLaces = useMemo(() => {
+    return uniq(products.map((x) => x.lace));
+  }, [products]);
 
-  const [availableLaces, setAvailableLaces] = useState<string[]>(
-    uniq(products.map((x) => x.lace)) ?? []
-  );
-
-  const [availableColors, setAvailableColors] = useState<string[]>([]);
-
-  useEffect(() => {
-    setAvailableLaces(uniq(products.map((x) => x.lace)));
-
-    const newAvailableColors = uniq(
+  const availableColors = useMemo(() => {
+    const res = uniq(
       products
         .filter((product) => product.lace === values.lace)
         .map((x) => x.color)
     );
-    setAvailableColors(newAvailableColors);
-
-    if (!newAvailableColors.includes(values.color)) {
-      values.color = newAvailableColors[0];
+    if (!res.includes(values.color)) {
+      values.color = res[0];
     }
+    return res;
+  }, [products, values.lace]);
 
-    const newSelectedProduct = products.find(
+  const selectedProduct = useMemo(() => {
+    return products.find(
       (p) => p.lace === values.lace && p.color === values.color
     );
-    setSelectedProduct(newSelectedProduct);
-  }, [products, values]);
+  }, [products, values.lace, values.color]);
 
   const availableColorsWithHex = useMemo(() => {
     return compact(

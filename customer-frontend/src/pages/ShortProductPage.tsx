@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useMemo } from "react";
 import { ProductShort } from "../model/product/ProductShort";
 import FirebaseStorageImage from "../components/FirebaseStorageImage";
 import Button from "@mui/material/Button";
@@ -66,6 +66,14 @@ const ShortProductPage: React.FC = () => {
     );
   };
 
+  const initialValues = useMemo(() => {
+    return {
+      length: initialProductAndAmount.product.length,
+      color: initialProductAndAmount.product.color,
+      count: initialProductAndAmount.amount,
+    };
+  }, [initialProductAndAmount]);
+
   const {
     values,
     isSubmitting,
@@ -75,44 +83,34 @@ const ShortProductPage: React.FC = () => {
     errors,
     setFieldValue,
   } = useFormik<ShortProductFormValues>({
-    initialValues: {
-      length: initialProductAndAmount.product.length,
-      color: initialProductAndAmount.product.color,
-      count: initialProductAndAmount.amount,
-    },
+    initialValues,
     validationSchema,
     onSubmit,
   });
 
-  const [selectedProduct, setSelectedProduct] = useState<
-    ProductShort | undefined
-  >(initialProductAndAmount.product);
+  const availableLength = useMemo(() => {
+    return uniq(products.map((x) => x.length));
+  }, [products]);
 
-  const [availableLength, setAvailableLength] = useState<string[]>(
-    uniq(products.map((x) => x.length)) ?? []
-  );
-
-  const [availableColors, setAvailableColors] = useState<string[]>([]);
-
-  useEffect(() => {
-    setAvailableLength(uniq(products.map((x) => x.length)));
-
-    const newAvailableColors = uniq(
+  const availableColors = useMemo(() => {
+    const res = uniq(
       products
         .filter((product) => product.length === values.length)
         .map((x) => x.color)
     );
-    setAvailableColors(newAvailableColors);
 
-    if (!newAvailableColors.includes(values.color)) {
-      values.color = newAvailableColors[0];
+    if (!res.includes(values.color)) {
+      values.color = res[0];
     }
 
-    const newSelectedProduct = products.find(
+    return res;
+  }, [products, values.length]);
+
+  const selectedProduct = useMemo(() => {
+    return products.find(
       (p) => p.length === values.length && p.color === values.color
     );
-    setSelectedProduct(newSelectedProduct);
-  }, [products, values]);
+  }, [products, values.length, values.color]);
 
   const availableColorsWithHex = useMemo(() => {
     return compact(

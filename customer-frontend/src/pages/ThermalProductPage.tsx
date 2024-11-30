@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useMemo } from "react";
 import { ProductThermal } from "../model/product/ProductThermal";
 import FirebaseStorageImage from "../components/FirebaseStorageImage";
 import Button from "@mui/material/Button";
@@ -25,11 +25,9 @@ interface ThermalProductFormValues {
 
 const ThermalProductPage: React.FC = () => {
   const dispatch = useAppDispatch();
+  const location = useLocation();
   const { products } = useThermalProducts();
   const { data: colors } = useColors();
-
-  if (!products || !colors) return null;
-  const location = useLocation();
 
   const initialProductAndAmount = useMemo(() => {
     const passedData = location.state;
@@ -68,6 +66,15 @@ const ThermalProductPage: React.FC = () => {
     );
   };
 
+  const initialValues = useMemo(() => {
+    return {
+      leg: initialProductAndAmount.product.leg,
+      size: initialProductAndAmount.product.size,
+      color: initialProductAndAmount.product.color,
+      count: initialProductAndAmount.amount,
+    };
+  }, [initialProductAndAmount]);
+
   const {
     values,
     isSubmitting,
@@ -77,44 +84,31 @@ const ThermalProductPage: React.FC = () => {
     errors,
     setFieldValue,
   } = useFormik<ThermalProductFormValues>({
-    initialValues: {
-      leg: initialProductAndAmount.product.leg,
-      size: initialProductAndAmount.product.size,
-      color: initialProductAndAmount.product.color,
-      count: initialProductAndAmount.amount,
-    },
+    initialValues,
     validationSchema,
     onSubmit,
   });
 
-  const [selectedProduct, setSelectedProduct] = useState<
-    ProductThermal | undefined
-  >(initialProductAndAmount.product);
+  const availableLegs = useMemo(() => {
+    return uniq(products.map((x) => x.leg));
+  }, [products]);
 
-  const [availableLegs, setAvailableLegs] = useState<string[]>([]);
-
-  const [availableSizes, setAvailableSizes] = useState<string[]>([]);
-
-  const [availableColors, setAvailableColors] = useState<string[]>([]);
-
-  useEffect(() => {
-    const newAvailableLegs = uniq(products.map((x) => x.leg));
-    setAvailableLegs(newAvailableLegs);
-    if (!newAvailableLegs.includes(values.leg)) {
-      values.leg = newAvailableLegs[0];
-    }
-
-    const newAvailableSizes = uniq(
+  const availableSizes = useMemo(() => {
+    const res = uniq(
       products
         .filter((product) => product.leg === values.leg)
         .map((x) => x.size)
     );
-    setAvailableSizes(newAvailableSizes);
-    if (!newAvailableSizes.includes(values.size)) {
-      values.size = newAvailableSizes[0];
+
+    if (!res.includes(values.size)) {
+      values.size = res[0];
     }
 
-    const newAvailableColors = uniq(
+    return res;
+  }, [products, values.leg]);
+
+  const availableColors = useMemo(() => {
+    const res = uniq(
       products
         .filter(
           (product) =>
@@ -122,20 +116,22 @@ const ThermalProductPage: React.FC = () => {
         )
         .map((x) => x.color)
     );
-    setAvailableColors(newAvailableColors);
 
-    if (!newAvailableColors.includes(values.color)) {
-      values.color = newAvailableColors[0];
+    if (!res.includes(values.color)) {
+      values.color = res[0];
     }
 
-    const newSelectedProduct = products.find(
+    return res;
+  }, [products, values.leg, values.size]);
+
+  const selectedProduct = useMemo(() => {
+    return products.find(
       (p) =>
         p.leg === values.leg &&
         p.size === values.size &&
         p.color === values.color
     );
-    setSelectedProduct(newSelectedProduct);
-  }, [products, values]);
+  }, [products, values.leg, values.size, values.color]);
 
   const availableColorsWithHex = useMemo(() => {
     return compact(
