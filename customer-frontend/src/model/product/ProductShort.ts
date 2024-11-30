@@ -1,8 +1,8 @@
 import { BaseProduct } from "./BaseProduct";
 import { ProductSchema } from "./ProductSchema";
 
-export interface ProductLace extends BaseProduct {
-  kind: ProductSchema.LACE;
-  lace: string;
+export interface ProductShort extends BaseProduct {
+  kind: ProductSchema.SHORT;
+  length: string;
   color: string;
 }

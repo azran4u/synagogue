@@ -16,7 +16,7 @@
   "hosting": [
     {
       "target": "customer-frontend",
-      "public": "customer-frontend/build",
+      "public": "customer-frontend/dist",
       "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
       "rewrites": [
         {

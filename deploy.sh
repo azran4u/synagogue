@@ -20,7 +20,7 @@ CURRENT_NODE_VERSION=$(nvm current)
 
 function build-react-app() {
   echo "Building React app"
-  nvm use v16.19.0
+  nvm use v18.19.1
   npm install
   npm run build
 }
