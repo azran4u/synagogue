@@ -6,6 +6,8 @@ import CartPage from "./pages/CartPage";
 import Footer from "./components/Footer";
 import Sidebar from "./components/Sidebar";
 import Box from "@mui/material/Box";
+import OrderPage from "./pages/OrderPage";
+import SuccessfulOrderPage from "./pages/SuccessfulOrderPage";
 
 function App() {
   return (
@@ -24,6 +26,8 @@ function App() {
             <Route path="/product/:kind" element={<ProductPage />} />
             <Route path="/checkout" element={<CheckoutPage />} />
             <Route path="/cart" element={<CartPage />} />
+            <Route path="/order/:id" element={<OrderPage />} />
+            <Route path="/success" element={<SuccessfulOrderPage />} />            
           </Routes>
         </Box>
         <Footer />

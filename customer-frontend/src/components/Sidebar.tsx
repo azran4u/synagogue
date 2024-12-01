@@ -27,6 +27,11 @@ const Sidebar: React.FC = () => {
   const navigate = useNavigate();
   const drawerWidth = useMemo(() => (isMobile ? "50%" : "20%"), [isMobile]);
 
+  const handleLinkClick = (path: string) => {
+    navigate(path);
+    handleDrawerToggle(); // Close the sidebar
+  };
+
   return (
     <>
       <>
@@ -76,27 +81,33 @@ const Sidebar: React.FC = () => {
             >
               <Logo />
               <ListItem sx={{ cursor: "pointer" }}>
-                <ListItemText primary="בית" onClick={() => navigate("/")} />
+                <ListItemText
+                  primary="בית"
+                  onClick={() => handleLinkClick("/")}
+                />
               </ListItem>
               <ListItem sx={{ cursor: "pointer" }}>
-                <ListItemText primary="מוצרים" onClick={() => navigate("/")} />
+                <ListItemText
+                  primary="מוצרים"
+                  onClick={() => handleLinkClick("/")}
+                />
               </ListItem>
               <ListItem sx={{ cursor: "pointer" }}>
                 <ListItemText
                   primary="עגלה"
-                  onClick={() => navigate("/cart")}
+                  onClick={() => handleLinkClick("/cart")}
                 />
               </ListItem>
               <ListItem sx={{ cursor: "pointer" }}>
                 <ListItemText
                   primary="נקודות חלוקה"
-                  onClick={() => navigate("/pickups")}
+                  onClick={() => handleLinkClick("/pickups")}
                 />
               </ListItem>
               <ListItem sx={{ cursor: "pointer" }}>
                 <ListItemText
                   primary="צור קשר"
-                  onClick={() => navigate("/contact")}
+                  onClick={() => handleLinkClick("/contact")}
                 />
               </ListItem>
               <CartWithBadge />

@@ -1,8 +1,9 @@
 import { createSelector, createSlice } from "@reduxjs/toolkit";
 import type { PayloadAction } from "@reduxjs/toolkit";
-import { isNil } from "lodash";
+import { isNil, set } from "lodash";
 import { RootState } from "./store";
 import { v4 as uuidv4 } from "uuid";
+import { CheckoutFormValues } from "../pages/CheckoutPage";
 
 export type CartItem = {
   id: string;
@@ -15,11 +16,20 @@ export type UpdateCartItemAmountOperations = "increase-one" | "decrease-one";
 export interface CartState {
   items: CartItemsMap;
   orderId: string;
+  checkout: CheckoutFormValues;
 }
 
 const initialState: CartState = {
   items: new Map<string, CartItem>(),
   orderId: uuidv4(),
+  checkout: {
+    firstName: "",
+    lastName: "",
+    email: "",
+    phoneNumber: "",
+    prefferedPickupLocation: "",
+    comments: "",
+  },
 };
 
 export const cartSlice = createSlice({
@@ -122,6 +132,9 @@ export const cartSlice = createSlice({
     setOrderId: (state, action: PayloadAction<string>) => {
       state.orderId = action.payload;
     },
+    setCheckout: (state, action: PayloadAction<CheckoutFormValues>) => {
+      state.checkout = action.payload;
+    },
   },
 });
 
@@ -145,12 +158,18 @@ export const selectCartItemsCount = createSelector(
 
 export const selectOrderId = createSelector(selectCart, (cart) => cart.orderId);
 
+export const selectCheckout = createSelector(
+  selectCart,
+  (cart) => cart.checkout
+);
+
 export const cartSelectors = {
   selectCart,
   selectCartItemsArray,
   selectCartItemsMap,
   selectCartItemsCount,
   selectOrderId,
+  selectCheckout,
 };
 
 export default cartSlice.reducer;

@@ -16,10 +16,11 @@ import Typography from "@mui/material/Typography";
 import { useCurrentSale } from "../hooks/useCurrentSale";
 import CircularProgress from "@mui/material/CircularProgress";
 import { useSubmitOrder } from "../hooks/useSubmitOrder";
-import { useAppSelector } from "../store/hooks";
-import { selectOrderId } from "../store/cartSlice";
+import { useAppDispatch, useAppSelector } from "../store/hooks";
+import { cartActions, selectCheckout, selectOrderId } from "../store/cartSlice";
+import { useNavigate } from "react-router-dom";
 
-interface CheckoutFormValues {
+export interface CheckoutFormValues {
   firstName: string;
   lastName: string;
   email: string;
@@ -36,6 +37,9 @@ const CheckoutPage: React.FC = () => {
   const { totalCost, totalCostAfterDiscount, discount } = useCartDiscount();
   const { submitOrder } = useSubmitOrder();
   const orderId = useAppSelector(selectOrderId);
+  const navigate = useNavigate();
+  const checkout = useAppSelector(selectCheckout);
+  const dispatch = useAppDispatch();
 
   const {
     values,
@@ -46,14 +50,7 @@ const CheckoutPage: React.FC = () => {
     errors,
     status,
   } = useFormik<CheckoutFormValues>({
-    initialValues: {
-      firstName: "",
-      lastName: "",
-      email: "",
-      phoneNumber: "",
-      prefferedPickupLocation: "",
-      comments: "",
-    },
+    initialValues: checkout,
     validationSchema: Yup.object<CheckoutFormValues>({
       firstName: Yup.string().required("שדה חובה"),
       lastName: Yup.string().required("שדה חובה"),
@@ -75,7 +72,6 @@ const CheckoutPage: React.FC = () => {
         setStatus("אירעה שגיאה בקבלת מזהה הזמנה");
         return;
       }
-      console.log("values", values);
       try {
         submitOrder({
           id: orderId,
@@ -94,6 +90,17 @@ const CheckoutPage: React.FC = () => {
           status: "התקבלה",
         });
         setStatus(null);
+        dispatch(
+          cartActions.setCheckout({
+            firstName: values.firstName,
+            lastName: values.lastName,
+            email: values.email,
+            phoneNumber: values.phoneNumber,
+            prefferedPickupLocation: values.prefferedPickupLocation,
+            comments: values.comments,
+          })
+        );
+        navigate("/success");
       } catch (error) {
         setStatus("אירעה שגיאה בעת ביצוע ההזמנה. אנא נסה שוב.");
       }

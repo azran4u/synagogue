@@ -17,6 +17,7 @@ import {
   runTransaction,
   Transaction,
   deleteDoc,
+  setDoc,
 } from "firebase/firestore";
 import { firestoreDatabase } from "./firebaseConfig";
 
@@ -50,6 +51,11 @@ export class FirestoreService<T extends WithFieldValue<DocumentData>> {
     const querySnapshot = await getDocs(q);
     const data = this.querySnapshotToObject(querySnapshot);
     return data;
+  }
+
+  public async insertWithId(id: string, document: Omit<T, "id">) {
+    await setDoc(this.docById(id), document);
+    return id;
   }
 
   public async insert(document: Omit<T, "id">) {

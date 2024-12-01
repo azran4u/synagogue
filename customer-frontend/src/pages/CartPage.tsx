@@ -42,8 +42,6 @@ const CartPage: React.FC = () => {
     dispatch(cartActions.decreaseAmount({ id }));
   };
 
-  const w = useMemo(() => (isMobile ? "auto" : "60vw"), [isMobile]);
-
   const isCartEmpty = useMemo(
     () => productsInCart.length === 0,
     [productsInCart]
