@@ -2,6 +2,7 @@ import { createSelector, createSlice } from "@reduxjs/toolkit";
 import type { PayloadAction } from "@reduxjs/toolkit";
 import { isNil } from "lodash";
 import { RootState } from "./store";
+import { v4 as uuidv4 } from "uuid";
 
 export type CartItem = {
   id: string;
@@ -13,10 +14,12 @@ export type UpdateCartItemAmountOperations = "increase-one" | "decrease-one";
 
 export interface CartState {
   items: CartItemsMap;
+  orderId: string;
 }
 
 const initialState: CartState = {
   items: new Map<string, CartItem>(),
+  orderId: uuidv4(),
 };
 
 export const cartSlice = createSlice({
@@ -116,6 +119,9 @@ export const cartSlice = createSlice({
 
       return state;
     },
+    setOrderId: (state, action: PayloadAction<string>) => {
+      state.orderId = action.payload;
+    },
   },
 });
 
@@ -137,11 +143,14 @@ export const selectCartItemsCount = createSelector(
   (items) => items.reduce((prev, curr) => prev + curr.amount, 0)
 );
 
+export const selectOrderId = createSelector(selectCart, (cart) => cart.orderId);
+
 export const cartSelectors = {
   selectCart,
   selectCartItemsArray,
   selectCartItemsMap,
   selectCartItemsCount,
+  selectOrderId,
 };
 
 export default cartSlice.reducer;

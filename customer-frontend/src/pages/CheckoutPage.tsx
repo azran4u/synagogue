@@ -13,10 +13,11 @@ import { useMobile } from "../hooks/useMobile";
 import { useCartProducts } from "../hooks/useCartProducts";
 import { useCartDiscount } from "../hooks/useCartDiscount";
 import Typography from "@mui/material/Typography";
-import { v4 as uuidv4 } from "uuid";
 import { useCurrentSale } from "../hooks/useCurrentSale";
 import CircularProgress from "@mui/material/CircularProgress";
 import { useSubmitOrder } from "../hooks/useSubmitOrder";
+import { useAppSelector } from "../store/hooks";
+import { selectOrderId } from "../store/cartSlice";
 
 interface CheckoutFormValues {
   firstName: string;
@@ -34,6 +35,7 @@ const CheckoutPage: React.FC = () => {
   const cartProducts = useCartProducts();
   const { totalCost, totalCostAfterDiscount, discount } = useCartDiscount();
   const { submitOrder } = useSubmitOrder();
+  const orderId = useAppSelector(selectOrderId);
 
   const {
     values,
@@ -65,10 +67,18 @@ const CheckoutPage: React.FC = () => {
         setStatus("העגלה ריקה. אנא הוסף/י מוצרים לעגלה לפני ביצוע ההזמנה.");
         return;
       }
+      if (!sale) {
+        setStatus("המכירה סגורה כעת");
+        return;
+      }
+      if (!orderId) {
+        setStatus("אירעה שגיאה בקבלת מזהה הזמנה");
+        return;
+      }
       console.log("values", values);
       try {
         submitOrder({
-          id: uuidv4(),
+          id: orderId,
           comments: values.comments,
           email: values.email,
           firstName: values.firstName,
@@ -76,7 +86,7 @@ const CheckoutPage: React.FC = () => {
           phoneNumber: values.phoneNumber,
           prefferedPickupLocation: values.prefferedPickupLocation,
           products: cartProducts,
-          saleName: "",
+          saleName: sale?.name,
           totalCost: totalCost,
           totalCostAfterDiscount: totalCostAfterDiscount,
           discount: discount,

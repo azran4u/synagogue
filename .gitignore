@@ -6,6 +6,7 @@ customer-frontend/node_modules
 node_modules/
 .env
 **/service_account.json
+customer-frontend/src/services/firebaseConfig.ts
 logs
 *.log
 npm-debug.log*
