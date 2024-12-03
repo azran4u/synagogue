@@ -14,7 +14,7 @@ const SuccessfulOrderPage = () => {
   const paymentMessage = "ניתן לשלם ללירון או שרהל'ה בביט / פייבוקס";
   const emailMessage = "אישור הזמנה ישלח לכתובת המייל שהזנת";
   const editMessage = "ניתן לערוך את ההזמנה בכל עת באמצעות הקישור הבא";
-  const url = useOrderUrl();
+  const {endpoint} = useOrderUrl();
   const checkout = useAppSelector(selectCheckout);
 
   return (
@@ -54,7 +54,7 @@ const SuccessfulOrderPage = () => {
         {editMessage}
       </Typography>
       <Box sx={{ display: "flex", justifyContent: "center" }}>
-        <Link to={url ?? ""}>
+        <Link to={endpoint ?? ""}>
           <Typography variant="h6" gutterBottom sx={{ margin: "0 auto" }}>
             לצפייה בהזמנה
           </Typography>

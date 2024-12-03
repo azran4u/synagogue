@@ -8,6 +8,8 @@ import Sidebar from "./components/Sidebar";
 import Box from "@mui/material/Box";
 import OrderPage from "./pages/OrderPage";
 import SuccessfulOrderPage from "./pages/SuccessfulOrderPage";
+import PickupsPage from "./pages/PickupsPage";
+import ContactUsPage from "./pages/ContactUsPage";
 
 function App() {
   return (
@@ -27,7 +29,9 @@ function App() {
             <Route path="/checkout" element={<CheckoutPage />} />
             <Route path="/cart" element={<CartPage />} />
             <Route path="/order/:id" element={<OrderPage />} />
-            <Route path="/success" element={<SuccessfulOrderPage />} />            
+            <Route path="/success" element={<SuccessfulOrderPage />} />
+            <Route path="/pickups" element={<PickupsPage />} />
+            <Route path="/contact" element={<ContactUsPage />} />
           </Routes>
         </Box>
         <Footer />

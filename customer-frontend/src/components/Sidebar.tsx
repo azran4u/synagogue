@@ -25,11 +25,11 @@ const Sidebar: React.FC = () => {
   const dispatch = useDispatch();
   const handleDrawerToggle = () => dispatch(sidebarActions.toggle());
   const navigate = useNavigate();
-  const drawerWidth = useMemo(() => (isMobile ? "50%" : "20%"), [isMobile]);
+  const drawerWidth = useMemo(() => (isMobile ? "35%" : "20%"), [isMobile]);
 
   const handleLinkClick = (path: string) => {
     navigate(path);
-    handleDrawerToggle(); // Close the sidebar
+    handleDrawerToggle();
   };
 
   return (
@@ -110,7 +110,6 @@ const Sidebar: React.FC = () => {
                   onClick={() => handleLinkClick("/contact")}
                 />
               </ListItem>
-              <CartWithBadge />
             </Box>
           </Box>
         </Drawer>

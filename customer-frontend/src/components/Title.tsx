@@ -13,8 +13,6 @@ const Title: React.FC<Props> = ({ title }) => {
       gutterBottom
       sx={{
         textAlign: "center",
-        width: "80vw",
-        margin: "0 auto",
       }}
     >
       {title}

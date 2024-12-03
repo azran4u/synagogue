@@ -42,6 +42,7 @@ def sync_excel_to_firestore():
         "pickups",
         "sales",
         "admins",
+        "contact",
     ]
     for collection in collections_to_delete:
         delete_collection(collection)
@@ -72,6 +73,7 @@ def save_dfs_to_firestore(dataframes):
             "pickups": ["name"],
             "sales": ["name"],
             "admins": ["email"],
+            "contact": ["first_name", "last_name"],
         }
         if tab_name in id_fields:
             columns_to_concatenate = id_fields[tab_name]
@@ -114,6 +116,10 @@ def read_google_sheet_to_dfs(sheet):
         tab_name = worksheet.title
         data = worksheet.get_all_records()
         df = pd.DataFrame(data)
+        if tab_name == "contact":
+            pd.set_option("display.max_rows", None)
+            pd.set_option("display.max_columns", None)
+            print(df)
         dfs[tab_name] = df
     return dfs
 

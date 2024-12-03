@@ -19,6 +19,8 @@ import { useSubmitOrder } from "../hooks/useSubmitOrder";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
 import { cartActions, selectCheckout, selectOrderId } from "../store/cartSlice";
 import { useNavigate } from "react-router-dom";
+import { useSendEmail } from "../hooks/useSendEmail";
+import { useOrderUrl } from "../hooks/useOrderLink";
 
 export interface CheckoutFormValues {
   firstName: string;
@@ -40,6 +42,8 @@ const CheckoutPage: React.FC = () => {
   const navigate = useNavigate();
   const checkout = useAppSelector(selectCheckout);
   const dispatch = useAppDispatch();
+  const { sendEmail } = useSendEmail();
+  const { url } = useOrderUrl();
 
   const {
     values,
@@ -100,6 +104,36 @@ const CheckoutPage: React.FC = () => {
             comments: values.comments,
           })
         );
+        sendEmail({
+          from: "MS_7732lz@trial-x2p03476779gzdrn.mlsender.net",
+          to: values.email,
+          message: {
+            subject: "תודה שהזמנת באתר טייץ השומרון",
+            html: `
+           <div style="direction: rtl; text-align: right;">
+          <h1>הזמנתך התקבלה בהצלחה</h1>
+          <p>פרטי ההזמנה:</p>
+          <p>שם פרטי: ${values.firstName}</p>
+          <p>שם משפחה: ${values.lastName}</p>
+          <p>אימייל: ${values.email}</p>
+          <p>טלפון נייד: ${values.phoneNumber}</p>
+          <p>נקודת חלוקה: ${values.prefferedPickupLocation}</p>
+          <p>קישור להזמנה: <a href=${url}>לחץ כאן</a></p>
+          <p>סכום לתשלום: ${totalCost} ש"ח</p>
+          ${
+            discount > 0
+              ? `
+            <p>הנחה: ${discount} ש"ח</p>
+            <p>סכום לתשלום לאחר הנחה: ${totalCostAfterDiscount} ש"ח</p>            
+            `
+              : ""
+          }
+          <p>תאריך: ${new Date().toLocaleString()}</p>
+          <p>סטטוס: התקבלה</p>
+        </div>
+            `,
+          },
+        });
         navigate("/success");
       } catch (error) {
         setStatus("אירעה שגיאה בעת ביצוע ההזמנה. אנא נסה שוב.");

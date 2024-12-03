@@ -4,9 +4,18 @@ import { selectOrderId } from "../store/cartSlice";
 
 export function useOrderUrl() {
   const orderId = useAppSelector(selectOrderId);
-  const url = useMemo(() => {
+  const baseUrl = useMemo(() => {
+    const { protocol, hostname, port } = window.location;
+    return `${protocol}//${hostname}${port ? `:${port}` : ""}`;
+  }, []);
+
+  const endpoint = useMemo(() => {
     return orderId ? `/order/${orderId}` : null;
   }, [orderId]);
 
-  return url ;
+  const url = useMemo(() => {
+    return orderId ? `${baseUrl}${endpoint}` : null;
+  }, [endpoint, baseUrl]);
+
+  return { endpoint, url };
 }

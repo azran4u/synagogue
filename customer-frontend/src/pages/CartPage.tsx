@@ -6,7 +6,6 @@ import { cartActions } from "../store/cartSlice";
 import { useAppDispatch } from "../store/hooks";
 import Typography from "@mui/material/Typography";
 import DeleteIcon from "@mui/icons-material/Delete";
-import { useMobile } from "../hooks/useMobile";
 import TableContainer from "@mui/material/TableContainer";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
@@ -24,7 +23,6 @@ import { useNavigate } from "react-router-dom";
 const CartPage: React.FC = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
-  const isMobile = useMobile();
   const theme = useTheme();
 
   const productsInCart = useCartProducts();
@@ -123,7 +121,7 @@ const CartPage: React.FC = () => {
                     <TableCell
                       align="center"
                       onClick={() =>
-                        navigate(`/product/${product.name}`, {
+                        navigate(`/product/${product.kind}`, {
                           state: {
                             product,
                             amount,

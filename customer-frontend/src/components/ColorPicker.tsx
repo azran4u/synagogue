@@ -36,7 +36,11 @@ const ColorPicker: React.FC<ColorPickerProps> = ({
           name={name}
           value={value}
           onChange={onChange}
-          sx={{ display: "flex", justifyContent: "center", margin: 0 }}
+          sx={{
+            display: "grid",
+            gridTemplateColumns: "repeat(5, 1fr)",
+            alignItems: "center",
+          }}
         >
           {colors.map((color) => (
             <FormControlLabel
@@ -47,24 +51,38 @@ const ColorPicker: React.FC<ColorPickerProps> = ({
                   sx={{
                     color: color.hex_color,
                     "&.Mui-checked": {
-                      borderRadius: "100%",
-                      "&:before": {
+                      color: color.hex_color,
+                      backgroundColor: color.hex_color,
+                      borderRadius: "50%",
+                      border: `1px solid black`,
+                      width: "2rem",
+                      height: "2rem",
+                      boxSizing: "border-box",
+                      "&::after": {
                         content: '""',
                         display: "block",
                         position: "absolute",
-                        border: `4px solid ${color.hex_color}`,
+                        top: "50%",
+                        left: "50%",
+                        transform: "translate(-50%, -50%)",
+                        backgroundColor: "black",
                         borderRadius: "50%",
+                        width: "0.5rem", // Smaller inner circle
+                        height: "0.5rem", // Smaller inner circle
+                        border: `1px solid black`,
                       },
                     },
                     "&:before": {
+                      color: color.hex_color,
                       content: '""',
                       display: "block",
                       position: "absolute",
                       backgroundColor: color.hex_color,
                       borderRadius: "50%",
-                      opacity: 0.5,
-                      width: "1rem",
-                      height: "1rem",
+                      border: `1px solid black`,
+                      width: "2rem",
+                      height: "2rem",
+                      boxSizing: "border-box",
                     },
                   }}
                 />

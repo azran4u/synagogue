@@ -17,7 +17,11 @@
     {
       "target": "customer-frontend",
       "public": "customer-frontend/dist",
-      "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+      "ignore": [
+        "firebase.json",
+        "**/.*",
+        "**/node_modules/**"
+      ],
       "rewrites": [
         {
           "source": "**",
@@ -28,7 +32,11 @@
     {
       "target": "admin-frontend",
       "public": "admin-frontend/build",
-      "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+      "ignore": [
+        "firebase.json",
+        "**/.*",
+        "**/node_modules/**"
+      ],
       "rewrites": [
         {
           "source": "**",
@@ -36,5 +44,8 @@
         }
       ]
     }
-  ]
+  ],
+  "extensions": {
+    "mailersend-email": "mailersend/mailersend-email@0.1.8"
+  }
 }
