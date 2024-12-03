@@ -38,8 +38,9 @@ const ColorPicker: React.FC<ColorPickerProps> = ({
           onChange={onChange}
           sx={{
             display: "grid",
-            gridTemplateColumns: "repeat(5, 1fr)",
-            alignItems: "center",
+            gridTemplateColumns: `repeat(${
+              colors.length >= 5 ? 5 : colors.length
+            }, 1fr)`,
           }}
         >
           {colors.map((color) => (
