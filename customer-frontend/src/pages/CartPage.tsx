@@ -67,14 +67,16 @@ const CartPage: React.FC = () => {
               alignItems: "center",
             }}
           >
-            <Typography variant="h6">סכ"ה: ₪{totalCost}</Typography>
-            <Typography variant="h6">
-              סכ"ה לתשלום: ₪{totalCostAfterDiscount}
-            </Typography>
+            <Typography variant="h6">סכ"ה לתשלום: ₪{totalCost}</Typography>
             {totalCost > totalCostAfterDiscount && (
-              <Typography variant="h6" color={theme.palette.primary.light}>
-                בקנייה זו חסכת: ₪{totalCost - totalCostAfterDiscount}
-              </Typography>
+              <>
+                <Typography variant="h6">
+                  סכ"ה לתשלום לאחר הנחה: ₪{totalCostAfterDiscount}
+                </Typography>
+                <Typography variant="h6" color={theme.palette.primary.light}>
+                  בקנייה זו חסכת: ₪{totalCost - totalCostAfterDiscount}
+                </Typography>
+              </>
             )}
           </Box>
           <TableContainer component={Paper}>
