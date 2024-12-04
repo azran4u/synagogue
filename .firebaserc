@@ -7,9 +7,6 @@
       "hosting": {
         "customer-frontend": [
           "shomron-tights"
-        ],
-        "admin-frontend": [
-          "shomron-tights-admin"
         ]
       }
     }

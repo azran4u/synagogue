@@ -1,33 +1,29 @@
 {
   "functions": [
     {
-      "source": "functions/fn1",
-      "codebase": "fn1",
+      "source": "functions/admin",
+      "codebase": "admin",
       "runtime": "python311",
       "entryPoint": "main",
       "trigger": {
         "type": "http",
-        "url": "fn1"
+        "url": "admin"
       },
-      "ignore": ["firebase-debug.log", "venv"]
+      "ignore": [
+        "firebase-debug.log",
+        "venv"
+      ]
     }
   ],
   "hosting": [
     {
       "target": "customer-frontend",
       "public": "customer-frontend/dist",
-      "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
-      "rewrites": [
-        {
-          "source": "**",
-          "destination": "/index.html"
-        }
-      ]
-    },
-    {
-      "target": "admin-frontend",
-      "public": "admin-frontend/build",
-      "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+      "ignore": [
+        "firebase.json",
+        "**/.*",
+        "**/node_modules/**"
+      ],
       "rewrites": [
         {
           "source": "**",
@@ -38,5 +34,8 @@
   ],
   "extensions": {
     "mailersend-email": "mailersend/mailersend-email@0.1.8"
+  },
+  "emulators": {
+    "singleProjectMode": true
   }
 }

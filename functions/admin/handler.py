@@ -45,6 +45,15 @@ else:
     exit(1)
 
 
+def allowed_admins():
+    admins = read_firestore_collection("admins")
+    allowed_admin = []
+    for admin in admins:
+        email = admin.get("email")
+        allowed_admin.append(email)
+    return allowed_admin
+
+
 def export_firestore_to_excel():
     base_url = "https://shomron-tights.web.app"
     collection_name = "orders"
@@ -106,7 +115,9 @@ def export_firestore_to_excel():
     tabs_data = {"orders": orders_df, "pack": products_df}
 
     # Create the Google Sheet and set permissions
-    spreadsheet = create_google_sheet_with_permissions(sheet_title, gmail_accounts, tabs_data)
+    spreadsheet = create_google_sheet_with_permissions(
+        sheet_title, gmail_accounts, tabs_data
+    )
     return spreadsheet.url
 
 

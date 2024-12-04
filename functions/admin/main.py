@@ -1,6 +1,7 @@
 from firebase_functions import https_fn
 from firebase_admin import auth
 from handler import (
+    allowed_admins,
     export_firestore_to_excel,
     sync_excel_to_firestore,
 )
@@ -10,7 +11,7 @@ from flask_cors import CORS
 app = flask.Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
 
-allowed_emails = ["azran4u@gmail.com"]
+allowed_emails = allowed_admins()
 
 
 def verify_id_token_and_email():

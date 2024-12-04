@@ -40,13 +40,14 @@ if [ "$SERVICE_NAME" == "customer-frontend" ]; then
 fi
 
 # if the service name is "backend", deploy the backend service
-if [ "$SERVICE_NAME" == "fn1" ]; then
-  echo "Deploying backend service fn1"  
-  cd functions/fn1
+if [ "$SERVICE_NAME" == "admin" ]; then
+  echo "Deploying backend service admin"  
+  cd functions/admin
+  python3.11 -m venv venv
   source venv/bin/activate
-  python3 -m pip install -r requirements.txt
+  pip install -r requirements.txt
   firebase-cli-node
-  firebase deploy --only functions:fn1
+  firebase deploy --only functions:admin
 fi
 
 cd $CWD
