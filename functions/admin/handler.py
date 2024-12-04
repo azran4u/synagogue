@@ -8,70 +8,38 @@ import firebase_admin
 from firebase_admin import credentials, storage
 from google.cloud import storage as gcs_storage
 
-sheet_id = "1n0O47l7KFeNS6bOd3aVu2iq5AZxoaGYllNgp9OSwuUY"
-service_account_file = os.path.join(
-    os.path.dirname(__file__), "service_account_firebase.json"
-)
-firebase_credentials_file = service_account_file
-gspread_service_account_file = service_account_file
-
-# firebase_credentials_file = os.path.join(
-#     os.path.dirname(__file__), "service_account_firebase.json"
-# )
-# gspread_service_account_file = os.path.join(
-#     os.path.dirname(__file__), "service_account_gspread.json"
-# )
+input_google_sheet_id = "1n0O47l7KFeNS6bOd3aVu2iq5AZxoaGYllNgp9OSwuUY"
+service_account_file = os.path.join(os.path.dirname(__file__), "service_account.json")
+firebase_storage_bucket = "shomron-tights.firebasestorage.app"
 firestore_project_id = "shomron-tights"
 images_path = "/Users/eyalazran/Downloads/app_images/test"
-
+base_frontend_url = "https://shomron-tights.web.app"
 
 if os.path.exists(service_account_file):
     cloud_storage_client = gcs_storage.Client.from_service_account_json(
         service_account_file
     )
     print(f"Google Cloud Storage client initialized successfully")
+    cred = credentials.Certificate(service_account_file)
+    print(f"credentials were loaded successfully")
+    firebase_admin.initialize_app(cred, {"storageBucket": firebase_storage_bucket})
+    print(f"Firebase app initialized successfully")
+    firestore_db = firestore.Client.from_service_account_json(
+        service_account_file, project=firestore_project_id
+    )
+    gc = gspread.service_account(filename=service_account_file)
+    print(f"Google Sheets client initialized successfully")
 else:
     print(f"Service account file not found: {service_account_file}")
     exit(1)
 
 
-if os.path.exists(firebase_credentials_file):
-    print(f"Using credentials file: {firebase_credentials_file}")
-    cred = credentials.Certificate(firebase_credentials_file)
-    print(f"credentials were loaded successfully")
-
-    print(f"Initializing Firebase app with project ID: {firestore_project_id}")
-    firebase_admin.initialize_app(
-        cred, {"storageBucket": "shomron-tights.firebasestorage.app"}
-    )
-    print(f"Firebase app initialized successfully")
-
-    print(f"Initializing Firestore client with project ID: {firestore_project_id}")
-    firestore_db = firestore.Client.from_service_account_json(
-        firebase_credentials_file, project=firestore_project_id
-    )
-    print(f"Firestore client initialized successfully")
-else:
-    print(f"Credentials file not found: {firebase_credentials_file}")
-    exit(1)
-
-if os.path.exists(gspread_service_account_file):
-    print(
-        f"Initializing Google Sheets client with service account file: {gspread_service_account_file}"
-    )
-    gc = gspread.service_account(filename=gspread_service_account_file)
-    print(f"Google Sheets client initialized successfully")
-else:
-    print(f"Service account file not found: {gspread_service_account_file}")
-    exit(1)
-
-
 def create_gcs_bucket(bucket_name):
-    # check if the bucket already exists
     bucket = cloud_storage_client.bucket(bucket_name)
     if bucket.exists():
         print(f"Bucket {bucket_name} already exists.")
         return
+
     # Create the bucket with the specified location and storage class
     bucket.storage_class = "STANDARD"
     new_bucket = cloud_storage_client.create_bucket(bucket, location="me-west1")
@@ -132,7 +100,6 @@ def allowed_admins():
 
 
 def export_firestore_to_excel():
-    base_url = "https://shomron-tights.web.app"
     collection_name = "orders"
     orders = read_firestore_collection(collection_name)
 
@@ -148,48 +115,80 @@ def export_firestore_to_excel():
         order_phone_number = order.get("phoneNumber")
         order_preffered_pickup_location = order.get("prefferedPickupLocation")
         order_sale_name = order.get("saleName")
-        order_status = order.get("status")
         order_total_price = order.get("totalCost")
         order_total_cost_after_discount = order.get("totalCostAfterDiscount")
         products = order.get("products", [])
+        total_amount = sum(product.get("amount", 0) for product in products)
+
         order_entry = {
-            "id": order_id,
-            "url": f"{base_url}/order/{order_id}",
-            "date": order_date,
-            "comments": order_comments,
-            "email": order_email,
-            "first_name": order_first_name,
-            "last_name": order_last_name,
-            "phone_number": order_phone_number,
-            "preffered_pickup_location": order_preffered_pickup_location,
-            "sale_name": order_sale_name,
-            "status": order_status,
-            "total_price": order_total_price,
-            "total_cost_after_discount": order_total_cost_after_discount,
+            "תאריך": order_date,
+            "נקודת חלוקה": order_preffered_pickup_location,
+            "שם פרטי": order_first_name,
+            "שם משפחה": order_last_name,
+            "מחיר לפני הנחה": order_total_price,
+            "מחיר לאחר הנחה": order_total_cost_after_discount,
+            "כמות פריטים": total_amount,
+            "טלפון נייד": order_phone_number,
+            "הערות": order_comments,
+            "כתובת מייל": order_email,
+            "קישור להזמנה": f"{base_frontend_url}/order/{order_id}",
+            "שם מכירה": order_sale_name,
         }
         orders_list.append(order_entry)
+
         for row in products:
             amount = row.get("amount")
             product = row.get("product")
+            supplier = product.get("supplier")
+            if product.get("kind") == "tights":
+                description = f"טייץ גרביון, {product.get('denier')} דניר, {product.get('leg')} רגל, מידה {product.get('size')}, צבע {product.get('color')}"
+            elif product.get("kind") == "lace":
+                description = (
+                    f"טייץ תחרה, תחרה {product.get('lace')} ,צבע {product.get('color')}"
+                )
+            elif product.get("kind") == "short":
+                description = f"טייץ קצר, אורך {product.get('length')} ,צבע {product.get('color')}"
+            elif product.get("kind") == "thermal":
+                description = f"טייץ תרמי, {product.get('leg')} רגל, מידה {product.get('size')} , צבע {product.get('color')} "
             product_entry = {
-                "first_name": order_first_name,
-                "last_name": order_last_name,
-                "phone_number": order_phone_number,
-                "pickup_location": order_preffered_pickup_location,
-                "description": product.get("id"),
-                "amount": amount,
-                "comments": order_comments,
+                "שם פרטי": order_first_name,
+                "שם משפחה": order_last_name,
+                "טלפון נייד": order_phone_number,
+                "נקודת חלוקה": order_preffered_pickup_location,
+                "המוצר": description.strip(),
+                "כמות": amount,
+                "כמות פריטים בהזמנה": total_amount,
+                "הערות": order_comments,
+                "ספק": supplier,
             }
             products_list.append(product_entry)
 
     orders_df = pd.DataFrame(orders_list)
     products_df = pd.DataFrame(products_list)
 
+    orders_groupby_pickup_df = (
+        orders_df.groupby("נקודת חלוקה")
+        .agg({"מחיר לפני הנחה": "sum", "מחיר לאחר הנחה": "sum", "כמות פריטים": "sum"})
+        .reset_index()
+    )
+    orders_groupby_pickup_df["עמלה"] = orders_groupby_pickup_df["מחיר לאחר הנחה"] * 0.10
+
+    suppliers_df = (
+        products_df.groupby(["ספק", "המוצר"])
+        .agg({"כמות פריטים בהזמנה": "sum"})
+        .reset_index()
+    )
+
     sheet_title = "shomron-tights" + "@" + datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    gmail_accounts = ["azran4u@gmail.com"]
+    gmail_accounts = allowed_admins()
 
     # Dictionary of tab names and DataFrames
-    tabs_data = {"orders": orders_df, "pack": products_df}
+    tabs_data = {
+        "הזמנות": orders_df,
+        "אריזות": products_df,
+        "מכירות לפי ישוב": orders_groupby_pickup_df,
+        "ספקים": suppliers_df,
+    }
 
     # Create the Google Sheet and set permissions
     spreadsheet = create_google_sheet_with_permissions(
@@ -210,7 +209,7 @@ def read_firestore_collection(collection_name):
         return documents
     except Exception as e:
         print(f"Error reading Firestore collection: {e}")
-        return []
+        raise e
 
 
 def create_google_sheet_with_permissions(sheet_title, gmail_accounts, tabs_data):
@@ -251,7 +250,7 @@ def sync_excel_to_firestore():
     for collection in collections_to_delete:
         delete_collection(collection)
 
-    sheet = read_google_sheet(sheet_id)
+    sheet = read_google_sheet(input_google_sheet_id)
     dataframes = read_google_sheet_to_dfs(sheet)
     save_dfs_to_firestore(dataframes)
 
@@ -315,10 +314,6 @@ def read_google_sheet_to_dfs(sheet):
         tab_name = worksheet.title
         data = worksheet.get_all_records()
         df = pd.DataFrame(data)
-        if tab_name == "contact":
-            pd.set_option("display.max_rows", None)
-            pd.set_option("display.max_columns", None)
-            print(df)
         dfs[tab_name] = df
     print("DataFrames read successfully")
     return dfs
