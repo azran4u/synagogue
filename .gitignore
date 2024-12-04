@@ -5,7 +5,8 @@ customer-frontend/node_modules
 **/venv
 node_modules/
 .env
-**/service_account.json
+**/service_account_firebase.json
+**/service_account_gspread.json
 customer-frontend/src/services/firebaseConfig.ts
 logs
 *.log

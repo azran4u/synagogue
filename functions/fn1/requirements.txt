@@ -6,3 +6,6 @@ google-auth~=2.36.0
 requests~=2.32.3
 pillow~=11.0.0
 firebase-admin~=6.6.0
+werkzeug
+flask
+flask_cors

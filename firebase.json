@@ -4,24 +4,19 @@
       "source": "functions/fn1",
       "codebase": "fn1",
       "runtime": "python311",
-      "ignore": [
-        "venv",
-        ".git",
-        "firebase-debug.log",
-        "firebase-debug.*.log",
-        "*.local"
-      ]
+      "entryPoint": "main",
+      "trigger": {
+        "type": "http",
+        "url": "fn1"
+      },
+      "ignore": ["firebase-debug.log", "venv"]
     }
   ],
   "hosting": [
     {
       "target": "customer-frontend",
       "public": "customer-frontend/dist",
-      "ignore": [
-        "firebase.json",
-        "**/.*",
-        "**/node_modules/**"
-      ],
+      "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
       "rewrites": [
         {
           "source": "**",
@@ -32,11 +27,7 @@
     {
       "target": "admin-frontend",
       "public": "admin-frontend/build",
-      "ignore": [
-        "firebase.json",
-        "**/.*",
-        "**/node_modules/**"
-      ],
+      "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
       "rewrites": [
         {
           "source": "**",

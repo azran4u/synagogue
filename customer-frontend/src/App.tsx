@@ -10,6 +10,7 @@ import OrderPage from "./pages/OrderPage";
 import SuccessfulOrderPage from "./pages/SuccessfulOrderPage";
 import PickupsPage from "./pages/PickupsPage";
 import ContactUsPage from "./pages/ContactUsPage";
+import AdminPage from "./pages/AdminPage";
 
 function App() {
   return (
@@ -32,6 +33,7 @@ function App() {
             <Route path="/success" element={<SuccessfulOrderPage />} />
             <Route path="/pickups" element={<PickupsPage />} />
             <Route path="/contact" element={<ContactUsPage />} />
+            <Route path="/admin" element={<AdminPage />} />
           </Routes>
         </Box>
         <Footer />
