@@ -134,6 +134,7 @@ const CheckoutPage: React.FC = () => {
             `,
           },
         });
+        dispatch(cartActions.clear());
         navigate("/success");
       } catch (error) {
         setStatus("אירעה שגיאה בעת ביצוע ההזמנה. אנא נסה שוב.");
