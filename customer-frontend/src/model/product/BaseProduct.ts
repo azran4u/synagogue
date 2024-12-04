@@ -11,7 +11,7 @@ export interface BaseProduct {
   discount_price: number;
   description: string;
   stock: number;
-  is_active: boolean;
-  is_default: boolean;
+  is_active: string;
+  is_default: string;
   image: string;
 }

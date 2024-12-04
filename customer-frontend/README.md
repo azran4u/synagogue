@@ -1,10 +1,11 @@
 # Tights app
+
 # TODO
-Admin app
-Deploy admin function
+add description for each product
+add suppliers report
+add pickup commision report
 
 # BUGS
-Contact - show phone number with trailing 0
 
 # FEATURES
 Order Confirmation Email - change email from address

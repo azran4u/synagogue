@@ -12,9 +12,10 @@ import SelectComponent from "../components/SelectComponent";
 import Title from "../components/Title";
 import { cartActions } from "../store/cartSlice";
 import { useAppDispatch } from "../store/hooks";
-import { useLocation } from "react-router-dom";
+import { useLocation, useParams } from "react-router-dom";
 import { useShortProducts } from "../hooks/useProductsByKind";
 import { useColors } from "../hooks/useColors";
+import Typography from "@mui/material/Typography";
 
 interface ShortProductFormValues {
   length: string;
@@ -24,7 +25,8 @@ interface ShortProductFormValues {
 
 const ShortProductPage: React.FC = () => {
   const dispatch = useAppDispatch();
-  const { products } = useShortProducts();
+  const { name } = useParams<{ kind: string; name: string }>();
+  const { products } = useShortProducts(name);
   const { data: colors } = useColors();
   const { state } = useLocation();
 
@@ -39,7 +41,7 @@ const ShortProductPage: React.FC = () => {
       };
     } else {
       const defaultProduct =
-        products.find((product) => product.is_default) ?? products[0];
+        products.find((product) => product.is_default === "כן") ?? products[0];
 
       return {
         product: defaultProduct,
@@ -132,6 +134,9 @@ const ShortProductPage: React.FC = () => {
       }}
     >
       <Title title={initialProductAndAmount?.product?.name ?? "Product"} />
+      <Typography variant="body1" sx={{ textAlign: "center" }}>
+        {initialProductAndAmount.product.description}
+      </Typography>
       <form onSubmit={handleSubmit}>
         <Box
           display="flex"

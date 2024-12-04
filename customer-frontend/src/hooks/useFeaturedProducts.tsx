@@ -4,7 +4,7 @@ import { useProducts } from "./useProducts";
 export function useFeaturedProducts() {
   const { isLoading, products } = useProducts();
   const featuredProducts = useMemo(
-    () => products.filter((product) => product.is_default),
+    () => products.filter((product) => product.is_default === "כן"),
     [products]
   );
   return { isLoading, featuredProducts };

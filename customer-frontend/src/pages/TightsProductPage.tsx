@@ -12,9 +12,10 @@ import SelectComponent from "../components/SelectComponent";
 import Title from "../components/Title";
 import { cartActions } from "../store/cartSlice";
 import { useAppDispatch } from "../store/hooks";
-import { useLocation } from "react-router-dom";
+import { useLocation, useParams } from "react-router-dom";
 import { useTightsProducts } from "../hooks/useProductsByKind";
 import { useColors } from "../hooks/useColors";
+import { Typography } from "@mui/material";
 
 interface TightsProductFormValues {
   denier: string;
@@ -27,7 +28,8 @@ interface TightsProductFormValues {
 const TightsProductPage: React.FC = () => {
   const dispatch = useAppDispatch();
   const location = useLocation();
-  const { products } = useTightsProducts();
+  const { name } = useParams<{ kind: string; name: string }>();
+  const { products } = useTightsProducts(name);
   const { data: colors } = useColors();
 
   const initialProductAndAmount = useMemo(() => {
@@ -39,7 +41,7 @@ const TightsProductPage: React.FC = () => {
       };
     } else {
       const defaultProduct =
-        products.find((product) => product.is_default) ?? products[0];
+        products.find((product) => product.is_default === "כן") ?? products[0];
 
       return {
         product: defaultProduct,
@@ -170,10 +172,14 @@ const TightsProductPage: React.FC = () => {
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
+        justifyContent: "center",
         gap: "0.5rem",
       }}
     >
       <Title title={initialProductAndAmount.product?.name ?? "Product"} />
+      <Typography variant="body1" sx={{ textAlign: "center" }}>
+        {initialProductAndAmount.product.description}
+      </Typography>
       <form onSubmit={handleSubmit}>
         <Box
           display="flex"

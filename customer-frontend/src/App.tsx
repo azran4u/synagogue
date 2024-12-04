@@ -26,7 +26,7 @@ function App() {
         <Box sx={{ flex: 1 }}>
           <Routes>
             <Route path="/" element={<HomePage />} />
-            <Route path="/product/:kind" element={<ProductPage />} />
+            <Route path="/product/:kind/:name" element={<ProductPage />} />
             <Route path="/checkout" element={<CheckoutPage />} />
             <Route path="/cart" element={<CartPage />} />
             <Route path="/order/:id" element={<OrderPage />} />

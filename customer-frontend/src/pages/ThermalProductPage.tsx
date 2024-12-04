@@ -12,9 +12,10 @@ import SelectComponent from "../components/SelectComponent";
 import Title from "../components/Title";
 import { cartActions } from "../store/cartSlice";
 import { useAppDispatch } from "../store/hooks";
-import { useLocation } from "react-router-dom";
+import { useLocation, useParams } from "react-router-dom";
 import { useThermalProducts } from "../hooks/useProductsByKind";
 import { useColors } from "../hooks/useColors";
+import Typography from "@mui/material/Typography";
 
 interface ThermalProductFormValues {
   leg: string;
@@ -26,7 +27,8 @@ interface ThermalProductFormValues {
 const ThermalProductPage: React.FC = () => {
   const dispatch = useAppDispatch();
   const location = useLocation();
-  const { products } = useThermalProducts();
+  const { name } = useParams<{ kind: string; name: string }>();
+  const { products } = useThermalProducts(name);
   const { data: colors } = useColors();
 
   const initialProductAndAmount = useMemo(() => {
@@ -38,7 +40,7 @@ const ThermalProductPage: React.FC = () => {
       };
     } else {
       const defaultProduct =
-        products.find((product) => product.is_default) ?? products[0];
+        products.find((product) => product.is_default === "כן") ?? products[0];
 
       return {
         product: defaultProduct,
@@ -153,6 +155,9 @@ const ThermalProductPage: React.FC = () => {
       }}
     >
       <Title title={initialProductAndAmount?.product?.name ?? "Product"} />
+      <Typography variant="body1" sx={{ textAlign: "center" }}>
+        {initialProductAndAmount.product.description}
+      </Typography>
       <form onSubmit={handleSubmit}>
         <Box
           display="flex"

@@ -8,5 +8,5 @@ export interface PickupLocation {
   phone_number: string;
   latitude: number;
   longitude: number;
-  is_active: boolean;
+  is_active: string;
 }

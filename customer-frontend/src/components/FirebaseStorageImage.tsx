@@ -8,7 +8,7 @@ interface Props {
 
 const FirebaseStorageImage: React.FC<Props> = ({ url }) => {
   const imageUrl = useFirebaseStorageImageUrl(url);
-  return <Image url={imageUrl} />;
+  return <Image url={imageUrl}  />;
 };
 
 export default FirebaseStorageImage;

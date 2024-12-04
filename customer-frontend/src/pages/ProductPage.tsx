@@ -9,7 +9,7 @@ import ThermalProductPage from "./ThermalProductPage";
 import { useProducts } from "../hooks/useProducts";
 
 const ProductPage: React.FC = () => {
-  const { kind } = useParams<{ kind: string }>();
+  const { kind } = useParams<{ kind: string; name: string }>();
   const { products } = useProducts();
   const navigate = useNavigate();
 

@@ -6,16 +6,33 @@ from google.cloud import firestore
 from PIL import Image
 import firebase_admin
 from firebase_admin import credentials, storage
+from google.cloud import storage as gcs_storage
 
 sheet_id = "1n0O47l7KFeNS6bOd3aVu2iq5AZxoaGYllNgp9OSwuUY"
-firebase_credentials_file = os.path.join(
+service_account_file = os.path.join(
     os.path.dirname(__file__), "service_account_firebase.json"
 )
-gspread_service_account_file = os.path.join(
-    os.path.dirname(__file__), "service_account_gspread.json"
-)
+firebase_credentials_file = service_account_file
+gspread_service_account_file = service_account_file
+
+# firebase_credentials_file = os.path.join(
+#     os.path.dirname(__file__), "service_account_firebase.json"
+# )
+# gspread_service_account_file = os.path.join(
+#     os.path.dirname(__file__), "service_account_gspread.json"
+# )
 firestore_project_id = "shomron-tights"
 images_path = "/Users/eyalazran/Downloads/app_images/test"
+
+
+if os.path.exists(service_account_file):
+    cloud_storage_client = gcs_storage.Client.from_service_account_json(
+        service_account_file
+    )
+    print(f"Google Cloud Storage client initialized successfully")
+else:
+    print(f"Service account file not found: {service_account_file}")
+    exit(1)
 
 
 if os.path.exists(firebase_credentials_file):
@@ -34,15 +51,75 @@ if os.path.exists(firebase_credentials_file):
         firebase_credentials_file, project=firestore_project_id
     )
     print(f"Firestore client initialized successfully")
+else:
+    print(f"Credentials file not found: {firebase_credentials_file}")
+    exit(1)
 
+if os.path.exists(gspread_service_account_file):
     print(
         f"Initializing Google Sheets client with service account file: {gspread_service_account_file}"
     )
     gc = gspread.service_account(filename=gspread_service_account_file)
     print(f"Google Sheets client initialized successfully")
 else:
-    print(f"Credentials file not found: {firebase_credentials_file}")
+    print(f"Service account file not found: {gspread_service_account_file}")
     exit(1)
+
+
+def create_gcs_bucket(bucket_name):
+    # check if the bucket already exists
+    bucket = cloud_storage_client.bucket(bucket_name)
+    if bucket.exists():
+        print(f"Bucket {bucket_name} already exists.")
+        return
+    # Create the bucket with the specified location and storage class
+    bucket.storage_class = "STANDARD"
+    new_bucket = cloud_storage_client.create_bucket(bucket, location="me-west1")
+
+    print(
+        f"Bucket {new_bucket.name} created in {new_bucket.location} with storage class {new_bucket.storage_class}."
+    )
+
+    # Set the bucket's IAM policy to allow public access
+    policy = new_bucket.get_iam_policy(requested_policy_version=3)
+    policy.bindings.append(
+        {
+            "role": "roles/storage.objectViewer",
+            "members": {"allUsers"},
+        }
+    )
+    new_bucket.set_iam_policy(policy)
+    print(f"Public access granted to bucket {new_bucket.name}.")
+
+    # Set the ACL for the bucket to allow public access
+    new_bucket.acl.all().grant_read()
+    new_bucket.acl.save()
+    print(f"Bucket {new_bucket.name} is now publicly accessible.")
+
+    # Disable soft delete (Object Versioning)
+    new_bucket.versioning_enabled = False
+    new_bucket.patch()
+    print(f"Soft delete (Object Versioning) disabled for bucket {new_bucket.name}.")
+
+    # Disable replication
+    new_bucket.iam_configuration.uniform_bucket_level_access_enabled = True
+    new_bucket.patch()
+    print(f"Replication disabled for bucket {new_bucket.name}.")
+
+
+def upload_folder_content_to_cloud_storage(bucket_name, folder_path):
+    bucket = cloud_storage_client.bucket(bucket_name)
+
+    # Iterate over all files in the folder
+    for root, _, files in os.walk(folder_path):
+        for file_name in files:
+            file_path = os.path.join(root, file_name)
+            blob_name = os.path.relpath(file_path, folder_path)
+            blob = bucket.blob(blob_name)
+
+            # Upload the file to the bucket
+            blob.upload_from_filename(file_path)
+            print(f"File {file_path} uploaded to {blob_name}.")
 
 
 def allowed_admins():
@@ -177,15 +254,6 @@ def sync_excel_to_firestore():
     sheet = read_google_sheet(sheet_id)
     dataframes = read_google_sheet_to_dfs(sheet)
     save_dfs_to_firestore(dataframes)
-
-
-def upload_images_to_firestore():
-    for root, _, files in os.walk(images_path):
-        for file in files:
-            if file.lower().endswith(("png", "jpg", "jpeg", "gif", "bmp")):
-                file_path = os.path.join(root, file)
-                destination_blob_name = f"images/{file}"
-                upload_image_to_firebase_storage(file_path, destination_blob_name)
 
 
 def save_dfs_to_firestore(dataframes):
@@ -373,3 +441,12 @@ def colors():
 
     # save the df to csv
     df.to_csv("colors.csv", index=False)
+
+
+def upload_images_to_firestore():
+    for root, _, files in os.walk(images_path):
+        for file in files:
+            if file.lower().endswith(("png", "jpg", "jpeg", "gif", "bmp")):
+                file_path = os.path.join(root, file)
+                destination_blob_name = f"images/{file}"
+                upload_image_to_firebase_storage(file_path, destination_blob_name)

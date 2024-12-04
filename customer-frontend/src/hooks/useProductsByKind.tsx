@@ -6,45 +6,53 @@ import { ProductLace } from "../model/product/ProductLace";
 import { ProductShort } from "../model/product/ProductShort";
 import { ProductThermal } from "../model/product/ProductThermal";
 
-export function useTightsProducts() {
+export function useTightsProducts(name?: string) {
+  if (!name) return { isLoading: true, products: [] };
   const { isLoading, products: allProudcts } = useProducts();
   const products = useMemo(() => {
     const res: ProductTights[] =
-      allProudcts.filter((product) => product.kind === ProductSchema.TIGHTS) ??
-      [];
+      allProudcts
+        .filter((product) => product.kind === ProductSchema.TIGHTS)
+        .filter((product) => product.name === name) ?? [];
     return res;
   }, [allProudcts]);
   return { isLoading, products };
 }
 
-export function useLaceProducts() {
+export function useLaceProducts(name?: string) {
+  if (!name) return { isLoading: true, products: [] };
   const { isLoading, products: allProudcts } = useProducts();
   const products = useMemo(() => {
     const res: ProductLace[] =
-      allProudcts.filter((product) => product.kind === ProductSchema.LACE) ??
-      [];
+      allProudcts
+        .filter((product) => product.kind === ProductSchema.LACE)
+        .filter((product) => product.name === name) ?? [];
     return res;
   }, [allProudcts]);
   return { isLoading, products };
 }
 
-export function useShortProducts() {
+export function useShortProducts(name?: string) {
+  if (!name) return { isLoading: true, products: [] };
   const { isLoading, products: allProudcts } = useProducts();
   const products = useMemo(() => {
     const res: ProductShort[] =
-      allProudcts.filter((product) => product.kind === ProductSchema.SHORT) ??
-      [];
+      allProudcts
+        .filter((product) => product.kind === ProductSchema.SHORT)
+        .filter((product) => product.name === name) ?? [];
     return res;
   }, [allProudcts]);
   return { isLoading, products };
 }
 
-export function useThermalProducts() {
+export function useThermalProducts(name?: string) {
+  if (!name) return { isLoading: true, products: [] };
   const { isLoading, products: allProudcts } = useProducts();
   const products = useMemo(() => {
     const res: ProductThermal[] =
-      allProudcts.filter((product) => product.kind === ProductSchema.THERMAL) ??
-      [];
+      allProudcts
+        .filter((product) => product.kind === ProductSchema.THERMAL)
+        .filter((product) => product.name === name) ?? [];
     return res;
   }, [allProudcts]);
   return { isLoading, products };

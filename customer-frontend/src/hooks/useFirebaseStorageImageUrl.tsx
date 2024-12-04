@@ -3,10 +3,16 @@ import { ref, getDownloadURL } from "firebase/storage";
 import { storage } from "../services/firebaseConfig";
 
 const cache = new Map<string, string>();
+const firebaseStorageUrl = "gs://shomron-tights.firebasestorage.app/";
 
 export function useFirebaseStorageImageUrl(url: string) {
   const [imageUrl, setImageUrl] = useState<string | undefined>(undefined);
   useEffect(() => {
+    if (!url.includes(firebaseStorageUrl)) {
+      setImageUrl(url);
+      return;
+    }
+
     const fetchImage = async () => {
       if (cache.has(url)) {
         setImageUrl(cache.get(url));

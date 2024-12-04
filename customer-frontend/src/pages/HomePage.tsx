@@ -59,7 +59,7 @@ const HomePage = () => {
           featuredProducts.map((product) => {
             return (
               <Link
-                to={`/product/${product.kind}`}
+                to={`/product/${product.kind}/${product.name}`}
                 style={{ textDecoration: "none", color: "inherit" }}
                 key={product.id}
               >
