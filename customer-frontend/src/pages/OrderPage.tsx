@@ -1,6 +1,6 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useMemo } from "react";
 import { useNavigate, useParams } from "react-router";
-import { Box } from "@mui/material";
+import { Box, Typography } from "@mui/material";
 import { useOrderById } from "../hooks/useOrderById";
 import { useAppDispatch } from "../store/hooks";
 import { cartActions } from "../store/cartSlice";
@@ -12,7 +12,9 @@ const OrderPage: React.FC = () => {
   const dispatch = useAppDispatch();
 
   useEffect(() => {
-    if (!order?.products) return;
+    if (!order || !order?.products) {
+      return;
+    }
     dispatch(cartActions.clear());
     dispatch(
       cartActions.upsertItems(
@@ -35,6 +37,27 @@ const OrderPage: React.FC = () => {
     navigate("/cart");
   }, [order]);
 
-  return <Box></Box>;
+  const isValidOrder = useMemo(() => {
+    return !!order && !!order?.date && order?.products.length > 0;
+  }, [order]);
+
+  return isValidOrder ? (
+    <Box></Box>
+  ) : (
+    <Box
+      sx={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "start",
+        height: "100%",
+        marginTop: "2rem",
+      }}
+    >
+      <Typography color="error" variant="h5">
+        הזמנה לא נמצאה
+      </Typography>
+    </Box>
+  );
 };
 export default OrderPage;
