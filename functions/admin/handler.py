@@ -99,13 +99,35 @@ def allowed_admins():
     return allowed_admin
 
 
+def current_sale():
+    sales = read_firestore_collection("sales")
+    current_sale = None
+    for sale in sales:
+        start_date_str = sale.get("start_date")
+        end_date_str = sale.get("end_date")
+        name = sale.get("name")
+
+        date_format = "%d/%m/%Y %H:%M"
+        start_date = datetime.strptime(start_date_str, date_format)
+        end_date = datetime.strptime(end_date_str, date_format)
+        current_date = datetime.now()
+        if start_date <= current_date <= end_date:
+            current_sale = name
+            break
+    return current_sale
+
+
 def export_firestore_to_excel():
     collection_name = "orders"
     orders = read_firestore_collection(collection_name)
+    current_sale_name = current_sale()
+    current_sale_orders = [
+        order for order in orders if order.get("saleName") == current_sale_name
+    ]
 
     orders_list = []
     products_list = []
-    for order in orders:
+    for order in current_sale_orders:
         order_id = order.get("id")
         order_date = order.get("date")
         order_comments = order.get("comments")
@@ -172,6 +194,12 @@ def export_firestore_to_excel():
         .reset_index()
     )
     orders_groupby_pickup_df["עמלה"] = orders_groupby_pickup_df["מחיר לאחר הנחה"] * 0.10
+    orders_count = (
+        orders_df.groupby("נקודת חלוקה").size().reset_index(name="מספר הזמנות")
+    )
+    orders_groupby_pickup_df = pd.merge(
+        orders_groupby_pickup_df, orders_count, on="נקודת חלוקה"
+    )
 
     suppliers_df = (
         products_df.groupby(["ספק", "המוצר"])
@@ -240,7 +268,7 @@ def create_google_sheet_with_permissions(sheet_title, gmail_accounts, tabs_data)
 def sync_excel_to_firestore():
     print("Syncing Excel to Firestore")
     collections_to_delete = [
-        "prodcuts",
+        "products",
         "colors",
         "pickups",
         "sales",

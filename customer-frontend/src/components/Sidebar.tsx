@@ -34,86 +34,84 @@ const Sidebar: React.FC = () => {
 
   return (
     <>
-      <>
-        <AppBar position="static">
-          <Toolbar>
-            <Box display="flex" justifyContent="space-between" width="100%">
-              <IconButton
-                edge="start"
-                color="inherit"
-                aria-label="menu"
-                onClick={handleDrawerToggle}
-              >
-                <MenuIcon />
-              </IconButton>
-              <CartWithBadge />
-              <Logo />
-            </Box>
-          </Toolbar>
-        </AppBar>
-        <Drawer
-          variant="temporary"
-          anchor="left"
-          open={isSidebarOpen}
-          onClose={handleDrawerToggle}
-          ModalProps={{
-            keepMounted: true, // Better open performance on mobile.
-          }}
-          PaperProps={{
-            sx: {
-              display: "flex",
-              flexDirection: "column",
-              justifyContent: "start",
-              alignItems: "center",
-              width: drawerWidth,
-              height: "100%",
-              backgroundColor: theme.palette.primary.main,
-              color: theme.palette.primary.contrastText,
-            },
-          }}
-        >
-          <Box width="100%">
-            <Box
-              display="flex"
-              flexDirection={"column"}
-              justifyContent={"center"}
-              alignItems={"center"}
+      <AppBar position="fixed">
+        <Toolbar>
+          <Box display="flex" justifyContent="space-between" width="100%">
+            <IconButton
+              edge="start"
+              color="inherit"
+              aria-label="menu"
+              onClick={handleDrawerToggle}
             >
-              <Logo />
-              <ListItem sx={{ cursor: "pointer" }}>
-                <ListItemText
-                  primary="בית"
-                  onClick={() => handleLinkClick("/")}
-                />
-              </ListItem>
-              <ListItem sx={{ cursor: "pointer" }}>
-                <ListItemText
-                  primary="מוצרים"
-                  onClick={() => handleLinkClick("/")}
-                />
-              </ListItem>
-              <ListItem sx={{ cursor: "pointer" }}>
-                <ListItemText
-                  primary="עגלה"
-                  onClick={() => handleLinkClick("/cart")}
-                />
-              </ListItem>
-              <ListItem sx={{ cursor: "pointer" }}>
-                <ListItemText
-                  primary="נקודות חלוקה"
-                  onClick={() => handleLinkClick("/pickups")}
-                />
-              </ListItem>
-              <ListItem sx={{ cursor: "pointer" }}>
-                <ListItemText
-                  primary="צור קשר"
-                  onClick={() => handleLinkClick("/contact")}
-                />
-              </ListItem>
-            </Box>
+              <MenuIcon />
+            </IconButton>
+            <Logo />
+            <CartWithBadge />
           </Box>
-        </Drawer>
-      </>
+        </Toolbar>
+      </AppBar>
+      <Drawer
+        variant="temporary"
+        anchor="left"
+        open={isSidebarOpen}
+        onClose={handleDrawerToggle}
+        ModalProps={{
+          keepMounted: true, // Better open performance on mobile.
+        }}
+        PaperProps={{
+          sx: {
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "start",
+            alignItems: "center",
+            width: drawerWidth,
+            height: "100%",
+            backgroundColor: theme.palette.primary.main,
+            color: theme.palette.primary.contrastText,
+          },
+        }}
+      >
+        <Box width="100%">
+          <Box
+            display="flex"
+            flexDirection={"column"}
+            justifyContent={"center"}
+            alignItems={"center"}
+          >
+            <Logo />
+            <ListItem sx={{ cursor: "pointer" }}>
+              <ListItemText
+                primary="בית"
+                onClick={() => handleLinkClick("/")}
+              />
+            </ListItem>
+            <ListItem sx={{ cursor: "pointer" }}>
+              <ListItemText
+                primary="מוצרים"
+                onClick={() => handleLinkClick("/")}
+              />
+            </ListItem>
+            <ListItem sx={{ cursor: "pointer" }}>
+              <ListItemText
+                primary="עגלה"
+                onClick={() => handleLinkClick("/cart")}
+              />
+            </ListItem>
+            <ListItem sx={{ cursor: "pointer" }}>
+              <ListItemText
+                primary="נקודות חלוקה"
+                onClick={() => handleLinkClick("/pickups")}
+              />
+            </ListItem>
+            <ListItem sx={{ cursor: "pointer" }}>
+              <ListItemText
+                primary="צור קשר"
+                onClick={() => handleLinkClick("/contact")}
+              />
+            </ListItem>
+          </Box>
+        </Box>
+      </Drawer>
     </>
   );
 };

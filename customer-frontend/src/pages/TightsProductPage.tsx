@@ -1,8 +1,8 @@
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo } from "react";
 import { ProductTights } from "../model/product/ProductTights";
 import FirebaseStorageImage from "../components/FirebaseStorageImage";
 import Button from "@mui/material/Button";
-import { compact, isNil, uniq } from "lodash";
+import { isNil, uniq } from "lodash";
 import { useFormik } from "formik";
 import Box from "@mui/material/Box";
 import * as Yup from "yup";
@@ -14,8 +14,8 @@ import { cartActions } from "../store/cartSlice";
 import { useAppDispatch } from "../store/hooks";
 import { useLocation, useParams } from "react-router-dom";
 import { useTightsProducts } from "../hooks/useProductsByKind";
-import { useColors } from "../hooks/useColors";
 import { Typography } from "@mui/material";
+import { useColorMapper } from "../hooks/useColorMapper";
 
 interface TightsProductFormValues {
   denier: string;
@@ -30,25 +30,23 @@ const TightsProductPage: React.FC = () => {
   const location = useLocation();
   const { name } = useParams<{ kind: string; name: string }>();
   const { products } = useTightsProducts(name);
-  const { data: colors } = useColors();
+  const { convertColorNameToColorObject } = useColorMapper();
 
   const initialProductAndAmount = useMemo(() => {
-    const passedData = location.state;
-    if (passedData) {
-      return passedData as {
+    if (location && location.state) {
+      return location.state as {
         product: ProductTights;
         amount: number;
       };
-    } else {
-      const defaultProduct =
-        products.find((product) => product.is_default === "כן") ?? products[0];
-
-      return {
-        product: defaultProduct,
-        amount: 1,
-      };
     }
-  }, [location, products]);
+    const defaultProduct =
+      products.find((product) => product.is_default === "כן") ?? products[0];
+
+    return {
+      product: defaultProduct,
+      amount: 1,
+    };
+  }, [products, location]);
 
   const validationSchema = Yup.object<TightsProductFormValues>({
     denier: Yup.string().required(),
@@ -105,7 +103,7 @@ const TightsProductPage: React.FC = () => {
         .map((x) => x.leg)
     );
     if (!res.includes(values.leg)) {
-      values.leg = res[0];
+      setFieldValue("leg", res[0]);
     }
     return res;
   }, [products, values.denier]);
@@ -121,13 +119,14 @@ const TightsProductPage: React.FC = () => {
     );
 
     if (!res.includes(values.size)) {
-      values.size = res[0];
+      setFieldValue("size", res[0]);
     }
 
     return res;
   }, [products, values.denier, values.leg]);
 
   const availableColors = useMemo(() => {
+    if (!products) return [];
     const res = uniq(
       products
         .filter(
@@ -140,11 +139,17 @@ const TightsProductPage: React.FC = () => {
     );
 
     if (!res.includes(values.color)) {
-      values.color = res[0];
+      setFieldValue("color", res[0]);
     }
 
-    return res;
-  }, [products, values.denier, values.leg, values.size]);
+    return convertColorNameToColorObject(res);
+  }, [
+    products,
+    values.denier,
+    values.leg,
+    values.size,
+    convertColorNameToColorObject,
+  ]);
 
   const selectedProduct = useMemo(() => {
     return products.find(
@@ -154,17 +159,18 @@ const TightsProductPage: React.FC = () => {
         p.size === values.size &&
         p.color === values.color
     );
-  }, [products, values]);
+  }, [products, values.denier, values.leg, values.size, values.color]);
 
-  const availableColorsWithHex = useMemo(() => {
-    return compact(
-      availableColors.map(
-        (color) =>
-          colors.find((c) => c.name === color) ??
-          colors.find((c) => c.name === "שחור")!
-      )
-    );
-  }, [colors, availableColors]);
+  useEffect(() => {
+    if (
+      values.denier === initialProductAndAmount.product.denier &&
+      values.leg === initialProductAndAmount.product.leg &&
+      values.size === initialProductAndAmount.product.size &&
+      values.color === initialProductAndAmount.product.color
+    )
+      return;
+    setFieldValue("count", 1);
+  }, [values.denier, values.leg, values.size, values.color]);
 
   return (
     <Box
@@ -176,7 +182,9 @@ const TightsProductPage: React.FC = () => {
         gap: "0.5rem",
       }}
     >
-      <Title title={initialProductAndAmount.product?.name ?? "Product"} />
+      <Title
+        title={initialProductAndAmount.product?.display_name ?? "Product"}
+      />
       <Typography variant="body1" sx={{ textAlign: "center" }}>
         {initialProductAndAmount.product.description}
       </Typography>
@@ -222,7 +230,7 @@ const TightsProductPage: React.FC = () => {
 
           <ColorPicker
             name="color"
-            colors={availableColorsWithHex}
+            colors={availableColors}
             value={values.color ?? ""}
             onChange={(event) => setFieldValue("color", event.target.value)}
           />

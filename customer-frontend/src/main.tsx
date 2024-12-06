@@ -5,10 +5,11 @@ import { CssBaseline } from "@mui/material";
 import App from "./App";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Provider } from "react-redux";
-import { store } from "./store/store";
+import { persistor, store } from "./store/store";
 import { enableMapSet } from "immer";
 import { CacheProvider } from "@emotion/react";
 import { cacheRtl, theme } from "./theme";
+import { PersistGate } from "redux-persist/integration/react";
 
 enableMapSet();
 const queryClient = new QueryClient();
@@ -19,9 +20,11 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
       <ThemeProvider theme={theme}>
         <CssBaseline />
         <Provider store={store}>
-          <QueryClientProvider client={queryClient}>
-            <App />
-          </QueryClientProvider>
+          <PersistGate loading={null} persistor={persistor}>
+            <QueryClientProvider client={queryClient}>
+              <App />
+            </QueryClientProvider>
+          </PersistGate>
         </Provider>
       </ThemeProvider>
     </CacheProvider>

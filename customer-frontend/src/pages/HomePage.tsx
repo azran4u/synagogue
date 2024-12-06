@@ -1,18 +1,19 @@
 import Typography from "@mui/material/Typography";
 import Title from "../components/Title";
 import { useFeaturedProducts } from "../hooks/useFeaturedProducts";
-import { Box, CircularProgress } from "@mui/material";
+import { Box, ButtonBase, CircularProgress } from "@mui/material";
 import { useMobile } from "../hooks/useMobile";
 import { useCurrentSale } from "../hooks/useCurrentSale";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import FirebaseStorageImage from "../components/FirebaseStorageImage";
 
 const HomePage = () => {
-  const title = "טייץ השומרון";
+  const title = "טייץ שומרון";
   const subtitle = "טייצים, גרביון ותחרה איכותיים במגוון מידות וצבעים";
   const { featuredProducts } = useFeaturedProducts();
   const isMobile = useMobile();
   const { isLoading: saleIsLoading, currentSale: sale } = useCurrentSale();
+  const navigate = useNavigate();
 
   return (
     <Box
@@ -58,23 +59,31 @@ const HomePage = () => {
         {featuredProducts &&
           featuredProducts.map((product) => {
             return (
-              <Link
-                to={`/product/${product.kind}/${product.name}`}
-                style={{ textDecoration: "none", color: "inherit" }}
+              <ButtonBase
+                onClick={() => {
+                  navigate(`/product/${product.kind}/${product.name}`);
+                }}
                 key={product.id}
               >
-                <FirebaseStorageImage url={product.image} />
-                <Typography
-                  variant="body1"
+                <Box
                   sx={{
-                    textDecoration: "none",
-                    color: "inherit",
-                    textAlign: "center",
+                    width: "100%",
                   }}
                 >
-                  {product.name}
-                </Typography>
-              </Link>
+                  <FirebaseStorageImage url={product.image} />
+                  <Typography
+                    variant="body1"
+                    sx={{
+                      textDecoration: "none",
+                      color: "inherit",
+                      textAlign: "center",
+                      fontWeight: "bold",
+                    }}
+                  >
+                    {product.name}
+                  </Typography>
+                </Box>
+              </ButtonBase>
             );
           })}
       </Box>

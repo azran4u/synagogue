@@ -5,7 +5,7 @@ import { useMemo } from "react";
 import { useContact } from "../hooks/useContact";
 
 const ContacUsPage = () => {
-  const title = "טייץ השומרון";
+  const title = "טייץ שומרון";
   const subtitle = "צרי קשר";
   const { contacts } = useContact();
   const isMobile = useMobile();

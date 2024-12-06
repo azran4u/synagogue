@@ -1,8 +1,8 @@
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo } from "react";
 import { ProductThermal } from "../model/product/ProductThermal";
 import FirebaseStorageImage from "../components/FirebaseStorageImage";
 import Button from "@mui/material/Button";
-import { compact, isNil, uniq } from "lodash";
+import { isNil, set, uniq } from "lodash";
 import { useFormik } from "formik";
 import Box from "@mui/material/Box";
 import * as Yup from "yup";
@@ -14,8 +14,8 @@ import { cartActions } from "../store/cartSlice";
 import { useAppDispatch } from "../store/hooks";
 import { useLocation, useParams } from "react-router-dom";
 import { useThermalProducts } from "../hooks/useProductsByKind";
-import { useColors } from "../hooks/useColors";
 import Typography from "@mui/material/Typography";
+import { useColorMapper } from "../hooks/useColorMapper";
 
 interface ThermalProductFormValues {
   leg: string;
@@ -29,7 +29,7 @@ const ThermalProductPage: React.FC = () => {
   const location = useLocation();
   const { name } = useParams<{ kind: string; name: string }>();
   const { products } = useThermalProducts(name);
-  const { data: colors } = useColors();
+  const { convertColorNameToColorObject } = useColorMapper();
 
   const initialProductAndAmount = useMemo(() => {
     const passedData = location.state;
@@ -103,13 +103,14 @@ const ThermalProductPage: React.FC = () => {
     );
 
     if (!res.includes(values.size)) {
-      values.size = res[0];
+      setFieldValue("size", res[0]);
     }
 
     return res;
   }, [products, values.leg]);
 
   const availableColors = useMemo(() => {
+    if (!products) return [];
     const res = uniq(
       products
         .filter(
@@ -120,11 +121,11 @@ const ThermalProductPage: React.FC = () => {
     );
 
     if (!res.includes(values.color)) {
-      values.color = res[0];
+      setFieldValue("color", res[0]);
     }
 
-    return res;
-  }, [products, values.leg, values.size]);
+    return convertColorNameToColorObject(res);
+  }, [products, values.leg, values.size, convertColorNameToColorObject]);
 
   const selectedProduct = useMemo(() => {
     return products.find(
@@ -135,15 +136,16 @@ const ThermalProductPage: React.FC = () => {
     );
   }, [products, values.leg, values.size, values.color]);
 
-  const availableColorsWithHex = useMemo(() => {
-    return compact(
-      availableColors.map(
-        (color) =>
-          colors.find((c) => c.name === color) ??
-          colors.find((c) => c.name === "שחור")!
-      )
-    );
-  }, [colors, availableColors]);
+  useEffect(() => {
+    if (
+      values.leg === initialProductAndAmount.product.leg &&
+      values.size === initialProductAndAmount.product.size &&
+      values.color === initialProductAndAmount.product.color
+    )
+      return;
+
+    setFieldValue("count", 1);
+  }, [values.leg, values.size, values.color]);
 
   return (
     <Box
@@ -191,7 +193,7 @@ const ThermalProductPage: React.FC = () => {
 
           <ColorPicker
             name="color"
-            colors={availableColorsWithHex}
+            colors={availableColors}
             value={values.color ?? ""}
             onChange={(event) => setFieldValue("color", event.target.value)}
           />

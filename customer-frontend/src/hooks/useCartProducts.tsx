@@ -2,12 +2,14 @@ import { useMemo } from "react";
 import { useAppSelector } from "../store/hooks";
 import { selectCartItemsArray } from "../store/cartSlice";
 import { useProducts } from "./useProducts";
+import { isEmpty } from "lodash";
 
 export function useCartProducts() {
   const cartContent = useAppSelector(selectCartItemsArray);
   const { products } = useProducts();
 
   return useMemo(() => {
+    if (isEmpty(products)) return [];
     return cartContent
       .map((cartItem) => {
         const product = products.find((product) => product.id === cartItem.id);

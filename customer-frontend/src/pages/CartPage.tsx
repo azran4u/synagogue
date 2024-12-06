@@ -2,8 +2,8 @@ import React, { useMemo } from "react";
 import Button from "@mui/material/Button";
 import Box from "@mui/material/Box";
 import Title from "../components/Title";
-import { cartActions } from "../store/cartSlice";
-import { useAppDispatch } from "../store/hooks";
+import { cartActions, selectOrderId } from "../store/cartSlice";
+import { useAppDispatch, useAppSelector } from "../store/hooks";
 import Typography from "@mui/material/Typography";
 import DeleteIcon from "@mui/icons-material/Delete";
 import TableContainer from "@mui/material/TableContainer";
@@ -19,11 +19,27 @@ import useTheme from "@mui/material/styles/useTheme";
 import { useCartProducts } from "../hooks/useCartProducts";
 import { useCartDiscount } from "../hooks/useCartDiscount";
 import { useNavigate } from "react-router-dom";
+import { useOrderById } from "../hooks/useOrderById";
+import { useDeleteOrderById } from "../hooks/useDeleteOrderById";
+import Dialog from "@mui/material/Dialog";
+import DialogTitle from "@mui/material/DialogTitle";
+import DialogActions from "@mui/material/DialogActions";
 
 const CartPage: React.FC = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const theme = useTheme();
+  const orderId = useAppSelector(selectOrderId);
+  const { order } = useOrderById(orderId);
+  const { deleteOrder } = useDeleteOrderById();
+  const [showDeleteOrderModal, setShowDeleteOrderModal] = React.useState(false);
+
+  const deleteOrderHandler = () => {
+    dispatch(cartActions.restoreInitialState());
+    deleteOrder(orderId);
+    navigate("/");
+    setShowDeleteOrderModal(false);
+  };
 
   const productsInCart = useCartProducts();
   const { totalCost, totalCostAfterDiscount } = useCartDiscount();
@@ -67,11 +83,11 @@ const CartPage: React.FC = () => {
               alignItems: "center",
             }}
           >
-            <Typography variant="h6">סכ"ה לתשלום: ₪{totalCost}</Typography>
+            <Typography variant="h6">סה"כ לתשלום: ₪{totalCost}</Typography>
             {totalCost > totalCostAfterDiscount && (
               <>
                 <Typography variant="h6">
-                  סכ"ה לתשלום לאחר הנחה: ₪{totalCostAfterDiscount}
+                  סה"כ לתשלום לאחר הנחה: ₪{totalCostAfterDiscount}
                 </Typography>
                 <Typography variant="h6" color={theme.palette.primary.light}>
                   בקנייה זו חסכת: ₪{totalCost - totalCostAfterDiscount}
@@ -107,7 +123,49 @@ const CartPage: React.FC = () => {
                   >
                     מחיר
                   </TableCell>
-                  <TableCell align="center"></TableCell>
+                  <TableCell align="center">
+                    {order?.date && (
+                      <Button
+                        variant="contained"
+                        color="error"
+                        onClick={() => {
+                          setShowDeleteOrderModal(true);
+                        }}
+                        sx={{
+                          width: "1rem",
+                          height: "2.5rem",
+                        }}
+                      >
+                        בטל הזמנה
+                      </Button>
+                    )}
+                  </TableCell>
+
+                  <Dialog
+                    open={showDeleteOrderModal}
+                    onClose={() => setShowDeleteOrderModal(false)}
+                    aria-labelledby="alert-dialog-title"
+                    aria-describedby="alert-dialog-description"
+                  >
+                    <DialogTitle id="alert-dialog-title">
+                      למחוק את ההזמנה?
+                    </DialogTitle>
+                    <DialogActions>
+                      <Button
+                        onClick={() => setShowDeleteOrderModal(false)}
+                        color="primary"
+                      >
+                        בטל
+                      </Button>
+                      <Button
+                        onClick={deleteOrderHandler}
+                        color="error"
+                        autoFocus
+                      >
+                        כן,מחק
+                      </Button>
+                    </DialogActions>
+                  </Dialog>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -123,7 +181,7 @@ const CartPage: React.FC = () => {
                     <TableCell
                       align="center"
                       onClick={() =>
-                        navigate(`/product/${product.kind}`, {
+                        navigate(`/product/${product.kind}/${product.name}`, {
                           state: {
                             product,
                             amount,
@@ -225,8 +283,10 @@ const CartPage: React.FC = () => {
           <Box
             sx={{
               display: "flex",
+              flexDirection: "column",
               justifyContent: "center",
               alignItems: "center",
+              gap: "1rem",
             }}
           >
             <Button variant="contained" onClick={() => navigate("/checkout")}>
@@ -240,125 +300,3 @@ const CartPage: React.FC = () => {
 };
 
 export default CartPage;
-
-// <Box
-//         sx={{
-//           display: "flex",
-//           flexDirection: "column",
-//           alignItems: "center",
-//           gap: "2rem",
-//         }}
-//       >
-//         <Title title="עגלה" />
-//         {productsInCart.length === 0 ? (
-//           <Typography variant="h6">העגלה ריקה</Typography>
-//         ) : (
-//           productsInCart.map(({ product, amount }) => (
-//             <Card
-//               key={product.id}
-//               sx={{
-//                 display: "flex",
-//                 flexDirection: "column",
-//                 alignItems: "center",
-//                 width: { w },
-//               }}
-//             >
-//               <Typography variant="h6">{product.name}</Typography>
-//               <CardContent
-//                 sx={{
-//                   display: "flex",
-//                   flexDirection: "row",
-//                   gap: "1rem",
-//                   justifyContent: "start",
-//                 }}
-//               >
-//                 {/* <Typography variant="body2">{product.description}</Typography> */}
-//                 <DeleteIcon onClick={() => handleRemoveItem(product.id)} />
-//                 <FirebaseStorageImage url={product?.image ?? ""} size="small" />
-//                 {product.kind === "tights" && (
-//                   <Box sx={{ display: "flex", flexDirection: "column" }}>
-//                     <Typography variant="body2">
-//                       דניר: {product.denier}
-//                     </Typography>
-//                     <Typography variant="body2">רגל: {product.leg}</Typography>
-//                     <Typography variant="body2">
-//                       מידה: {product.size}
-//                     </Typography>
-//                     <Typography variant="body2">
-//                       צבע: {product.color}
-//                     </Typography>
-//                   </Box>
-//                 )}
-//                 {product.kind === "lace" && (
-//                   <Box sx={{ display: "flex", flexDirection: "column" }}>
-//                     <Typography variant="body2">
-//                       תחרה: {product.lace}
-//                     </Typography>
-//                     <Typography variant="body2">
-//                       צבע: {product.color}
-//                     </Typography>
-//                   </Box>
-//                 )}
-//                 {product.kind === "short" && (
-//                   <Box sx={{ display: "flex", flexDirection: "column" }}>
-//                     <Typography variant="body2">
-//                       אורך: {product.length}
-//                     </Typography>
-//                     <Typography variant="body2">
-//                       צבע: {product.color}
-//                     </Typography>
-//                   </Box>
-//                 )}
-//                 {product.kind === "thermal" && (
-//                   <Box sx={{ display: "flex", flexDirection: "column" }}>
-//                     <Typography variant="body2">רגל: {product.leg}</Typography>
-//                     <Typography variant="body2">
-//                       מידה: {product.size}
-//                     </Typography>
-//                     <Typography variant="body2">
-//                       צבע: {product.color}
-//                     </Typography>
-//                   </Box>
-//                 )}
-//               </CardContent>
-//               <Typography variant="body1">
-//                 מחיר: ₪{product.price * amount}
-//               </Typography>
-//               <CardActions
-//                 sx={{
-//                   display: "flex",
-//                   flexDirection: "column",
-//                   gap: "1rem",
-//                   justifyContent: "space-between",
-//                 }}
-//               >
-//                 <Box
-//                   sx={{
-//                     display: "flex",
-//                     flexDirection: "row",
-//                     gap: "1rem",
-//                     justifyContent: "start",
-//                   }}
-//                 >
-//                   <Button
-//                     variant="contained"
-//                     size="small"
-//                     onClick={() => handleIncreaseQuantity(product.id)}
-//                   >
-//                     +
-//                   </Button>
-//                   <Typography variant="body1">כמות: {amount}</Typography>
-//                   <Button
-//                     size="small"
-//                     variant="contained"
-//                     onClick={() => handleDecreaseQuantity(product.id)}
-//                     disabled={amount <= 1}
-//                   >
-//                     -
-//                   </Button>
-//                 </Box>
-//               </CardActions>
-//             </Card>
-//           ))
-//         )}
-//       </Box>

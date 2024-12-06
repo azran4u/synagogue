@@ -38,6 +38,7 @@ const ColorPicker: React.FC<ColorPickerProps> = ({
           onChange={onChange}
           sx={{
             display: "grid",
+            justifyContent: "start",
             gridTemplateColumns: `repeat(${
               colors.length >= 5 ? 5 : colors.length
             }, 1fr)`,

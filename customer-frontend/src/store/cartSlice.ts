@@ -14,13 +14,13 @@ export type CartItemsMap = Map<string, { id: string; amount: number }>;
 export type UpdateCartItemAmountOperations = "increase-one" | "decrease-one";
 
 export interface CartState {
-  items: CartItemsMap;
+  items: CartItem[];
   orderId: string;
   checkout: CheckoutFormValues;
 }
 
 const initialState: CartState = {
-  items: new Map<string, CartItem>(),
+  items: [],
   orderId: uuidv4(),
   checkout: {
     firstName: "",
@@ -44,21 +44,17 @@ export const cartSlice = createSlice({
           );
           return state;
         }
-
-        if (state.items.has(cartItem.id)) {
-          state.items.set(cartItem.id, {
-            id: cartItem.id,
-            amount: state.items.get(cartItem.id)!.amount + cartItem.amount,
-          });
+        const foundItem = state.items.find((x) => x.id === cartItem.id);
+        if (foundItem) {
+          set(foundItem, "amount", foundItem.amount + cartItem.amount);
         } else {
-          state.items.set(cartItem.id, cartItem);
+          state.items.push(cartItem);
         }
         return state;
       });
     },
     clear: (state) => {
-      state.items.clear();
-      return state;
+      state.items = [];
     },
     increaseAmount: (
       state,
@@ -72,16 +68,13 @@ export const cartSlice = createSlice({
         console.error(`CART_INCREASE_ITEM_AMOUNT: invalid id ${id}`);
         return state;
       }
-      const foundItem = state.items.get(id);
+      const foundItem = state.items.find((x) => x.id === id);
 
       if (isNil(foundItem)) {
         return state;
       }
 
-      state.items.set(id, {
-        id,
-        amount: foundItem.amount + 1,
-      });
+      foundItem.amount += 1;
 
       return state;
     },
@@ -98,16 +91,13 @@ export const cartSlice = createSlice({
         console.error(`CART_DECREASE_ITEM_AMOUNT: invalid id ${id}`);
         return state;
       }
-      const foundItem = state.items.get(id);
+      const foundItem = state.items.find((x) => x.id === id);
 
       if (isNil(foundItem)) {
         return state;
       }
 
-      state.items.set(id, {
-        id,
-        amount: foundItem.amount - 1,
-      });
+      foundItem.amount -= 1;
 
       return state;
     },
@@ -119,13 +109,13 @@ export const cartSlice = createSlice({
         return state;
       }
 
-      const foundItem = state.items.get(id);
+      const foundItem = state.items.find((x) => x.id === id);
 
       if (isNil(foundItem)) {
         return state;
       }
 
-      state.items.delete(id);
+      state.items = state.items.filter((x) => x.id !== id);
 
       return state;
     },
@@ -135,6 +125,11 @@ export const cartSlice = createSlice({
     setCheckout: (state, action: PayloadAction<CheckoutFormValues>) => {
       state.checkout = action.payload;
     },
+    restoreInitialState: (state) => {
+      state.items = initialState.items;
+      state.orderId = initialState.orderId;
+      state.checkout = initialState.checkout;
+    },
   },
 });
 
@@ -142,13 +137,9 @@ export const cartActions = cartSlice.actions;
 
 export const selectCart = (state: RootState) => state.cart;
 
-export const selectCartItemsMap = createSelector(
+export const selectCartItemsArray = createSelector(
   selectCart,
   (cart) => cart.items
-);
-
-export const selectCartItemsArray = createSelector(selectCartItemsMap, (map) =>
-  Array.from(map.values())
 );
 
 export const selectCartItemsCount = createSelector(
@@ -166,7 +157,6 @@ export const selectCheckout = createSelector(
 export const cartSelectors = {
   selectCart,
   selectCartItemsArray,
-  selectCartItemsMap,
   selectCartItemsCount,
   selectOrderId,
   selectCheckout,

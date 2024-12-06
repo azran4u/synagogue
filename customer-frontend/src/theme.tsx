@@ -16,7 +16,7 @@ export const theme = createTheme({
       main: "#19857b",
     },
     error: {
-      main: red.A400,
+      main: "#e84242",
     },
   },
 });
@@ -25,4 +25,3 @@ export const cacheRtl = createCache({
   key: "muirtl",
   stylisPlugins: [prefixer, rtlPlugin],
 });
-

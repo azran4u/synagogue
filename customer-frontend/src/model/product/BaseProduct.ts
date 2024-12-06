@@ -4,6 +4,7 @@ export interface BaseProduct {
   id: string;
   kind: ProductSchema;
   name: string;
+  display_name: string;
   price: number;
   supplier: string;
   discount_type: string;
@@ -14,4 +15,5 @@ export interface BaseProduct {
   is_active: string;
   is_default: string;
   image: string;
+  sort_order?: string;
 }

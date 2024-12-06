@@ -1,8 +1,8 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo } from "react";
 import { ProductLace } from "../model/product/ProductLace";
 import FirebaseStorageImage from "../components/FirebaseStorageImage";
 import Button from "@mui/material/Button";
-import { compact, isNil, uniq } from "lodash";
+import { isNil, uniq } from "lodash";
 import { useFormik } from "formik";
 import Box from "@mui/material/Box";
 import * as Yup from "yup";
@@ -14,8 +14,8 @@ import { cartActions } from "../store/cartSlice";
 import { useAppDispatch } from "../store/hooks";
 import { useLocation, useParams } from "react-router-dom";
 import { useLaceProducts } from "../hooks/useProductsByKind";
-import { useColors } from "../hooks/useColors";
 import Typography from "@mui/material/Typography";
+import { useColorMapper } from "../hooks/useColorMapper";
 
 interface LaceProductFormValues {
   lace: string;
@@ -28,7 +28,7 @@ const LaceProductPage: React.FC = () => {
   const { state } = useLocation();
   const { name } = useParams<{ kind: string; name: string }>();
   const { products } = useLaceProducts(name);
-  const { data: colors } = useColors();
+  const { convertColorNameToColorObject } = useColorMapper();
 
   const initialProductAndAmount = useMemo(() => {
     const passedData = state;
@@ -99,10 +99,10 @@ const LaceProductPage: React.FC = () => {
         .map((x) => x.color)
     );
     if (!res.includes(values.color)) {
-      values.color = res[0];
+      setFieldValue("color", res[0]);
     }
-    return res;
-  }, [products, values.lace]);
+    return convertColorNameToColorObject(res);
+  }, [products, values.lace, convertColorNameToColorObject]);
 
   const selectedProduct = useMemo(() => {
     return products.find(
@@ -110,15 +110,14 @@ const LaceProductPage: React.FC = () => {
     );
   }, [products, values.lace, values.color]);
 
-  const availableColorsWithHex = useMemo(() => {
-    return compact(
-      availableColors.map(
-        (color) =>
-          colors.find((c) => c.name === color) ??
-          colors.find((c) => c.name === "שחור")!
-      )
-    );
-  }, [colors, availableColors]);
+  useEffect(() => {
+    if (
+      values.lace === initialProductAndAmount.product.lace &&
+      values.color === initialProductAndAmount.product.color
+    )
+      return;
+    setFieldValue("count", 1);
+  }, [values.lace, values.color]);
 
   return (
     <Box
@@ -155,7 +154,7 @@ const LaceProductPage: React.FC = () => {
 
           <ColorPicker
             name="color"
-            colors={availableColorsWithHex}
+            colors={availableColors}
             value={values.color ?? ""}
             onChange={(event) => setFieldValue("color", event.target.value)}
           />

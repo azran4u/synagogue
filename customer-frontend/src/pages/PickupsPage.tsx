@@ -5,7 +5,7 @@ import { useMobile } from "../hooks/useMobile";
 import { useMemo } from "react";
 
 const PickupsPage = () => {
-  const title = "טייץ השומרון";
+  const title = "טייץ שומרון";
   const subtitle = "רשימת נקודות החלוקה";
   const offer = "אם ברצונך לפתוח נקודת חלוקה חדשה באזורך - אנא צרי איתנו קשר";
   const { pickups } = usePickups();
@@ -16,7 +16,6 @@ const PickupsPage = () => {
   return (
     <Box
       sx={{
-        minHeight: "15vh",
         display: "flex",
         flexDirection: "column",
         justifyContent: "center",

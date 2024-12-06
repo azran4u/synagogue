@@ -3,4 +3,5 @@ export interface Color {
   name: string;
   hex_color: string;
   kind: string;
+  sort_order: string;
 }

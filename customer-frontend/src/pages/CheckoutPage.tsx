@@ -108,7 +108,7 @@ const CheckoutPage: React.FC = () => {
           from: "MS_7732lz@trial-x2p03476779gzdrn.mlsender.net",
           to: values.email,
           message: {
-            subject: "תודה שהזמנת באתר טייץ השומרון",
+            subject: "תודה שהזמנת באתר טייץ שומרון",
             html: `
            <div style="direction: rtl; text-align: right;">
           <h1>הזמנתך התקבלה בהצלחה</h1>
@@ -119,6 +119,7 @@ const CheckoutPage: React.FC = () => {
           <p>טלפון נייד: ${values.phoneNumber}</p>
           <p>נקודת חלוקה: ${values.prefferedPickupLocation}</p>
           <p>קישור להזמנה: <a href=${url}>לחץ כאן</a></p>
+          <p>ניתן לעדכן את ההזמנה עד לסגירת המכירה בתאריך: ${sale.end_date}</p>
           <p>סכום לתשלום: ${totalCost} ש"ח</p>
           ${
             discount > 0

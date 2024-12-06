@@ -23,7 +23,7 @@ function App() {
     >
       <Router>
         <Sidebar />
-        <Box sx={{ flex: 1 }}>
+        <Box sx={{ flex: 1, marginTop: "4rem" }}>
           <Routes>
             <Route path="/" element={<HomePage />} />
             <Route path="/product/:kind/:name" element={<ProductPage />} />
