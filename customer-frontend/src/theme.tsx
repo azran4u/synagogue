@@ -1,5 +1,4 @@
 import { createTheme } from "@mui/material/styles";
-import { red } from "@mui/material/colors";
 import createCache from "@emotion/cache";
 import { prefixer } from "stylis";
 import rtlPlugin from "stylis-plugin-rtl";
@@ -18,6 +17,15 @@ export const theme = createTheme({
     error: {
       main: "#e84242",
     },
+  },
+  typography: {
+    fontFamily: "Alef",
+    // fontFamily: "sans-serif",
+    // fontFamily: "Arimo",
+    // fontFamily: "Assistant",
+    // fontFamily: "Rubik",
+    // fontFamily: "Open Sans",
+    // fontFamily: "Arial",
   },
 });
 
