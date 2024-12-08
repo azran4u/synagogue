@@ -86,6 +86,7 @@ const HomePage = () => {
               </ButtonBase>
             );
           })}
+        <br />
       </Box>
     </Box>
   );

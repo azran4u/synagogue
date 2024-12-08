@@ -19,13 +19,7 @@ export const theme = createTheme({
     },
   },
   typography: {
-    fontFamily: "Alef",
-    // fontFamily: "sans-serif",
-    // fontFamily: "Arimo",
-    // fontFamily: "Assistant",
-    // fontFamily: "Rubik",
-    // fontFamily: "Open Sans",
-    // fontFamily: "Arial",
+    fontFamily: "sans-serif",
   },
 });
 
