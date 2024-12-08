@@ -6,5 +6,6 @@ export interface ProductTights extends BaseProduct {
   denier: string;
   leg: string;
   size: string;
+  size_description?: string;
   color: string;
 }

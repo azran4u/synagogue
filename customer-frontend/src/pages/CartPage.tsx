@@ -222,6 +222,9 @@ const CartPage: React.FC = () => {
                             אורך: {product.length}
                           </Typography>
                           <Typography variant="body2">
+                            מידה: {product.size}
+                          </Typography>
+                          <Typography variant="body2">
                             צבע: {product.color}
                           </Typography>
                         </Box>

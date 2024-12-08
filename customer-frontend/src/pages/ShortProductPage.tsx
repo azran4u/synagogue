@@ -2,7 +2,7 @@ import React, { useEffect, useMemo } from "react";
 import { ProductShort } from "../model/product/ProductShort";
 import FirebaseStorageImage from "../components/FirebaseStorageImage";
 import Button from "@mui/material/Button";
-import { isNil, set, uniq } from "lodash";
+import { isNil, uniq } from "lodash";
 import { useFormik } from "formik";
 import Box from "@mui/material/Box";
 import * as Yup from "yup";
@@ -19,6 +19,7 @@ import { useColorMapper } from "../hooks/useColorMapper";
 
 interface ShortProductFormValues {
   length: string;
+  size: string;
   color: string;
   count: number;
 }
@@ -50,6 +51,7 @@ const ShortProductPage: React.FC = () => {
 
   const validationSchema = Yup.object<ShortProductFormValues>({
     length: Yup.string().required(),
+    size: Yup.string().required(),
     color: Yup.string().required(),
     count: Yup.number().required().min(1),
   });
@@ -69,6 +71,7 @@ const ShortProductPage: React.FC = () => {
   const initialValues = useMemo(() => {
     return {
       length: initialProductAndAmount.product.length,
+      size: initialProductAndAmount.product.size,
       color: initialProductAndAmount.product.color,
       count: initialProductAndAmount.amount,
     };
@@ -92,10 +95,25 @@ const ShortProductPage: React.FC = () => {
     return uniq(products.map((x) => x.length));
   }, [products]);
 
-  const availableColors = useMemo(() => {
+  const availableSizes = useMemo(() => {
     const res = uniq(
       products
         .filter((product) => product.length === values.length)
+        .map((x) => x.size)
+    );
+    if (!res.includes(values.size)) {
+      setFieldValue("size", res[0]);
+    }
+    return res;
+  }, [products, values.length]);
+
+  const availableColors = useMemo(() => {
+    const res = uniq(
+      products
+        .filter(
+          (product) =>
+            product.length === values.length && product.size === values.size
+        )
         .map((x) => x.color)
     );
 
@@ -104,22 +122,26 @@ const ShortProductPage: React.FC = () => {
     }
 
     return convertColorNameToColorObject(res);
-  }, [products, values.length, convertColorNameToColorObject]);
+  }, [products, values.length, values.size, convertColorNameToColorObject]);
 
   const selectedProduct = useMemo(() => {
     return products.find(
-      (p) => p.length === values.length && p.color === values.color
+      (p) =>
+        p.length === values.length &&
+        p.size === values.size &&
+        p.color === values.color
     );
-  }, [products, values.length, values.color]);
+  }, [products, values.length, values.size, values.color]);
 
   useEffect(() => {
     if (
       values.length === initialProductAndAmount.product.length &&
+      values.size === initialProductAndAmount.product.size &&
       values.color === initialProductAndAmount.product.color
     )
       return;
     setFieldValue("count", 1);
-  }, [values.length, values.color]);
+  }, [values.length, values.size, values.color]);
 
   return (
     <Box
@@ -153,6 +175,20 @@ const ShortProductPage: React.FC = () => {
             error={touched.length && Boolean(errors.length)}
             helperText={errors.length}
           />
+
+          <SelectComponent
+            label="מידה"
+            name="size"
+            value={values.size}
+            options={availableSizes}
+            onChange={handleChange}
+            error={touched.size && Boolean(errors.size)}
+            helperText={errors.size}
+          />
+
+          <Typography variant="body1" sx={{ textAlign: "center" }}>
+            {selectedProduct?.size_description}
+          </Typography>
 
           <ColorPicker
             name="color"

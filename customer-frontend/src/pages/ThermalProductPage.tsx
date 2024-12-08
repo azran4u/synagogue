@@ -190,6 +190,9 @@ const ThermalProductPage: React.FC = () => {
             error={touched.size && Boolean(errors.size)}
             helperText={errors.size}
           />
+          <Typography variant="body1" sx={{ textAlign: "center" }}>
+            {selectedProduct?.size_description}
+          </Typography>
 
           <ColorPicker
             name="color"

@@ -169,7 +169,7 @@ def export_firestore_to_excel():
                     f"טייץ תחרה, תחרה {product.get('lace')} ,צבע {product.get('color')}"
                 )
             elif product.get("kind") == "short":
-                description = f"טייץ קצר, אורך {product.get('length')} ,צבע {product.get('color')}"
+                description = f"טייץ קצר, אורך {product.get('length')}, מידה {product.get("size")} ,צבע {product.get('color')}"
             elif product.get("kind") == "thermal":
                 description = f"טייץ תרמי, {product.get('leg')} רגל, מידה {product.get('size')} , צבע {product.get('color')} "
             product_entry = {
@@ -290,7 +290,7 @@ def save_dfs_to_firestore(dataframes):
         id_fields = {
             "tights": ["denier", "leg", "size", "color"],
             "lace": ["lace", "color"],
-            "short": ["length", "color"],
+            "short": ["length",  "size", "color"],
             "thermal": ["leg", "size", "color"],
             "colors": ["name"],
             "pickups": ["name"],
