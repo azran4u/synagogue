@@ -39,5 +39,14 @@ export function useAdminActions() {
     },
   });
 
-  return { sync, syncLoading, syncData, syncError, exportFn, exportLoading, exportData, exportError };
+  return {
+    sync,
+    syncLoading,
+    syncData,
+    syncError,
+    exportFn,
+    exportLoading,
+    exportData,
+    exportError,
+  };
 }

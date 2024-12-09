@@ -9,21 +9,16 @@
         "type": "http",
         "url": "admin"
       },
-      "ignore": [
-        "firebase-debug.log",
-        "venv"
-      ]
+      "timeoutSeconds": 300,
+      "availableMemoryMb": 512,
+      "ignore": ["firebase-debug.log", "venv"]
     }
   ],
   "hosting": [
     {
       "target": "customer-frontend",
       "public": "customer-frontend/dist",
-      "ignore": [
-        "firebase.json",
-        "**/.*",
-        "**/node_modules/**"
-      ],
+      "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
       "rewrites": [
         {
           "source": "**",

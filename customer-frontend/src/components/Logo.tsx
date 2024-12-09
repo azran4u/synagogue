@@ -2,7 +2,10 @@ import logo from "../assets/images/logo.svg";
 import Box from "@mui/material/Box";
 import { useNavigate } from "react-router-dom";
 
-const Logo: React.FC = () => {
+interface LogoProps {
+  height?: string;
+}
+const Logo: React.FC<LogoProps> = ({ height = "3rem" }) => {
   const navigate = useNavigate();
   return (
     <Box
@@ -10,7 +13,7 @@ const Logo: React.FC = () => {
       src={logo}
       alt={"Logo"}
       sx={{
-        height: "3rem",
+        height,
         width: "auto",
       }}
       onClick={() => navigate("/")}

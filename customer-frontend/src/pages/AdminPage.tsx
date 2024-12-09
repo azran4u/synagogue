@@ -68,7 +68,9 @@ const AdminPage = () => {
               </Button>
               {syncData && <Typography>הסנכרון בוצע בהצלחה</Typography>}
               {syncError && (
-                <Typography>{JSON.stringify(syncError)}</Typography>
+                <Typography color="error">
+                  {JSON.stringify(syncError)}
+                </Typography>
               )}
             </>
           )}
