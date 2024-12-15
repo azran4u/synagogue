@@ -33,6 +33,7 @@ const SelectComponent: React.FC<SelectComponentProps> = ({
         id={`${name}-label`}
         sx={{
           fontSize: "1rem",
+          fontWeight: "bold",
         }}
       >
         {label}
