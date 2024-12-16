@@ -8,6 +8,13 @@ from config import input_google_sheet_id
 
 def sync():
     print("Syncing Excel to Firestore")
+
+    dataframes = read_google_sheet_to_dfs(input_google_sheet_id)
+    delete_collections()
+    save_dfs_to_firestore(dataframes)
+
+
+def delete_collections():
     collections_to_delete = [
         "products",
         "colors",
@@ -18,9 +25,6 @@ def sync():
     ]
     for collection in collections_to_delete:
         delete_collection(collection)
-
-    dataframes = read_google_sheet_to_dfs(input_google_sheet_id)
-    save_dfs_to_firestore(dataframes)
 
 
 def save_dfs_to_firestore(dataframes):

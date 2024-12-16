@@ -1,14 +1,15 @@
 # test_main.py
 
-# from sync import sync
-# sync()
+from sync import sync
+
+sync()
 
 # from export_orders import export_orders
 # export()
 
-from upload_images import upload_images
+# from upload_images import upload_images
 
-upload_images()
+# upload_images()
 
 # from main import controller
 # from werkzeug.test import EnvironBuilder
