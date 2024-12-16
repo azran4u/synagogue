@@ -70,7 +70,7 @@ const HomePage = () => {
                     width: "100%",
                   }}
                 >
-                  <FirebaseStorageImage url={product.image} />
+                  <FirebaseStorageImage url={product.category_image} />
                   <Typography
                     variant="body1"
                     sx={{

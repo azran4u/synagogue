@@ -14,6 +14,7 @@ export interface BaseProduct {
   stock: number;
   is_active: string;
   is_default: string;
+  category_image: string;
   image: string;
   sort_order?: string;
 }
