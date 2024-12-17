@@ -92,7 +92,11 @@ const ShortProductPage: React.FC = () => {
   });
 
   const availableLength = useMemo(() => {
-    return uniq(products.map((x) => x.length));
+    return uniq(
+      products
+        .sort((a, b) => +a.length_sort_order - +b.length_sort_order)
+        .map((x) => x.length)
+    );
   }, [products]);
 
   const availableSizes = useMemo(() => {

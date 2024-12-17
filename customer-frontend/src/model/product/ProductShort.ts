@@ -7,4 +7,5 @@ export interface ProductShort extends BaseProduct {
   size: string;
   color: string;
   length_description?: string;
+  length_sort_order: string;
 }
