@@ -17,4 +17,5 @@ export interface BaseProduct {
   category_image: string;
   image: string;
   sort_order?: string;
+  size_description?: string;
 }

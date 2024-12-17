@@ -20,6 +20,7 @@ import { useColorMapper } from "../hooks/useColorMapper";
 interface LaceProductFormValues {
   lace: string;
   color: string;
+  size: string;
   count: number;
 }
 
@@ -51,6 +52,7 @@ const LaceProductPage: React.FC = () => {
   const validationSchema = Yup.object<LaceProductFormValues>({
     lace: Yup.string().required(),
     color: Yup.string().required(),
+    size: Yup.string().required(),
     count: Yup.number().required().min(1),
   });
 
@@ -70,6 +72,7 @@ const LaceProductPage: React.FC = () => {
     return {
       lace: initialProductAndAmount.product.lace,
       color: initialProductAndAmount.product.color,
+      size: initialProductAndAmount.product.size,
       count: initialProductAndAmount.amount,
     };
   }, [initialProductAndAmount]);
@@ -92,32 +95,49 @@ const LaceProductPage: React.FC = () => {
     return uniq(products.map((x) => x.lace));
   }, [products]);
 
+  const availableSizes = useMemo(() => {
+    const res = uniq(
+      products
+        .filter((product) => product.lace === values.lace)
+        .map((x) => x.size)
+    );
+    if (!res.includes(values.size)) {
+      setFieldValue("size", res[0]);
+    }
+    return res;
+  }, [products, values.lace]);
+
   const availableColors = useMemo(() => {
     const res = uniq(
       products
         .filter((product) => product.lace === values.lace)
+        .filter((product) => product.size === values.size)
         .map((x) => x.color)
     );
     if (!res.includes(values.color)) {
       setFieldValue("color", res[0]);
     }
     return convertColorNameToColorObject(res);
-  }, [products, values.lace, convertColorNameToColorObject]);
+  }, [products, values.lace, values.size, convertColorNameToColorObject]);
 
   const selectedProduct = useMemo(() => {
     return products.find(
-      (p) => p.lace === values.lace && p.color === values.color
+      (p) =>
+        p.lace === values.lace &&
+        p.size === values.size &&
+        p.color === values.color
     );
-  }, [products, values.lace, values.color]);
+  }, [products, values.lace, values.color, values.size]);
 
   useEffect(() => {
     if (
       values.lace === initialProductAndAmount.product.lace &&
+      values.size === initialProductAndAmount.product.size &&
       values.color === initialProductAndAmount.product.color
     )
       return;
     setFieldValue("count", 1);
-  }, [values.lace, values.color]);
+  }, [values.lace, values.size, values.color]);
 
   return (
     <Box
@@ -151,6 +171,19 @@ const LaceProductPage: React.FC = () => {
             error={touched.lace && Boolean(errors.lace)}
             helperText={errors.lace}
           />
+
+          <SelectComponent
+            label="מידה"
+            name="size"
+            value={values.size}
+            options={availableSizes}
+            onChange={handleChange}
+            error={touched.size && Boolean(errors.size)}
+            helperText={errors.size}
+          />
+          <Typography variant="body1" sx={{ textAlign: "center" }}>
+            {selectedProduct?.size_description}
+          </Typography>
 
           <ColorPicker
             name="color"
