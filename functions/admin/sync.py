@@ -33,7 +33,7 @@ def save_dfs_to_firestore(dataframes):
         print(f"Processing DataFrame for tab: {tab_name}")
         id_fields = {
             "tights": ["denier", "leg", "size", "color"],
-            "lace": ["lace", "color"],
+            "lace": ["lace", "color", "size"],
             "short": ["length", "size", "color"],
             "thermal": ["leg", "size", "color"],
             "colors": ["name"],
