@@ -80,7 +80,7 @@ const HomePage = () => {
                       fontWeight: "bold",
                     }}
                   >
-                    {product.name}
+                    {product.display_name}
                   </Typography>
                 </Box>
               </ButtonBase>

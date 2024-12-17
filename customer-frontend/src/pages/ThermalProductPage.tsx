@@ -194,6 +194,26 @@ const ThermalProductPage: React.FC = () => {
             {selectedProduct?.size_description}
           </Typography>
 
+          <Typography
+            variant="h5"
+            color="primary"
+            sx={{ textAlign: "center", marginTop: "1rem", fontWeight: "bold" }}
+          >
+            {selectedProduct?.price} ₪
+          </Typography>
+
+          {selectedProduct?.discount_min_qty &&
+            selectedProduct?.discount_price && (
+              <Typography
+                variant="h6"
+                color="secondary"
+                sx={{ textAlign: "center" }}
+              >
+                מבצע: {selectedProduct?.discount_min_qty} יחידות ב{" "}
+                {selectedProduct?.discount_price} ₪
+              </Typography>
+            )}
+
           <ColorPicker
             name="color"
             colors={availableColors}

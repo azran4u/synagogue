@@ -7,7 +7,6 @@ export interface BaseProduct {
   display_name: string;
   price: number;
   supplier: string;
-  discount_type: string;
   discount_min_qty: number;
   discount_price: number;
   description: string;

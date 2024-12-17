@@ -30,7 +30,7 @@ const ColorPicker: React.FC<ColorPickerProps> = ({
         marginBottom: "1rem",
       }}
     >
-      <Typography variant="h6">{value}</Typography>
+      <Typography variant="h5" fontWeight="bold">{value}</Typography>
       <RadioGroup
         row
         name={name}

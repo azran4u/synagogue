@@ -6,4 +6,5 @@ export interface ProductShort extends BaseProduct {
   length: string;
   size: string;
   color: string;
+  length_description?: string;
 }
