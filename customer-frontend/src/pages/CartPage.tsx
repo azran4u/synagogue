@@ -24,13 +24,14 @@ import { useDeleteOrderById } from "../hooks/useDeleteOrderById";
 import Dialog from "@mui/material/Dialog";
 import DialogTitle from "@mui/material/DialogTitle";
 import DialogActions from "@mui/material/DialogActions";
+import CircularProgress from "@mui/material/CircularProgress";
 
 const CartPage: React.FC = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const theme = useTheme();
   const orderId = useAppSelector(selectOrderId);
-  const { order } = useOrderById(orderId);
+  const { order, isLoading: orderByIdLoading } = useOrderById(orderId);
   const { deleteOrder } = useDeleteOrderById();
   const [showDeleteOrderModal, setShowDeleteOrderModal] = React.useState(false);
 
@@ -41,7 +42,8 @@ const CartPage: React.FC = () => {
     setShowDeleteOrderModal(false);
   };
 
-  const productsInCart = useCartProducts();
+  const { cartProducts: productsInCart, isLoading: productsInCartLoading } =
+    useCartProducts();
   const { totalCost, totalCostAfterDiscount } = useCartDiscount();
 
   const handleRemoveItem = (id: string) => {
@@ -64,7 +66,9 @@ const CartPage: React.FC = () => {
   return (
     <>
       <Title title="עגלת קניות" />
-      {isCartEmpty ? (
+      {productsInCartLoading || orderByIdLoading ? (
+        <CircularProgress />
+      ) : isCartEmpty ? (
         <Box
           sx={{
             display: "flex",
@@ -282,7 +286,26 @@ const CartPage: React.FC = () => {
             </Table>
           </TableContainer>
           <br />
-
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              marginBottom: "1rem",
+            }}
+          >
+            <Typography variant="h6">סה"כ לתשלום: ₪{totalCost}</Typography>
+            {totalCost > totalCostAfterDiscount && (
+              <>
+                <Typography variant="h6">
+                  סה"כ לתשלום לאחר הנחה: ₪{totalCostAfterDiscount}
+                </Typography>
+                <Typography variant="h6" color={theme.palette.primary.light}>
+                  בקנייה זו חסכת: ₪{totalCost - totalCostAfterDiscount}
+                </Typography>
+              </>
+            )}
+          </Box>
           <Box
             sx={{
               display: "flex",
@@ -290,10 +313,11 @@ const CartPage: React.FC = () => {
               justifyContent: "center",
               alignItems: "center",
               gap: "1rem",
+              marginBottom: "1rem",
             }}
           >
             <Button variant="contained" onClick={() => navigate("/checkout")}>
-              בצע הזמנה
+              בצע/י הזמנה
             </Button>
           </Box>
         </>

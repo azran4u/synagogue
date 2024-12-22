@@ -3,7 +3,7 @@ import { useCartProducts } from "./useCartProducts";
 import { groupBy } from "lodash";
 
 export function useCartDiscount() {
-  const cartProducts = useCartProducts();
+  const {cartProducts} = useCartProducts();
 
   return useMemo(() => {
     const groups = groupBy(

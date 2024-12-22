@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { ProductShort } from "../model/product/ProductShort";
 import FirebaseStorageImage from "../components/FirebaseStorageImage";
 import Button from "@mui/material/Button";
@@ -16,6 +16,8 @@ import { useLocation, useParams } from "react-router-dom";
 import { useShortProducts } from "../hooks/useProductsByKind";
 import Typography from "@mui/material/Typography";
 import { useColorMapper } from "../hooks/useColorMapper";
+import Snackbar from "@mui/material/Snackbar";
+import Alert from "@mui/material/Alert";
 
 interface ShortProductFormValues {
   length: string;
@@ -30,6 +32,7 @@ const ShortProductPage: React.FC = () => {
   const { products } = useShortProducts(name);
   const { state } = useLocation();
   const { convertColorNameToColorObject } = useColorMapper();
+  const [openSnackbar, setOpenSnackbar] = useState(false);
 
   const initialProductAndAmount = useMemo(() => {
     const passedData = state;
@@ -66,6 +69,7 @@ const ShortProductPage: React.FC = () => {
         },
       ])
     );
+    setOpenSnackbar(true);
   };
 
   const initialValues = useMemo(() => {
@@ -146,6 +150,10 @@ const ShortProductPage: React.FC = () => {
       return;
     setFieldValue("count", 1);
   }, [values.length, values.size, values.color]);
+
+  const handleCloseSnackbar = () => {
+    setOpenSnackbar(false);
+  };
 
   return (
     <Box
@@ -246,6 +254,21 @@ const ShortProductPage: React.FC = () => {
           </Button>
         </Box>
       </form>
+      <Snackbar
+        open={openSnackbar}
+        autoHideDuration={3000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      >
+        <Alert
+          onClose={handleCloseSnackbar}
+          severity="success"
+          variant="filled"
+          sx={{ width: "100%" }}
+        >
+          המוצר התווסף לסל בהצלחה
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };

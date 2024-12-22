@@ -1,13 +1,13 @@
 import React, { useEffect, useMemo } from "react";
 import { useNavigate, useParams } from "react-router";
-import { Box, Typography } from "@mui/material";
+import { Box, CircularProgress, Typography } from "@mui/material";
 import { useOrderById } from "../hooks/useOrderById";
 import { useAppDispatch } from "../store/hooks";
 import { cartActions } from "../store/cartSlice";
 
 const OrderPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const { order } = useOrderById(id);
+  const { order, isLoading } = useOrderById(id);
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
 
@@ -54,9 +54,13 @@ const OrderPage: React.FC = () => {
         marginTop: "2rem",
       }}
     >
-      <Typography color="error" variant="h5">
-        הזמנה לא נמצאה
-      </Typography>
+      {isLoading ? (
+        <CircularProgress />
+      ) : (
+        <Typography color="error" variant="h5">
+          הזמנה לא נמצאה
+        </Typography>
+      )}
     </Box>
   );
 };

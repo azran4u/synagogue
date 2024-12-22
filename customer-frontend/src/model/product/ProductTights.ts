@@ -7,4 +7,5 @@ export interface ProductTights extends BaseProduct {
   leg: string;
   size: string;
   color: string;
+  denier_sort_order: string;
 }

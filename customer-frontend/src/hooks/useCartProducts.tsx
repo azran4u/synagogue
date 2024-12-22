@@ -6,9 +6,9 @@ import { isEmpty } from "lodash";
 
 export function useCartProducts() {
   const cartContent = useAppSelector(selectCartItemsArray);
-  const { products } = useProducts();
+  const { products, isLoading } = useProducts();
 
-  return useMemo(() => {
+  const cartProducts = useMemo(() => {
     if (isEmpty(products)) return [];
     return cartContent
       .map((cartItem) => {
@@ -26,4 +26,6 @@ export function useCartProducts() {
       })
       .filter((x) => x !== null);
   }, [cartContent, products]);
+
+  return { cartProducts, isLoading };
 }

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { ProductTights } from "../model/product/ProductTights";
 import FirebaseStorageImage from "../components/FirebaseStorageImage";
 import Button from "@mui/material/Button";
@@ -14,7 +14,7 @@ import { cartActions } from "../store/cartSlice";
 import { useAppDispatch } from "../store/hooks";
 import { useLocation, useParams } from "react-router-dom";
 import { useTightsProducts } from "../hooks/useProductsByKind";
-import { Typography } from "@mui/material";
+import { Alert, Snackbar, Typography } from "@mui/material";
 import { useColorMapper } from "../hooks/useColorMapper";
 
 interface TightsProductFormValues {
@@ -31,6 +31,7 @@ const TightsProductPage: React.FC = () => {
   const { name } = useParams<{ kind: string; name: string }>();
   const { products } = useTightsProducts(name);
   const { convertColorNameToColorObject } = useColorMapper();
+  const [openSnackbar, setOpenSnackbar] = useState(false);
 
   const initialProductAndAmount = useMemo(() => {
     if (location && location.state) {
@@ -66,6 +67,7 @@ const TightsProductPage: React.FC = () => {
         },
       ])
     );
+    setOpenSnackbar(true);
   };
 
   const initialValues = useMemo(() => {
@@ -93,7 +95,11 @@ const TightsProductPage: React.FC = () => {
   });
 
   const availableDeniers = useMemo(() => {
-    return uniq(products.map((x) => x.denier));
+    return uniq(
+      products
+        .sort((a, b) => +a.denier_sort_order - +b.denier_sort_order)
+        .map((x) => x.denier)
+    );
   }, [products]);
 
   const availableLegs = useMemo(() => {
@@ -171,6 +177,10 @@ const TightsProductPage: React.FC = () => {
       return;
     setFieldValue("count", 1);
   }, [values.denier, values.leg, values.size, values.color]);
+
+  const handleCloseSnackbar = () => {
+    setOpenSnackbar(false);
+  };
 
   return (
     <Box
@@ -279,6 +289,21 @@ const TightsProductPage: React.FC = () => {
           </Button>
         </Box>
       </form>
+      <Snackbar
+        open={openSnackbar}
+        autoHideDuration={3000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      >
+        <Alert
+          onClose={handleCloseSnackbar}
+          severity="success"
+          variant="filled"
+          sx={{ width: "100%" }}
+        >
+          המוצר התווסף לסל בהצלחה
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };

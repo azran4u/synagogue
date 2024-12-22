@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import Button from "@mui/material/Button";
 import { useFormik } from "formik";
 import Box from "@mui/material/Box";
@@ -35,7 +35,7 @@ const CheckoutPage: React.FC = () => {
   const { currentSale: sale, isLoading: saleIsLoading } = useCurrentSale();
   const { pickups } = usePickups();
   const isMobile = useMobile();
-  const cartProducts = useCartProducts();
+  const {cartProducts} = useCartProducts();
   const { totalCost, totalCostAfterDiscount, discount } = useCartDiscount();
   const { submitOrder } = useSubmitOrder();
   const orderId = useAppSelector(selectOrderId);
@@ -44,6 +44,80 @@ const CheckoutPage: React.FC = () => {
   const dispatch = useAppDispatch();
   const { sendEmail } = useSendEmail();
   const { url } = useOrderUrl();
+
+  const generateCartTable = useMemo(() => {
+    let tableRows = cartProducts
+      .map((product) => {
+        return `
+      <tr>
+        <td>
+        <div>${product.product.display_name}</div>
+        ${
+          //@ts-ignore
+          product.product?.denier
+            ? //@ts-ignore
+              `<div>דניר: ${product.product?.denier}</div>`
+            : ``
+        }
+        ${
+          //@ts-ignore
+          product.product?.leg
+            ? //@ts-ignore
+              `<div>רגל: ${product.product?.leg}</div>`
+            : ``
+        }
+        ${
+          //@ts-ignore
+          product.product?.lace
+            ? //@ts-ignore
+              `<div>תחרה: ${product.product?.lace}</div>`
+            : ``
+        }
+        ${
+          //@ts-ignore
+          product.product?.length
+            ? //@ts-ignore
+              `<div>אורך: ${product.product?.length}</div>`
+            : ``
+        }
+        ${
+          //@ts-ignore
+          product.product?.size
+            ? //@ts-ignore
+              `<div>מידה: ${product.product?.size}</div>`
+            : ``
+        }
+        ${
+          //@ts-ignore
+          product.product?.color
+            ? //@ts-ignore
+              `<div>צבע: ${product.product?.color}</div>`
+            : ``
+        }        
+        </td>
+        <td>${product.amount}</td>
+        <td>${product.product.price}</td>
+        <td>${product.product.price * product.amount}</td>
+      `;
+      })
+      .join("");
+
+    return `
+      <table border="1" cellpadding="5" cellspacing="0">
+        <thead>
+          <tr>
+            <th>תיאור</th>
+            <th>כמות</th>
+            <th>מחיר ליחידה</th>
+            <th>מחיר (לפני הנחה)</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${tableRows}
+        </tbody>
+      </table>
+    `;
+  }, [cartProducts]);
 
   const {
     values,
@@ -118,7 +192,7 @@ const CheckoutPage: React.FC = () => {
           <p>אימייל: ${values.email}</p>
           <p>טלפון נייד: ${values.phoneNumber}</p>
           <p>נקודת חלוקה: ${values.prefferedPickupLocation}</p>
-          <p>קישור להזמנה: <a href=${url}>לחץ כאן</a></p>
+          <p>קישור לעריכת ההזמנה: <a href=${url}>לחץ כאן</a></p>          
           <p>ניתן לעדכן את ההזמנה עד לסגירת המכירה בתאריך: ${sale.end_date}</p>
           <p>סכום לתשלום: ${totalCost} ש"ח</p>
           ${
@@ -131,6 +205,7 @@ const CheckoutPage: React.FC = () => {
           }
           <p>תאריך: ${new Date().toLocaleString()}</p>
           <p>סטטוס: התקבלה</p>
+          ${generateCartTable}
         </div>
             `,
           },

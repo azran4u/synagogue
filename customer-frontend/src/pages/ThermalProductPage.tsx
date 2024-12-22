@@ -1,8 +1,8 @@
-import React, { useEffect, useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { ProductThermal } from "../model/product/ProductThermal";
 import FirebaseStorageImage from "../components/FirebaseStorageImage";
 import Button from "@mui/material/Button";
-import { isNil, set, uniq } from "lodash";
+import { isNil, uniq } from "lodash";
 import { useFormik } from "formik";
 import Box from "@mui/material/Box";
 import * as Yup from "yup";
@@ -16,6 +16,8 @@ import { useLocation, useParams } from "react-router-dom";
 import { useThermalProducts } from "../hooks/useProductsByKind";
 import Typography from "@mui/material/Typography";
 import { useColorMapper } from "../hooks/useColorMapper";
+import Snackbar from "@mui/material/Snackbar";
+import Alert from "@mui/material/Alert";
 
 interface ThermalProductFormValues {
   leg: string;
@@ -30,6 +32,7 @@ const ThermalProductPage: React.FC = () => {
   const { name } = useParams<{ kind: string; name: string }>();
   const { products } = useThermalProducts(name);
   const { convertColorNameToColorObject } = useColorMapper();
+  const [openSnackbar, setOpenSnackbar] = useState(false);
 
   const initialProductAndAmount = useMemo(() => {
     const passedData = location.state;
@@ -66,6 +69,7 @@ const ThermalProductPage: React.FC = () => {
         },
       ])
     );
+    setOpenSnackbar(true);
   };
 
   const initialValues = useMemo(() => {
@@ -146,6 +150,10 @@ const ThermalProductPage: React.FC = () => {
 
     setFieldValue("count", 1);
   }, [values.leg, values.size, values.color]);
+
+  const handleCloseSnackbar = () => {
+    setOpenSnackbar(false);
+  };
 
   return (
     <Box
@@ -242,6 +250,21 @@ const ThermalProductPage: React.FC = () => {
           </Button>
         </Box>
       </form>
+      <Snackbar
+        open={openSnackbar}
+        autoHideDuration={3000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      >
+        <Alert
+          onClose={handleCloseSnackbar}
+          severity="success"
+          variant="filled"
+          sx={{ width: "100%" }}
+        >
+          המוצר התווסף לסל בהצלחה
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };
