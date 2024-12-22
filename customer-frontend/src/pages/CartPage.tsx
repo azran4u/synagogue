@@ -63,6 +63,11 @@ const CartPage: React.FC = () => {
     [productsInCart]
   );
 
+  const isExistingOrder = useMemo(() => {
+    if (order && order?.products?.length > 0) return true;
+    return false;
+  }, [order]);
+
   return (
     <>
       <Title title="עגלת קניות" />
@@ -317,7 +322,7 @@ const CartPage: React.FC = () => {
             }}
           >
             <Button variant="contained" onClick={() => navigate("/checkout")}>
-              בצע/י הזמנה
+              {isExistingOrder ? "עדכן/י הזמנה" : "בצע/י הזמנה"}
             </Button>
           </Box>
         </>
