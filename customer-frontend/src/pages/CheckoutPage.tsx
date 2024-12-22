@@ -105,7 +105,7 @@ const CheckoutPage: React.FC = () => {
           })
         );
         sendEmail({
-          from: "MS_7732lz@trial-x2p03476779gzdrn.mlsender.net",
+          from: "טייץ שומרון <app@shomron-tights.com>",
           to: values.email,
           message: {
             subject: "תודה שהזמנת באתר טייץ שומרון",
