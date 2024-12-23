@@ -52,6 +52,7 @@ const PickupsPage = () => {
                   <Typography variant="body1">
                     {pickup.street}, {pickup.city}
                   </Typography>
+                  <Typography variant="body1">{pickup.phone_number}</Typography>
                 </CardContent>
               </Card>
             );
