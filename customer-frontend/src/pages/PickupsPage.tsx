@@ -1,5 +1,5 @@
 import Typography from "@mui/material/Typography";
-import { Box, Card, CardActions, CardContent, useTheme } from "@mui/material";
+import { Box, Card, CardContent, useTheme } from "@mui/material";
 import { usePickups } from "../hooks/usePickups";
 import { useMobile } from "../hooks/useMobile";
 import { useMemo } from "react";
@@ -49,10 +49,20 @@ const PickupsPage = () => {
               <Card key={pickup.id} sx={{ borderRadius: "5px" }}>
                 <CardContent>
                   <Typography variant="h6">{pickup.name}</Typography>
-                  <Typography variant="body1">
-                    {pickup.street}, {pickup.city}
-                  </Typography>
-                  <Typography variant="body1">{pickup.phone_number}</Typography>
+                  {pickup.city && pickup.street ? (
+                    <Typography variant="body1">
+                      {pickup.street}, {pickup.city}
+                    </Typography>
+                  ) : (
+                    pickup.city && (
+                      <Typography variant="body1">{pickup.city}</Typography>
+                    )
+                  )}
+                  {pickup.phone_number && (
+                    <Typography variant="body1">
+                      {pickup.phone_number}
+                    </Typography>
+                  )}
                 </CardContent>
               </Card>
             );
