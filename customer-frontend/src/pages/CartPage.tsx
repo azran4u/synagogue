@@ -25,6 +25,7 @@ import Dialog from "@mui/material/Dialog";
 import DialogTitle from "@mui/material/DialogTitle";
 import DialogActions from "@mui/material/DialogActions";
 import CircularProgress from "@mui/material/CircularProgress";
+import { useCurrentSale } from "../hooks/useCurrentSale";
 
 const CartPage: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -34,6 +35,7 @@ const CartPage: React.FC = () => {
   const { order, isLoading: orderByIdLoading } = useOrderById(orderId);
   const { deleteOrder } = useDeleteOrderById();
   const [showDeleteOrderModal, setShowDeleteOrderModal] = React.useState(false);
+  const { isLoading: saleIsLoading, currentSale: sale } = useCurrentSale();
 
   const deleteOrderHandler = () => {
     dispatch(cartActions.restoreInitialState());
@@ -321,9 +323,23 @@ const CartPage: React.FC = () => {
               marginBottom: "1rem",
             }}
           >
-            <Button variant="contained" onClick={() => navigate("/checkout")}>
+            <Button
+              disabled={!sale}
+              variant="contained"
+              onClick={() => navigate("/checkout")}
+            >
               {isExistingOrder ? "עדכן/י הזמנה" : "בצע/י הזמנה"}
             </Button>
+            {!sale && (
+              <Typography
+                variant="h5"
+                color="error"
+                gutterBottom
+                sx={{ margin: "0 auto" }}
+              >
+                המכירה סגורה כעת
+              </Typography>
+            )}
           </Box>
         </>
       )}
