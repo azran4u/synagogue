@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import Button from "@mui/material/Button";
 import Box from "@mui/material/Box";
 import Title from "../components/Title";
@@ -34,14 +34,21 @@ const CartPage: React.FC = () => {
   const orderId = useAppSelector(selectOrderId);
   const { order, isLoading: orderByIdLoading } = useOrderById(orderId);
   const { deleteOrder } = useDeleteOrderById();
-  const [showDeleteOrderModal, setShowDeleteOrderModal] = React.useState(false);
+  const [showDeleteOrderModal, setShowDeleteOrderModal] = useState(false);
+  const [showCreateNewOrderModal, setShowCreateNewOrderModal] = useState(false);
   const { isLoading: saleIsLoading, currentSale: sale } = useCurrentSale();
+
+  const createNewOrderHandler = () => {
+    dispatch(cartActions.restoreInitialState());
+    setShowCreateNewOrderModal(false);
+    navigate("/");
+  };
 
   const deleteOrderHandler = () => {
     dispatch(cartActions.restoreInitialState());
     deleteOrder(orderId);
-    navigate("/");
     setShowDeleteOrderModal(false);
+    navigate("/");
   };
 
   const { cartProducts: productsInCart, isLoading: productsInCartLoading } =
@@ -72,7 +79,50 @@ const CartPage: React.FC = () => {
 
   return (
     <>
-      <Title title="עגלת קניות" />
+      <Box
+        sx={{
+          display: "grid",
+          gridTemplateColumns: "1fr 2fr 1fr",
+        }}
+      >
+        <Button
+          disabled={!sale}
+          variant="contained"
+          onClick={() => setShowCreateNewOrderModal(true)}
+          sx={{
+            width: "1rem",
+            height: "2.5rem",
+            display: "flex",
+            marginLeft: "1rem",
+            marginTop: "1rem",
+          }}
+        >
+          הזמנה חדשה
+        </Button>
+        <Title title="עגלת קניות" />
+      </Box>
+      <Dialog
+        open={showCreateNewOrderModal}
+        onClose={() => setShowCreateNewOrderModal(false)}
+        aria-labelledby="alert-dialog-title"
+        aria-describedby="alert-dialog-description"
+      >
+        <DialogTitle id="alert-dialog-title">
+          פעולה זו תנקה את הסל ותתחיל הזמנה חדשה. היא אינה משפיעה על הזמנות שכבר
+          ביצעת
+        </DialogTitle>
+        <DialogActions>
+          <Button
+            onClick={() => setShowCreateNewOrderModal(false)}
+            color="primary"
+          >
+            בטל
+          </Button>
+          <Button onClick={createNewOrderHandler} color="error" autoFocus>
+            כן, המשך
+          </Button>
+        </DialogActions>
+      </Dialog>
       {productsInCartLoading || orderByIdLoading ? (
         <CircularProgress />
       ) : isCartEmpty ? (

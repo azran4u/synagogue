@@ -127,7 +127,7 @@ export const cartSlice = createSlice({
     },
     restoreInitialState: (state) => {
       state.items = initialState.items;
-      state.orderId = initialState.orderId;
+      state.orderId = uuidv4();
       state.checkout = initialState.checkout;
     },
   },
