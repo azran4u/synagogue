@@ -2,6 +2,7 @@ import Typography from "@mui/material/Typography";
 import { Box, Button, CircularProgress, Link } from "@mui/material";
 import { useAuth } from "../hooks/useAuth";
 import { useAdminActions } from "../hooks/useAdminActions";
+import { useOrdersCount } from "../hooks/useOrdersCount";
 
 const AdminPage = () => {
   const title = "מנהלים";
@@ -17,6 +18,8 @@ const AdminPage = () => {
     exportError,
     exportLoading,
   } = useAdminActions();
+
+  const { count } = useOrdersCount();
 
   return (
     <Box
@@ -100,6 +103,11 @@ const AdminPage = () => {
                 <Typography>{JSON.stringify(exportError)}</Typography>
               )}
             </>
+          )}
+          {count && (
+            <Typography variant="body1" gutterBottom>
+              ישנם {count} הזמנות
+            </Typography>
           )}
         </>
       ) : (

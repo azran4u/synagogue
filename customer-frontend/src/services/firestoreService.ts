@@ -18,6 +18,7 @@ import {
   Transaction,
   deleteDoc,
   setDoc,
+  getCountFromServer,
 } from "firebase/firestore";
 import { firestoreDatabase } from "./firebaseConfig";
 
@@ -78,6 +79,12 @@ export class FirestoreService<T extends WithFieldValue<DocumentData>> {
       cb(res);
     });
     return unsubscribe;
+  }
+
+  public async countDocuments(): Promise<number> {
+    const q = query(this.collectionRef);
+    const snapshot = await getCountFromServer(q);
+    return snapshot.data().count;
   }
 
   public async deleteById(id: string) {
