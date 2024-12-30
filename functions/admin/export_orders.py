@@ -36,10 +36,12 @@ def allowed_admins():
 def export_orders():
     collection_name = "orders"
     orders = read_firestore_collection(collection_name)
-    current_sale_name = current_sale()
-    current_sale_orders = [
-        order for order in orders if order.get("saleName") == current_sale_name
-    ]
+    # current_sale_name = current_sale()
+    # current_sale_orders = [
+    #     order for order in orders if order.get("saleName") == current_sale_name
+    # ]
+
+    current_sale_orders = orders
 
     orders_list = []
     products_list = []
@@ -118,9 +120,7 @@ def export_orders():
     )
 
     suppliers_df = (
-        products_df.groupby(["ספק", "המוצר"])
-        .agg({"כמות פריטים בהזמנה": "sum"})
-        .reset_index()
+        products_df.groupby(["ספק", "המוצר"]).agg({"כמות": "sum"}).reset_index()
     )
 
     sheet_title = "shomron-tights" + "@" + datetime.now().strftime("%Y-%m-%d %H:%M:%S")
