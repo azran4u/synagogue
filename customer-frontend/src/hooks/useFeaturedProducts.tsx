@@ -1,9 +1,9 @@
 import { useMemo } from "react";
-import { useProducts } from "./useProducts";
+import { useActiveProducts } from "./useProducts";
 import { isNumber } from "lodash";
 
 export function useFeaturedProducts() {
-  const { isLoading, products } = useProducts();
+  const { isLoading, products } = useActiveProducts();
   const featuredProducts = useMemo(
     () =>
       products

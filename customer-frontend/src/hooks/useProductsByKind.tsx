@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { useProducts } from "./useProducts";
+import { useActiveProducts } from "./useProducts";
 import { ProductSchema } from "../model/product/ProductSchema";
 import { ProductTights } from "../model/product/ProductTights";
 import { ProductLace } from "../model/product/ProductLace";
@@ -8,7 +8,7 @@ import { ProductThermal } from "../model/product/ProductThermal";
 
 export function useTightsProducts(name?: string) {
   if (!name) return { isLoading: true, products: [] };
-  const { isLoading, products: allProudcts } = useProducts();
+  const { isLoading, products: allProudcts } = useActiveProducts();
   const products = useMemo(() => {
     const res: ProductTights[] =
       allProudcts
@@ -21,7 +21,7 @@ export function useTightsProducts(name?: string) {
 
 export function useLaceProducts(name?: string) {
   if (!name) return { isLoading: true, products: [] };
-  const { isLoading, products: allProudcts } = useProducts();
+  const { isLoading, products: allProudcts } = useActiveProducts();
   const products = useMemo(() => {
     const res: ProductLace[] =
       allProudcts
@@ -34,7 +34,7 @@ export function useLaceProducts(name?: string) {
 
 export function useShortProducts(name?: string) {
   if (!name) return { isLoading: true, products: [] };
-  const { isLoading, products: allProudcts } = useProducts();
+  const { isLoading, products: allProudcts } = useActiveProducts();
   const products = useMemo(() => {
     const res: ProductShort[] =
       allProudcts
@@ -47,7 +47,7 @@ export function useShortProducts(name?: string) {
 
 export function useThermalProducts(name?: string) {
   if (!name) return { isLoading: true, products: [] };
-  const { isLoading, products: allProudcts } = useProducts();
+  const { isLoading, products: allProudcts } = useActiveProducts();
   const products = useMemo(() => {
     const res: ProductThermal[] =
       allProudcts

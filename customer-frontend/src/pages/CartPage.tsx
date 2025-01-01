@@ -273,6 +273,9 @@ const CartPage: React.FC = () => {
                             תחרה: {product.lace}
                           </Typography>
                           <Typography variant="body2">
+                            מידה: {product.size}
+                          </Typography>
+                          <Typography variant="body2">
                             צבע: {product.color}
                           </Typography>
                         </Box>

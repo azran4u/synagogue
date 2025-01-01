@@ -6,11 +6,11 @@ import { Box, Button } from "@mui/material";
 import LaceProductPage from "./LaceProductPage";
 import ShortProductPage from "./ShortProductPage";
 import ThermalProductPage from "./ThermalProductPage";
-import { useProducts } from "../hooks/useProducts";
+import { useActiveProducts } from "../hooks/useProducts";
 
 const ProductPage: React.FC = () => {
   const { kind } = useParams<{ kind: string; name: string }>();
-  const { products } = useProducts();
+  const { products } = useActiveProducts();
   const navigate = useNavigate();
 
   const backButtonText = "חזרה לקטלוג המוצרים";

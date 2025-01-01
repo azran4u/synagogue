@@ -84,7 +84,7 @@ def export_orders():
                 description = f"טייץ גרביון, {product.get('denier')} דניר, {product.get('leg')} רגל, מידה {product.get('size')}, צבע {product.get('color')}"
             elif product.get("kind") == "lace":
                 description = (
-                    f"טייץ תחרה, תחרה {product.get('lace')} ,צבע {product.get('color')}"
+                    f"טייץ תחרה, תחרה {product.get('lace')} , מידה {product.get('size')}, צבע {product.get('color')}"
                 )
             elif product.get("kind") == "short":
                 description = f"טייץ קצר, אורך {product.get('length')}, מידה {product.get('size')} ,צבע {product.get('color')}"
