@@ -26,6 +26,7 @@ import DialogTitle from "@mui/material/DialogTitle";
 import DialogActions from "@mui/material/DialogActions";
 import CircularProgress from "@mui/material/CircularProgress";
 import { useCurrentSale } from "../hooks/useCurrentSale";
+import { useIsExistingOrder } from "../hooks/useIsExistingOrder";
 
 const CartPage: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -38,6 +39,7 @@ const CartPage: React.FC = () => {
   const [showCreateNewOrderModal, setShowCreateNewOrderModal] = useState(false);
   const { isLoading: saleIsLoading, currentSale: sale } = useCurrentSale();
 
+  const { isExistingOrder } = useIsExistingOrder();
   const createNewOrderHandler = () => {
     dispatch(cartActions.restoreInitialState());
     setShowCreateNewOrderModal(false);
@@ -53,6 +55,7 @@ const CartPage: React.FC = () => {
 
   const { cartProducts: productsInCart, isLoading: productsInCartLoading } =
     useCartProducts();
+
   const { totalCost, totalCostAfterDiscount } = useCartDiscount();
 
   const handleRemoveItem = (id: string) => {
@@ -71,11 +74,6 @@ const CartPage: React.FC = () => {
     () => productsInCart.length === 0,
     [productsInCart]
   );
-
-  const isExistingOrder = useMemo(() => {
-    if (order && order?.products?.length > 0) return true;
-    return false;
-  }, [order]);
 
   return (
     <>
