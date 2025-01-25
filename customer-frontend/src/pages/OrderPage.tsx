@@ -10,9 +10,12 @@ const OrderPage: React.FC = () => {
   const { order, isLoading } = useOrderById(id);
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
-
+  const isValidOrder = useMemo(() => {
+    return !!order && !!order?.date && order?.products.length > 0;
+  }, [order]);
+  
   useEffect(() => {
-    if (!order || !order?.products) {
+    if (!isValidOrder || !order) {
       return;
     }
     dispatch(cartActions.clear());
@@ -35,11 +38,9 @@ const OrderPage: React.FC = () => {
       })
     );
     navigate("/cart");
-  }, [order]);
+  }, [order, isValidOrder]);
 
-  const isValidOrder = useMemo(() => {
-    return !!order && !!order?.date && order?.products.length > 0;
-  }, [order]);
+  
 
   return isValidOrder ? (
     <Box></Box>

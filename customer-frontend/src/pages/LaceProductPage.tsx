@@ -103,6 +103,7 @@ const LaceProductPage: React.FC = () => {
     const res = uniq(
       products
         .filter((product) => product.lace === values.lace)
+        .sort((a, b) => +a.size_sort_order - +b.size_sort_order)
         .map((x) => x.size)
     );
     if (!res.includes(values.size)) {

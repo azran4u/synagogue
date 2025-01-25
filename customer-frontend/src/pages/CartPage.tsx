@@ -2,7 +2,7 @@ import React, { useMemo, useState } from "react";
 import Button from "@mui/material/Button";
 import Box from "@mui/material/Box";
 import Title from "../components/Title";
-import { cartActions, selectOrderId } from "../store/cartSlice";
+import { cartActions, selectCheckout, selectOrderId } from "../store/cartSlice";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
 import Typography from "@mui/material/Typography";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -27,6 +27,8 @@ import DialogActions from "@mui/material/DialogActions";
 import CircularProgress from "@mui/material/CircularProgress";
 import { useCurrentSale } from "../hooks/useCurrentSale";
 import { useIsExistingOrder } from "../hooks/useIsExistingOrder";
+import { useSendEmail } from "../hooks/useSendEmail";
+import { useProductsTable } from "../hooks/useProductsTable";
 
 const CartPage: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -38,15 +40,40 @@ const CartPage: React.FC = () => {
   const [showDeleteOrderModal, setShowDeleteOrderModal] = useState(false);
   const [showCreateNewOrderModal, setShowCreateNewOrderModal] = useState(false);
   const { isLoading: saleIsLoading, currentSale: sale } = useCurrentSale();
-
+  const { sendEmail } = useSendEmail();
+  const checkout = useAppSelector(selectCheckout);
   const { isExistingOrder } = useIsExistingOrder();
   const createNewOrderHandler = () => {
     dispatch(cartActions.restoreInitialState());
     setShowCreateNewOrderModal(false);
     navigate("/");
   };
-
+  const generateCartTable = useProductsTable(order?.products ?? []);
+  
   const deleteOrderHandler = () => {
+    if(order){
+      sendEmail({
+        to: checkout.email,
+        message: {
+          subject: "תודה שהזמנת באתר טייץ שומרון",
+          html: `
+         <div style="direction: rtl; text-align: right;">
+        <h1 style="color: red;">הזמנתך נמחקה</h1>
+        <p>פרטי ההזמנה:</p>
+        <p>שם פרטי: ${order.firstName}</p>
+        <p>שם משפחה: ${order.lastName}</p>
+        <p>אימייל: ${order.email}</p>
+        <p>טלפון נייד: ${order.phoneNumber}</p>
+        <p>נקודת חלוקה: ${order.prefferedPickupLocation}</p>
+        <p>סכום לתשלום: ${order.totalCostAfterDiscount} ש"ח</p>      
+        <p>תאריך: ${order.date}</p>
+        <p>סטטוס: נמחקה</p>
+        ${generateCartTable}
+      </div>
+          `,
+        },
+      });
+    }
     dispatch(cartActions.restoreInitialState());
     deleteOrder(orderId);
     setShowDeleteOrderModal(false);
@@ -77,6 +104,7 @@ const CartPage: React.FC = () => {
 
   return (
     <>
+    {isExistingOrder && <Typography style={{display: "flex", justifyContent: "center"}} color="error" variant="h6">שימי לב שאת עורכת הזמנה קיימת</Typography>}
       <Box
         sx={{
           display: "grid",
@@ -195,7 +223,7 @@ const CartPage: React.FC = () => {
                           height: "2.5rem",
                         }}
                       >
-                        בטל הזמנה
+                        מחיקת הזמנה
                       </Button>
                     )}
                   </TableCell>
@@ -378,8 +406,9 @@ const CartPage: React.FC = () => {
               disabled={!sale}
               variant="contained"
               onClick={() => navigate("/checkout")}
+              color={isExistingOrder ? "error": "primary"}
             >
-              {isExistingOrder ? "עדכן/י הזמנה" : "בצע/י הזמנה"}
+              {isExistingOrder ? "עדכון הזמנה קיימת" : "בצע/י הזמנה"}
             </Button>
             {!sale && (
               <Typography

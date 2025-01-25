@@ -1,16 +1,17 @@
 import Typography from "@mui/material/Typography";
 import { Box, Button } from "@mui/material";
-import { useNavigate } from "react-router-dom";
-import { useOrderUrl } from "../hooks/useOrderLink";
+import { useNavigate, useParams } from "react-router-dom";
+import { useOrderUrl } from "../hooks/useOrderUrl";
 import { useAppSelector } from "../store/hooks";
 import { selectCheckout } from "../store/cartSlice";
 import { useCurrentSale } from "../hooks/useCurrentSale";
 import { useMemo } from "react";
 
 const SuccessfulOrderPage = () => {
+  const { id } = useParams<{ id: string }>();
   const { currentSale } = useCurrentSale();
   const navigate = useNavigate();
-  const { endpoint } = useOrderUrl();
+  const { endpoint } = useOrderUrl(id);
   const checkout = useAppSelector(selectCheckout);
   const orderSuccessMessage = "הזמנתך בוצעה בהצלחה!";
   const pickupMessage = "הזמנתך תמתין לך בנקודת החלוקה שבחרת: ";

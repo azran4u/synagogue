@@ -97,6 +97,10 @@ export const cartSlice = createSlice({
         return state;
       }
 
+      if (foundItem.amount === 1) {
+        return state;
+      }
+
       foundItem.amount -= 1;
 
       return state;
@@ -129,6 +133,9 @@ export const cartSlice = createSlice({
       state.items = initialState.items;
       state.orderId = uuidv4();
       state.checkout = initialState.checkout;
+    },
+    newOrderId: (state) => {
+      state.orderId = uuidv4();
     },
   },
 });

@@ -7,11 +7,11 @@ export function useFeaturedProducts() {
   const featuredProducts = useMemo(
     () =>
       products
-        .filter((product) => product.is_default === "כן")
+        .filter((product) => !!product.category_image && !!product.category_sort_order)
         .sort((a, b) => {
-          if (!a.sort_order || !isNumber(a.sort_order)) return -1;
-          if (!b.sort_order || !isNumber(b.sort_order)) return 1;
-          return Number(a.sort_order) - Number(b.sort_order);
+          if (!a.category_sort_order || !isNumber(a.category_sort_order)) return -1;
+          if (!b.category_sort_order || !isNumber(b.category_sort_order)) return 1;
+          return Number(a.category_sort_order) - Number(b.category_sort_order);
         }),
     [products]
   );

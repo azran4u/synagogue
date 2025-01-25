@@ -20,7 +20,9 @@ import { useAppDispatch, useAppSelector } from "../store/hooks";
 import { cartActions, selectCheckout, selectOrderId } from "../store/cartSlice";
 import { useNavigate } from "react-router-dom";
 import { useSendEmail } from "../hooks/useSendEmail";
-import { useOrderUrl } from "../hooks/useOrderLink";
+import { useOrderUrl } from "../hooks/useOrderUrl";
+import { useProductsTable } from "../hooks/useProductsTable";
+import { useIsExistingOrder } from "../hooks/useIsExistingOrder";
 
 export interface CheckoutFormValues {
   firstName: string;
@@ -44,81 +46,9 @@ const CheckoutPage: React.FC = () => {
   const dispatch = useAppDispatch();
   const { sendEmail } = useSendEmail();
   const { url } = useOrderUrl();
-
-  const generateCartTable = useMemo(() => {
-    let tableRows = cartProducts
-      .map((product) => {
-        return `
-      <tr>
-        <td>
-        <div>${product.product.display_name}</div>
-        ${
-          //@ts-ignore
-          product.product?.denier
-            ? //@ts-ignore
-              `<div>דניר: ${product.product?.denier}</div>`
-            : ``
-        }
-        ${
-          //@ts-ignore
-          product.product?.leg
-            ? //@ts-ignore
-              `<div>רגל: ${product.product?.leg}</div>`
-            : ``
-        }
-        ${
-          //@ts-ignore
-          product.product?.lace
-            ? //@ts-ignore
-              `<div>תחרה: ${product.product?.lace}</div>`
-            : ``
-        }
-        ${
-          //@ts-ignore
-          product.product?.length
-            ? //@ts-ignore
-              `<div>אורך: ${product.product?.length}</div>`
-            : ``
-        }
-        ${
-          //@ts-ignore
-          product.product?.size
-            ? //@ts-ignore
-              `<div>מידה: ${product.product?.size}</div>`
-            : ``
-        }
-        ${
-          //@ts-ignore
-          product.product?.color
-            ? //@ts-ignore
-              `<div>צבע: ${product.product?.color}</div>`
-            : ``
-        }        
-        </td>
-        <td>${product.amount}</td>
-        <td>${product.product.price}</td>
-        <td>${product.product.price * product.amount}</td>
-      `;
-      })
-      .join("");
-
-    return `
-      <table border="1" cellpadding="5" cellspacing="0">
-        <thead>
-          <tr>
-            <th>תיאור</th>
-            <th>כמות</th>
-            <th>מחיר ליחידה</th>
-            <th>מחיר (לפני הנחה)</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${tableRows}
-        </tbody>
-      </table>
-    `;
-  }, [cartProducts]);
-
+  const generateCartTable = useProductsTable(cartProducts);
+  const { isExistingOrder } = useIsExistingOrder();
+  
   const {
     values,
     isSubmitting,
@@ -179,7 +109,6 @@ const CheckoutPage: React.FC = () => {
           })
         );
         sendEmail({
-          from: "טייץ שומרון <app@shomron-tights.com>",
           to: values.email,
           message: {
             subject: "תודה שהזמנת באתר טייץ שומרון",
@@ -211,7 +140,8 @@ const CheckoutPage: React.FC = () => {
           },
         });
         dispatch(cartActions.clear());
-        navigate("/success");
+        dispatch(cartActions.newOrderId());
+        navigate("/success/" + orderId);
       } catch (error) {
         setStatus("אירעה שגיאה בעת ביצוע ההזמנה. אנא נסה שוב.");
       }
@@ -243,6 +173,7 @@ const CheckoutPage: React.FC = () => {
         gap: "0.5rem",
       }}
     >
+      {isExistingOrder && <Typography style={{display: "flex", justifyContent: "center"}} color="error" variant="h6">שימי לב שאת עורכת הזמנה קיימת</Typography>}
       <Title title={"טופס הזמנה"} />
       <form onSubmit={handleSubmit}>
         {status && (
@@ -336,11 +267,11 @@ const CheckoutPage: React.FC = () => {
         <Button
           type="submit"
           variant="contained"
-          color="primary"
+          color={isExistingOrder ? "error": "primary"}
           disabled={isSubmitting}
           sx={{ margin: "1rem auto", display: "flex" }}
         >
-          בצע/י הזמנה
+          {isExistingOrder ? "עדכון הזמנה קיימת" : "בצע/י הזמנה"}
         </Button>
       </form>
     </Box>

@@ -6,4 +6,5 @@ export interface ProductLace extends BaseProduct {
   lace: string;
   size: string;
   color: string;
+  size_sort_order: string;
 }

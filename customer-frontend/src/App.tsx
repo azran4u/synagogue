@@ -30,7 +30,7 @@ function App() {
             <Route path="/checkout" element={<CheckoutPage />} />
             <Route path="/cart" element={<CartPage />} />
             <Route path="/order/:id" element={<OrderPage />} />
-            <Route path="/success" element={<SuccessfulOrderPage />} />
+            <Route path="/success/:id" element={<SuccessfulOrderPage />} />
             <Route path="/pickups" element={<PickupsPage />} />
             <Route path="/contact" element={<ContactUsPage />} />
             <Route path="/admin" element={<AdminPage />} />

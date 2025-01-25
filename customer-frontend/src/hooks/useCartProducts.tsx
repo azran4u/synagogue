@@ -3,6 +3,7 @@ import { useAppSelector } from "../store/hooks";
 import { selectCartItemsArray } from "../store/cartSlice";
 import { useProducts } from "./useProducts";
 import { isEmpty } from "lodash";
+import { CartProduct } from "../model/cartProduct";
 
 export function useCartProducts() {
   const cartContent = useAppSelector(selectCartItemsArray);
@@ -22,7 +23,7 @@ export function useCartProducts() {
         return {
           product,
           amount: cartItem.amount,
-        };
+        } as CartProduct;
       })
       .filter((x) => x !== null);
   }, [cartContent, products]);
