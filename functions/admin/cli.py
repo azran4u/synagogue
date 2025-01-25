@@ -2,6 +2,7 @@ import argparse
 from sync import sync
 from export_orders import export_orders
 from upload_images import upload_images
+from backup import backup
 
 def main():
     parser = argparse.ArgumentParser(description="Run various commands.")
@@ -15,6 +16,8 @@ def main():
         export_orders()
     elif args.command == "upload_images":
         upload_images()
+    elif args.command == "backup":
+        backup()
 
 if __name__ == "__main__":
     main()

@@ -33,7 +33,7 @@ def backup_collections():
         print(f"{len(df)} records found for collection {collection}")
         tabs_data[collection] = df
     
-    sheet_title = "shomron-tights" + "@" + datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    sheet_title = "shomron-tights-backup" + "@" + datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     gmail_accounts = ["azran4u@gmail.com"]
     spreadsheet = create_google_sheet_with_permissions(sheet_title, gmail_accounts, tabs_data)
     return spreadsheet.url
