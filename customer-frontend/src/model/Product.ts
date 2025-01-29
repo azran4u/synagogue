@@ -1,8 +1,8 @@
 import { ProductSchema } from "./ProductSchema";
 
-export interface BaseProduct {
-  id: string;
+export interface Product {
   kind: ProductSchema;
+  id: string;
   name: string;
   display_name: string;
   price: number;
@@ -16,5 +16,15 @@ export interface BaseProduct {
   category_image: string;
   image: string;
   category_sort_order?: string;
-  size_description?: string;
+  color: string;
+  size: string;
+  size_sort_order: string;
+  size_description: string;
+  lace: string;
+  length: string;
+  length_description: string;
+  length_sort_order: string;
+  leg: string;
+  denier: string;
+  denier_sort_order: string;
 }

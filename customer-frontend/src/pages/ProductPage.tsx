@@ -1,7 +1,7 @@
 import React from "react";
 import TightsProductPage from "./TightsProductPage";
 import { useNavigate, useParams } from "react-router";
-import { ProductSchema } from "../model/product/ProductSchema";
+import { ProductSchema } from "../model/ProductSchema";
 import { Box, Button } from "@mui/material";
 import LaceProductPage from "./LaceProductPage";
 import ShortProductPage from "./ShortProductPage";

@@ -4,8 +4,15 @@ import { emailService } from "../services/emailService";
 
 export function useSendEmail() {
   const { mutate: sendEmail } = useMutation({
-    mutationFn: async (email: Omit<Email, 'from'>) => {
-      return emailService.insert({...email, from: "טייץ שומרון <app@shomron-tights.com>"});
+    mutationFn: async (input: {
+      email: Omit<Email, "from">;
+      metadata?: Record<string, any>;
+    }) => {
+      return emailService.insert({
+        ...input.email,
+        ...input.metadata,
+        from: "טייץ שומרון <app@shomron-tights.com>",
+      });
     },
     retry: 3,
   });

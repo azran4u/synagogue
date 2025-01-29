@@ -108,37 +108,57 @@ const CheckoutPage: React.FC = () => {
             comments: values.comments,
           })
         );
-        sendEmail({
-          to: values.email,
-          message: {
-            subject: "תודה שהזמנת באתר טייץ שומרון",
-            html: `
-           <div style="direction: rtl; text-align: right;">
-          <h1>הזמנתך התקבלה בהצלחה</h1>
-          <p>פרטי ההזמנה:</p>
-          <p>שם פרטי: ${values.firstName}</p>
-          <p>שם משפחה: ${values.lastName}</p>
-          <p>אימייל: ${values.email}</p>
-          <p>טלפון נייד: ${values.phoneNumber}</p>
-          <p>נקודת חלוקה: ${values.prefferedPickupLocation}</p>
-          <p>קישור לעריכת ההזמנה: <a href=${url}>לחץ כאן</a></p>          
-          <p>ניתן לעדכן את ההזמנה עד לסגירת המכירה בתאריך: ${sale.end_date}</p>
-          <p>סכום לתשלום: ${totalCost} ש"ח</p>
-          ${
-            discount > 0
-              ? `
-            <p>הנחה: ${discount} ש"ח</p>
-            <p>סכום לתשלום לאחר הנחה: ${totalCostAfterDiscount} ש"ח</p>            
-            `
-              : ""
+        sendEmail(
+          {
+            email: {
+              to: values.email,
+              message: {
+                subject: "תודה שהזמנת באתר טייץ שומרון",
+                html: `
+               <div style="direction: rtl; text-align: right;">
+              <h1>הזמנתך התקבלה בהצלחה</h1>
+              <p>פרטי ההזמנה:</p>
+              <p>שם פרטי: ${values.firstName}</p>
+              <p>שם משפחה: ${values.lastName}</p>
+              <p>אימייל: ${values.email}</p>
+              <p>טלפון נייד: ${values.phoneNumber}</p>
+              <p>נקודת חלוקה: ${values.prefferedPickupLocation}</p>
+              <p>קישור לעריכת ההזמנה: <a href=${url}>לחץ כאן</a></p>          
+              <p>ניתן לעדכן את ההזמנה עד לסגירת המכירה בתאריך: ${sale.end_date}</p>
+              <p>סכום לתשלום: ${totalCost} ש"ח</p>
+              ${
+                discount > 0
+                  ? `
+                <p>הנחה: ${discount} ש"ח</p>
+                <p>סכום לתשלום לאחר הנחה: ${totalCostAfterDiscount} ש"ח</p>            
+                `
+                  : ""
+              }
+              <p>תאריך: ${new Date().toLocaleString()}</p>
+              <p>סטטוס: התקבלה</p>
+              ${generateCartTable}
+            </div>
+                `,
+              },
+            },
+            metadata: {
+              orderId: orderId,
+              saleName: sale.name,
+              firstName: values.firstName,
+              lastName: values.lastName,
+              email: values.email,
+              phoneNumber: values.phoneNumber,
+              prefferedPickupLocation: values.prefferedPickupLocation,
+              comments: values.comments,
+              products: cartProducts,
+              totalCost: totalCost,
+              totalCostAfterDiscount: totalCostAfterDiscount,
+              discount: discount,
+              date: new Date().toLocaleString(),
+              status: "התקבלה",
+            }
           }
-          <p>תאריך: ${new Date().toLocaleString()}</p>
-          <p>סטטוס: התקבלה</p>
-          ${generateCartTable}
-        </div>
-            `,
-          },
-        });
+          );
         dispatch(cartActions.clear());
         dispatch(cartActions.newOrderId());
         navigate("/success/" + orderId);

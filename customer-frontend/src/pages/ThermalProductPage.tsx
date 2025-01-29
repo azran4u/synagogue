@@ -1,5 +1,4 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { ProductThermal } from "../model/product/ProductThermal";
 import FirebaseStorageImage from "../components/FirebaseStorageImage";
 import Button from "@mui/material/Button";
 import { isNil, uniq } from "lodash";
@@ -13,11 +12,13 @@ import Title from "../components/Title";
 import { cartActions } from "../store/cartSlice";
 import { useAppDispatch } from "../store/hooks";
 import { useLocation, useParams } from "react-router-dom";
-import { useThermalProducts } from "../hooks/useProductsByKind";
+import { useProductsByKindAndName } from "../hooks/useProductsByKind";
 import Typography from "@mui/material/Typography";
 import { useColorMapper } from "../hooks/useColorMapper";
 import Snackbar from "@mui/material/Snackbar";
 import Alert from "@mui/material/Alert";
+import { ProductSchema } from "../model/ProductSchema";
+import { Product } from "../model/Product";
 
 interface ThermalProductFormValues {
   leg: string;
@@ -30,7 +31,7 @@ const ThermalProductPage: React.FC = () => {
   const dispatch = useAppDispatch();
   const location = useLocation();
   const { name } = useParams<{ kind: string; name: string }>();
-  const { products } = useThermalProducts(name);
+  const { products } = useProductsByKindAndName(ProductSchema.THERMAL, name);
   const { convertColorNameToColorObject } = useColorMapper();
   const [openSnackbar, setOpenSnackbar] = useState(false);
 
@@ -38,7 +39,7 @@ const ThermalProductPage: React.FC = () => {
     const passedData = location.state;
     if (passedData) {
       return passedData as {
-        product: ProductThermal;
+        product: Product;
         amount: number;
       };
     } else {

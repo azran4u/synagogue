@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { productsSrevice } from "../services/productsSrevice";
-import { Product } from "../model/product/Product";
+import { Product } from "../model/Product";
 import { useMemo } from "react";
 
 export function useActiveProducts() {

@@ -37,5 +37,3 @@ def backup_collections():
     gmail_accounts = ["azran4u@gmail.com"]
     spreadsheet = create_google_sheet_with_permissions(sheet_title, gmail_accounts, tabs_data)
     return spreadsheet.url
-
-backup()

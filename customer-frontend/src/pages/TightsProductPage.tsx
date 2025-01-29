@@ -1,5 +1,4 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { ProductTights } from "../model/product/ProductTights";
 import FirebaseStorageImage from "../components/FirebaseStorageImage";
 import Button from "@mui/material/Button";
 import { isNil, uniq } from "lodash";
@@ -13,9 +12,11 @@ import Title from "../components/Title";
 import { cartActions } from "../store/cartSlice";
 import { useAppDispatch } from "../store/hooks";
 import { useLocation, useParams } from "react-router-dom";
-import { useTightsProducts } from "../hooks/useProductsByKind";
+import { useProductsByKindAndName } from "../hooks/useProductsByKind";
 import { Alert, Snackbar, Typography } from "@mui/material";
 import { useColorMapper } from "../hooks/useColorMapper";
+import { ProductSchema } from "../model/ProductSchema";
+import { Product } from "../model/Product";
 
 interface TightsProductFormValues {
   denier: string;
@@ -29,14 +30,14 @@ const TightsProductPage: React.FC = () => {
   const dispatch = useAppDispatch();
   const location = useLocation();
   const { name } = useParams<{ kind: string; name: string }>();
-  const { products } = useTightsProducts(name);
+  const { products } = useProductsByKindAndName(ProductSchema.TIGHTS,name);
   const { convertColorNameToColorObject } = useColorMapper();
   const [openSnackbar, setOpenSnackbar] = useState(false);
 
   const initialProductAndAmount = useMemo(() => {
     if (location && location.state) {
       return location.state as {
-        product: ProductTights;
+        product: Product;
         amount: number;
       };
     }

@@ -26,16 +26,12 @@ def delete_collections():
     for collection in collections_to_delete:
         delete_collection(collection)
 
-
 def save_dfs_to_firestore(dataframes):
     print("Saving DataFrames to Firestore")
     for tab_name, df in dataframes.items():
         print(f"Processing DataFrame for tab: {tab_name}")
         id_fields = {
-            "tights": ["denier", "leg", "size", "color"],
-            "lace": ["lace", "color", "size"],
-            "short": ["length", "size", "color"],
-            "thermal": ["leg", "size", "color"],
+            "products": ["kind", "name","denier", "leg", "lace", "length", "size", "color"],            
             "colors": ["name"],
             "pickups": ["name"],
             "sales": ["name"],
@@ -48,17 +44,8 @@ def save_dfs_to_firestore(dataframes):
                 tab_name
                 + "_"
                 + df[columns_to_concatenate].astype(str).agg("_".join, axis=1)
-            )
-            df["kind"] = tab_name
-            if (
-                tab_name == "tights"
-                or tab_name == "lace"
-                or tab_name == "short"
-                or tab_name == "thermal"
-            ):
-                collection_name = "products"
-            else:
-                collection_name = tab_name
+            )            
+            collection_name = tab_name
             write_df_to_firestore(df, collection_name, "id")
         else:
             print(f"Skipping tab: {tab_name}")

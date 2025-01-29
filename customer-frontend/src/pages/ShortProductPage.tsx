@@ -1,5 +1,4 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { ProductShort } from "../model/product/ProductShort";
 import FirebaseStorageImage from "../components/FirebaseStorageImage";
 import Button from "@mui/material/Button";
 import { isNil, uniq } from "lodash";
@@ -13,11 +12,13 @@ import Title from "../components/Title";
 import { cartActions } from "../store/cartSlice";
 import { useAppDispatch } from "../store/hooks";
 import { useLocation, useParams } from "react-router-dom";
-import { useShortProducts } from "../hooks/useProductsByKind";
+import { useProductsByKindAndName } from "../hooks/useProductsByKind";
 import Typography from "@mui/material/Typography";
 import { useColorMapper } from "../hooks/useColorMapper";
 import Snackbar from "@mui/material/Snackbar";
 import Alert from "@mui/material/Alert";
+import { ProductSchema } from "../model/ProductSchema";
+import { Product } from "../model/Product";
 
 interface ShortProductFormValues {
   length: string;
@@ -29,7 +30,7 @@ interface ShortProductFormValues {
 const ShortProductPage: React.FC = () => {
   const dispatch = useAppDispatch();
   const { name } = useParams<{ kind: string; name: string }>();
-  const { products } = useShortProducts(name);
+  const { products } = useProductsByKindAndName(ProductSchema.SHORT, name);
   const { state } = useLocation();
   const { convertColorNameToColorObject } = useColorMapper();
   const [openSnackbar, setOpenSnackbar] = useState(false);
@@ -38,7 +39,7 @@ const ShortProductPage: React.FC = () => {
     const passedData = state;
     if (passedData) {
       return passedData as {
-        product: ProductShort;
+        product: Product;
         amount: number;
       };
     } else {

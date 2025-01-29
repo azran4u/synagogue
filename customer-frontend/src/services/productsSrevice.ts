@@ -1,5 +1,5 @@
 import { FirestoreService } from "./firestoreService";
-import { Product } from "../model/product/Product";
+import { Product } from "../model/Product";
 
 export class ProductsService extends FirestoreService<Product> {
   constructor() {

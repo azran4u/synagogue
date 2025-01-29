@@ -51,28 +51,47 @@ const CartPage: React.FC = () => {
   const generateCartTable = useProductsTable(order?.products ?? []);
   
   const deleteOrderHandler = () => {
-    if(order){
+    if(order && sale){
       sendEmail({
-        to: checkout.email,
-        message: {
-          subject: "תודה שהזמנת באתר טייץ שומרון",
-          html: `
-         <div style="direction: rtl; text-align: right;">
-        <h1 style="color: red;">הזמנתך נמחקה</h1>
-        <p>פרטי ההזמנה:</p>
-        <p>שם פרטי: ${order.firstName}</p>
-        <p>שם משפחה: ${order.lastName}</p>
-        <p>אימייל: ${order.email}</p>
-        <p>טלפון נייד: ${order.phoneNumber}</p>
-        <p>נקודת חלוקה: ${order.prefferedPickupLocation}</p>
-        <p>סכום לתשלום: ${order.totalCostAfterDiscount} ש"ח</p>      
-        <p>תאריך: ${order.date}</p>
-        <p>סטטוס: נמחקה</p>
-        ${generateCartTable}
-      </div>
-          `,
+        email: {
+          to: checkout.email,
+          message: {
+            subject: "תודה שהזמנת באתר טייץ שומרון",
+            html: `
+           <div style="direction: rtl; text-align: right;">
+          <h1 style="color: red;">הזמנתך נמחקה</h1>
+          <p>פרטי ההזמנה:</p>
+          <p>שם פרטי: ${order.firstName}</p>
+          <p>שם משפחה: ${order.lastName}</p>
+          <p>אימייל: ${order.email}</p>
+          <p>טלפון נייד: ${order.phoneNumber}</p>
+          <p>נקודת חלוקה: ${order.prefferedPickupLocation}</p>
+          <p>סכום לתשלום: ${order.totalCostAfterDiscount} ש"ח</p>      
+          <p>תאריך: ${order.date}</p>
+          <p>סטטוס: נמחקה</p>
+          ${generateCartTable}
+        </div>
+            `,
+          } 
         },
-      });
+        metadata: {
+          orderId: order.id,
+          saleName: sale?.name,
+          firstName: order.firstName,
+          lastName: order.lastName,
+          email: order.email,
+          phoneNumber: order.phoneNumber,
+          prefferedPickupLocation: order.prefferedPickupLocation,
+          comments: order.comments,
+          products: order.products,
+          totalCost: order.totalCost,
+          totalCostAfterDiscount: order.totalCostAfterDiscount,
+          discount: order.discount,
+          date: order.date,
+          status: "נמחקה",
+        }
+      }
+         );
     }
     dispatch(cartActions.restoreInitialState());
     deleteOrder(orderId);

@@ -6,7 +6,7 @@ from backup import backup
 
 def main():
     parser = argparse.ArgumentParser(description="Run various commands.")
-    parser.add_argument("command", choices=["sync", "export", "upload_images"], help="The command to run")
+    parser.add_argument("command", choices=["sync", "export", "upload_images", "backup"], help="The command to run")
 
     args = parser.parse_args()
 
