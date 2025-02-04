@@ -11,8 +11,11 @@ import SuccessfulOrderPage from "./pages/SuccessfulOrderPage";
 import PickupsPage from "./pages/PickupsPage";
 import ContactUsPage from "./pages/ContactUsPage";
 import AdminPage from "./pages/AdminPage";
+import { useRemoveNonExistingCartItems } from "./hooks/useRemoveNonExistingCartItems";
 
 function App() {
+
+  useRemoveNonExistingCartItems();
   return (
     <Box
       sx={{

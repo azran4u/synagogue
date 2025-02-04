@@ -125,7 +125,6 @@ def export_orders():
     suppliers_with_products_df = pd.merge(suppliers_df, products_df, how="left", left_on=["המוצר"], right_on=["short_description"])
 
     suppliers_df = suppliers_with_products_df[["ספק", "המוצר", "כמות", "stock_liron", "stock_sharale", "units_in_package"]]
-    
     suppliers_df = suppliers_df.rename(columns={"stock_liron": "מלאי לירון", "stock_sharale": "מלאי שהרלה", "units_in_package": "יחידות באריזה"})
     
     sheet_title = "shomron-tights" + "@" + datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -145,4 +144,4 @@ def export_orders():
     )
     return spreadsheet.url
 
-export_orders()
+# export_orders()
