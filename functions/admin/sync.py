@@ -77,7 +77,7 @@ def product_short_description(df):
     denier_hebrew = "דניר"
     with_leg_hebrew = "גרביון"
     without_leg_hebrew = "טייץ"
-    if leg == "leg":
+    if leg == "עם רגל":
         leg_label = with_leg_hebrew
     else:
         leg_label = without_leg_hebrew

@@ -1,8 +1,10 @@
 from datetime import datetime
+from sync import product_short_description
 from utils.google_sheet_utils import create_google_sheet_with_permissions
 from utils.firestore_utils import read_firestore_collection
 from config import base_frontend_url
 import pandas as pd
+import numpy as np
 
 
 def current_sale():
@@ -35,8 +37,9 @@ def allowed_admins():
 
 def export_orders():
     orders = read_firestore_collection("orders")
-    products = read_firestore_collection("products")
+    products = read_firestore_collection("products")    
     products_df = pd.DataFrame(products)
+    products_df["short_description"] = products_df.apply(product_short_description, axis=1)
 
     orders_list = []
     packeging_list = []
@@ -80,12 +83,11 @@ def export_orders():
             product = order_cart_product.get("product")
 
             id = product.get("id")
-            supplier = product.get("supplier")
 
             product_from_products = products_df[products_df["id"] == id].iloc[0]
-            short_description = product_from_products.get("short_description")
+            short_description = product_short_description(product_from_products)
             
-            pageging_entry = {
+            packaging_entry = {
                 "שם פרטי": order_first_name,
                 "שם משפחה": order_last_name,
                 "טלפון נייד": order_phone_number,
@@ -97,10 +99,10 @@ def export_orders():
                 "ארוז": "",
                 "ספק": supplier,
             }
-            packeging_list.append(pageging_entry)
+            packeging_list.append(packaging_entry)
 
     orders_df = pd.DataFrame(orders_list)
-    pageging_df = pd.DataFrame(packeging_list)
+    packaging_df = pd.DataFrame(packeging_list)
 
     orders_groupby_pickup_df = (
         orders_df.groupby("נקודת חלוקה")
@@ -119,21 +121,35 @@ def export_orders():
     orders_groupby_pickup_df["למי לשלם"] = ""
 
     suppliers_df = (
-        pageging_df.groupby(["ספק", "המוצר"]).agg({"כמות": "sum"}).reset_index()
+        packaging_df.groupby(["ספק", "המוצר"]).agg({"כמות": "sum"}).reset_index()
     )
 
-    suppliers_with_products_df = pd.merge(suppliers_df, products_df, how="left", left_on=["המוצר"], right_on=["short_description"])
+    suppliers_with_products_df = pd.merge(suppliers_df, products_df, how="left", left_on=["המוצר", "ספק"], right_on=["short_description", "supplier"])
 
-    suppliers_df = suppliers_with_products_df[["ספק", "המוצר", "כמות", "stock_liron", "stock_sharale", "units_in_package"]]
-    suppliers_df = suppliers_df.rename(columns={"stock_liron": "מלאי לירון", "stock_sharale": "מלאי שהרלה", "units_in_package": "יחידות באריזה"})
-    
+    suppliers_df = suppliers_with_products_df[["ספק", "המוצר", "כמות", "stock_liron", "stock_sharale", "units_in_package", "price"]]
+    suppliers_df = suppliers_df.rename(columns={"stock_liron": "מלאי לירון", "stock_sharale": "מלאי שהרלה", "units_in_package": "יחידות באריזה", "price": "מחיר ליחידה"})
+    suppliers_df["מלאי לירון"] = pd.to_numeric(suppliers_df["מלאי לירון"], errors='coerce').fillna(0).astype(int)
+    suppliers_df["מלאי שהרלה"] = pd.to_numeric(suppliers_df["מלאי שהרלה"], errors='coerce').fillna(0).astype(int)
+    suppliers_df["יחידות באריזה"] = pd.to_numeric(suppliers_df["יחידות באריזה"], errors='coerce').fillna(0).astype(int)
+    suppliers_df["מחיר ליחידה"] = pd.to_numeric(suppliers_df["מחיר ליחידה"], errors='coerce').fillna(0).astype(int)
+
+    suppliers_df["מלאי כולל"] = suppliers_df["מלאי לירון"] + suppliers_df["מלאי שהרלה"]
+    suppliers_df["כמה יחידות להזמין"] = (suppliers_df["כמות"] - suppliers_df["מלאי כולל"]).clip(lower=0)
+    suppliers_df["כמה אריזות להזמין"] = np.ceil(suppliers_df["כמה יחידות להזמין"] / suppliers_df["יחידות באריזה"]) 
+    suppliers_df["כמות להזמנה"] = suppliers_df["כמה אריזות להזמין"] * suppliers_df["יחידות באריזה"]
+    suppliers_df["ספייר"] = suppliers_df["כמות להזמנה"] - suppliers_df["כמה יחידות להזמין"]
+    suppliers_df["עלות"] = suppliers_df["כמות להזמנה"] * suppliers_df["מחיר ליחידה"]
+    suppliers_df.replace([np.inf, -np.inf], np.nan, inplace=True)
+    suppliers_df.fillna(0, inplace=True)
+    suppliers_df = suppliers_df.round(2)
+
     sheet_title = "shomron-tights" + "@" + datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     gmail_accounts = allowed_admins()
 
     # Dictionary of tab names and DataFrames
     tabs_data = {
         "הזמנות": orders_df.sort_values(by=["נקודת חלוקה", "שם משפחה", "שם פרטי"], ascending=[True, True, True]),
-        "אריזות": pageging_df.sort_values(by=["נקודת חלוקה", "שם משפחה", "שם פרטי", "המוצר"], ascending=[True, True, True, True]),
+        "אריזות": packaging_df.sort_values(by=["נקודת חלוקה", "שם משפחה", "שם פרטי", "המוצר"], ascending=[True, True, True, True]),
         "מכירות לפי ישוב": orders_groupby_pickup_df.sort_values(by=["נקודת חלוקה"], ascending=[True]),
         "ספקים": suppliers_df.sort_values(by=["ספק", "המוצר"], ascending=[True, True]),
     }
