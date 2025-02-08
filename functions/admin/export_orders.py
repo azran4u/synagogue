@@ -34,6 +34,10 @@ def allowed_admins():
         allowed_admin.append(email)
     return allowed_admin
 
+def normalize_df(df):
+    df.replace([np.inf, -np.inf], np.nan, inplace=True)
+    df.fillna(0, inplace=True)
+    df = df.round(2)
 
 def export_orders():
     orders = read_firestore_collection("orders")
@@ -83,6 +87,7 @@ def export_orders():
             product = order_cart_product.get("product")
 
             id = product.get("id")
+            supplier = product.get("supplier")
 
             product_from_products = products_df[products_df["id"] == id].iloc[0]
             short_description = product_short_description(product_from_products)
@@ -139,10 +144,29 @@ def export_orders():
     suppliers_df["כמות להזמנה"] = suppliers_df["כמה אריזות להזמין"] * suppliers_df["יחידות באריזה"]
     suppliers_df["ספייר"] = suppliers_df["כמות להזמנה"] - suppliers_df["כמה יחידות להזמין"]
     suppliers_df["עלות"] = suppliers_df["כמות להזמנה"] * suppliers_df["מחיר ליחידה"]
-    suppliers_df.replace([np.inf, -np.inf], np.nan, inplace=True)
-    suppliers_df.fillna(0, inplace=True)
-    suppliers_df = suppliers_df.round(2)
+    normalize_df(suppliers_df)
 
+    current_sale_name = current_sale()
+    num_of_orders = len(orders_df)
+    suppliers_total_cost = suppliers_df["עלות"].sum()
+    orders_revenue_before_discounts = orders_df["מחיר לפני הנחה"].sum()
+    orders_revenue_after_discounts = orders_df["מחיר לאחר הנחה"].sum()
+    orders_groupby_pickup_df_without_revava_and_yakir = orders_groupby_pickup_df[~orders_groupby_pickup_df["נקודת חלוקה"].str.contains('רבבה|יקיר', na=False)]
+    comissions_without_revava_and_yakir = orders_groupby_pickup_df_without_revava_and_yakir["עמלה"].sum()
+    net_profit_before_tax = orders_revenue_after_discounts - suppliers_total_cost - comissions_without_revava_and_yakir
+
+    general_df = pd.DataFrame(columns=['key', 'value'])
+    general_df.loc[0] = ['מכירה נוכחית', current_sale_name]
+    general_df.loc[1] = ['כמות הזמנות', num_of_orders]
+    general_df.loc[2] = ['עלות ספקים', suppliers_total_cost]
+    general_df.loc[3] = ['סכום הזמנות', orders_revenue_before_discounts]
+    general_df.loc[4] = ['סכום הזמנות לאחר הנחה', orders_revenue_after_discounts]
+    general_df.loc[5] = ['סכום עמלות ללא רבבה ויקיר', comissions_without_revava_and_yakir]
+    general_df.loc[5] = ['רווח', net_profit_before_tax]
+
+    general_df = general_df.rename(columns={"key": "נתון", "value": "ערך"})
+    normalize_df(general_df)
+    
     sheet_title = "shomron-tights" + "@" + datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     gmail_accounts = allowed_admins()
 
@@ -152,6 +176,7 @@ def export_orders():
         "אריזות": packaging_df.sort_values(by=["נקודת חלוקה", "שם משפחה", "שם פרטי", "המוצר"], ascending=[True, True, True, True]),
         "מכירות לפי ישוב": orders_groupby_pickup_df.sort_values(by=["נקודת חלוקה"], ascending=[True]),
         "ספקים": suppliers_df.sort_values(by=["ספק", "המוצר"], ascending=[True, True]),
+        "כללי": general_df
     }
 
     # Create the Google Sheet and set permissions
@@ -160,4 +185,4 @@ def export_orders():
     )
     return spreadsheet.url
 
-# export_orders()
+export_orders()
