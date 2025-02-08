@@ -184,5 +184,3 @@ def export_orders():
         sheet_title, gmail_accounts, tabs_data
     )
     return spreadsheet.url
-
-export_orders()
