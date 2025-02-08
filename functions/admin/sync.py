@@ -75,8 +75,8 @@ def product_short_description(df):
     tights_hebrew = "טייץ"
     thermal_hebrew = "טרמי"
     denier_hebrew = "דניר"
-    with_leg_hebrew = "עם רגל"
-    without_leg_hebrew = "ללא רגל"
+    with_leg_hebrew = "גרביון"
+    without_leg_hebrew = "טייץ"
     if leg == "leg":
         leg_label = with_leg_hebrew
     else:
