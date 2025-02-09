@@ -153,7 +153,8 @@ def export_orders():
     orders_revenue_after_discounts = orders_df["מחיר לאחר הנחה"].sum()
     orders_groupby_pickup_df_without_revava_and_yakir = orders_groupby_pickup_df[~orders_groupby_pickup_df["נקודת חלוקה"].str.contains('רבבה|יקיר', na=False)]
     comissions_without_revava_and_yakir = orders_groupby_pickup_df_without_revava_and_yakir["עמלה"].sum()
-    net_profit_before_tax = orders_revenue_after_discounts - suppliers_total_cost - comissions_without_revava_and_yakir
+    expected_comissions_cost = comissions_without_revava_and_yakir / 2
+    net_profit_before_tax = orders_revenue_after_discounts - suppliers_total_cost - expected_comissions_cost
 
     general_df = pd.DataFrame(columns=['key', 'value'])
     general_df.loc[0] = ['מכירה נוכחית', current_sale_name]
@@ -162,7 +163,8 @@ def export_orders():
     general_df.loc[3] = ['סכום הזמנות', orders_revenue_before_discounts]
     general_df.loc[4] = ['סכום הזמנות לאחר הנחה', orders_revenue_after_discounts]
     general_df.loc[5] = ['סכום עמלות ללא רבבה ויקיר', comissions_without_revava_and_yakir]
-    general_df.loc[5] = ['רווח', net_profit_before_tax]
+    general_df.loc[6] = ['עלות עמלות', expected_comissions_cost]
+    general_df.loc[7] = ['רווח', net_profit_before_tax]
 
     general_df = general_df.rename(columns={"key": "נתון", "value": "ערך"})
     normalize_df(general_df)
