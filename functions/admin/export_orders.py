@@ -142,7 +142,7 @@ def export_orders():
     suppliers_df["כמה יחידות להזמין"] = (suppliers_df["כמות"] - suppliers_df["מלאי כולל"]).clip(lower=0)
     suppliers_df["כמה אריזות להזמין"] = np.ceil(suppliers_df["כמה יחידות להזמין"] / suppliers_df["יחידות באריזה"]) 
     suppliers_df["כמות להזמנה"] = suppliers_df["כמה אריזות להזמין"] * suppliers_df["יחידות באריזה"]
-    suppliers_df["ספייר"] = suppliers_df["כמות להזמנה"] - suppliers_df["כמה יחידות להזמין"]
+    suppliers_df["ספייר"] = suppliers_df["מלאי כולל"] + suppliers_df["כמות להזמנה"] - suppliers_df["כמות"]
     suppliers_df["עלות"] = suppliers_df["כמות להזמנה"] * suppliers_df["מחיר ליחידה"]
     normalize_df(suppliers_df)
 
