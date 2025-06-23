@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import { HomePage } from "./pages/HomePage";
 import { PrayerCardPage } from "./pages/PrayerCardPage";
+import PrayerTimesPage from "./pages/PrayerTimesPage";
 import Footer from "./components/Footer";
 import { Sidebar } from "./components/Sidebar";
 import Box from "@mui/material/Box";
@@ -24,6 +25,7 @@ export const App: React.FC = () => {
             <Routes>
               <Route path="/" element={<HomePage />} />
               <Route path="/prayer-card" element={<PrayerCardPage />} />
+              <Route path="/prayer-times" element={<PrayerTimesPage />} />
             </Routes>
           </Box>
           <Footer />

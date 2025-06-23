@@ -8,7 +8,8 @@
     "build": "tsc && vite build",
     "preview": "vite preview",
     "seed": "node scripts/seed.js",
-    "seed:ts": "tsx src/scripts/seedPrayerCards.ts"
+    "seed:ts": "tsx src/scripts/seedPrayerCards.ts",
+    "seed:prayer-times": "tsx src/scripts/seedPrayerTimes.ts"
   },
   "dependencies": {
     "@date-io/core": "^3.2.0",
