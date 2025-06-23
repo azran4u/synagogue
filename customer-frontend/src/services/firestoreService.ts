@@ -55,12 +55,14 @@ export class FirestoreService<T extends WithFieldValue<DocumentData>> {
   }
 
   public async insertWithId(id: string, document: Omit<T, "id">) {
-    await setDoc(this.docById(id), document);
+    const sanitizedDocument = this.replaceUndefinedWithNull(document);
+    await setDoc(this.docById(id), sanitizedDocument);
     return id;
   }
 
   public async insert(document: Omit<T, "id">) {
-    const doc = await addDoc(this.collectionRef, document);
+    const sanitizedDocument = this.replaceUndefinedWithNull(document);
+    const doc = await addDoc(this.collectionRef, sanitizedDocument);
     return doc.id;
   }
 
@@ -69,12 +71,13 @@ export class FirestoreService<T extends WithFieldValue<DocumentData>> {
   }
 
   public async update(id: string, document: Partial<T>) {
-    await updateDoc<any, DocumentData>(this.docById(id), document);
+    const sanitizedDocument = this.replaceUndefinedWithNull(document);
+    await updateDoc<any, DocumentData>(this.docById(id), sanitizedDocument);
   }
 
   public async liveQuery(cb: (arr: T[]) => void) {
     const q = query(this.collectionRef);
-    const unsubscribe = onSnapshot(q, (querySnapshot) => {
+    const unsubscribe = onSnapshot(q, querySnapshot => {
       const res: T[] = this.querySnapshotToObject(querySnapshot);
       cb(res);
     });
@@ -100,7 +103,7 @@ export class FirestoreService<T extends WithFieldValue<DocumentData>> {
   }
 
   private querySnapshotToObject(querySnapshot: QuerySnapshot<DocumentData>) {
-    return querySnapshot.docs.map((doc) => this.documentSnapshotToObject(doc));
+    return querySnapshot.docs.map(doc => this.documentSnapshotToObject(doc));
   }
 
   private documentSnapshotToObject(
@@ -119,5 +122,29 @@ export class FirestoreService<T extends WithFieldValue<DocumentData>> {
         setTimeout(() => reject(new Error("Request timed out")), timeout)
       ),
     ]);
+  }
+
+  /**
+   * Recursively replaces all undefined values with null
+   * This prevents Firestore errors when undefined values are sent
+   */
+  private replaceUndefinedWithNull(obj: any): any {
+    if (obj === undefined) {
+      return null;
+    }
+    if (obj === null) {
+      return null;
+    }
+    if (Array.isArray(obj)) {
+      return obj.map(item => this.replaceUndefinedWithNull(item));
+    }
+    if (typeof obj === "object" && obj !== null) {
+      const result: any = {};
+      for (const [key, value] of Object.entries(obj)) {
+        result[key] = this.replaceUndefinedWithNull(value);
+      }
+      return result;
+    }
+    return obj;
   }
 }

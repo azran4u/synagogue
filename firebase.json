@@ -26,11 +26,5 @@
         }
       ]
     }
-  ],
-  "extensions": {
-    "mailersend-email": "mailersend/mailersend-email@0.1.8"
-  },
-  "emulators": {
-    "singleProjectMode": true
-  }
+  ]
 }

@@ -6,7 +6,7 @@ import React from "react";
 
 const Footer: React.FC = () => {
   const year = new Date().getFullYear();
-  const company = "טייץ שומרון";
+  const company = "בית הכנסת רבבה דרום";
   return (
     <AppBar position="static" color="primary" sx={{ top: "auto", bottom: 0 }}>
       <Toolbar>

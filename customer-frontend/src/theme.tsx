@@ -9,10 +9,10 @@ export const theme = createTheme({
   direction: "rtl",
   palette: {
     primary: {
-      main: "#ab7a5f",
+      main: "#9da832",
     },
     secondary: {
-      main: "#19857b",
+      main: "#328ba8",
     },
     error: {
       main: "#e84242",

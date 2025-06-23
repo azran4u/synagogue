@@ -1,5 +1,8 @@
 customer-frontend/build
 customer-frontend/node_modules
+customer-frontend/dist
+customer-frontend/src/services/firebaseConfig.ts
+
 **/__pycache__
 **/*.pyc
 **/venv
@@ -8,7 +11,6 @@ node_modules/
 **/service_account_firebase.json
 **/service_account_gspread.json
 **/service_account.json
-customer-frontend/src/services/firebaseConfig.ts
 logs
 *.log
 npm-debug.log*

@@ -1,12 +1,12 @@
 {
   "projects": {
-    "default": "shomron-tights"
+    "default": "synagogue-aa874"
   },
   "targets": {
-    "shomron-tights": {
+    "synagogue-aa874": {
       "hosting": {
         "customer-frontend": [
-          "shomron-tights"
+          "synagogue-aa874"
         ]
       }
     }

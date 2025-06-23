@@ -1,48 +1,32 @@
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
-import ProductPage from "./pages/ProductPage";
-import CheckoutPage from "./pages/CheckoutPage";
-import HomePage from "./pages/HomePage";
-import CartPage from "./pages/CartPage";
+import { HomePage } from "./pages/HomePage";
 import Footer from "./components/Footer";
-import Sidebar from "./components/Sidebar";
+import { Sidebar } from "./components/Sidebar";
 import Box from "@mui/material/Box";
-import OrderPage from "./pages/OrderPage";
-import SuccessfulOrderPage from "./pages/SuccessfulOrderPage";
-import PickupsPage from "./pages/PickupsPage";
-import ContactUsPage from "./pages/ContactUsPage";
-import AdminPage from "./pages/AdminPage";
-import { useRemoveNonExistingCartItems } from "./hooks/useRemoveNonExistingCartItems";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
+import { he } from "date-fns/locale";
 
-function App() {
-
-  useRemoveNonExistingCartItems();
+export const App: React.FC = () => {
   return (
-    <Box
-      sx={{
-        display: "flex",
-        flexDirection: "column",
-        height: "100vh",
-      }}
-    >
-      <Router>
-        <Sidebar />
-        <Box sx={{ flex: 1, marginTop: "4rem" }}>
-          <Routes>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/product/:kind/:name" element={<ProductPage />} />
-            <Route path="/checkout" element={<CheckoutPage />} />
-            <Route path="/cart" element={<CartPage />} />
-            <Route path="/order/:id" element={<OrderPage />} />
-            <Route path="/success/:id" element={<SuccessfulOrderPage />} />
-            <Route path="/pickups" element={<PickupsPage />} />
-            <Route path="/contact" element={<ContactUsPage />} />
-            <Route path="/admin" element={<AdminPage />} />
-          </Routes>
-        </Box>
-        <Footer />
-      </Router>
-    </Box>
+    <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={he}>
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          height: "100vh",
+        }}
+      >
+        <Router>
+          <Sidebar />
+          <Box sx={{ flex: 1, marginTop: "4rem" }}>
+            <Routes>
+              <Route path="/" element={<HomePage />} />
+            </Routes>
+          </Box>
+          <Footer />
+        </Router>
+      </Box>
+    </LocalizationProvider>
   );
-}
-
-export default App;
+};
