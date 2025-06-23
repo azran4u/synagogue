@@ -1,5 +1,5 @@
 import { HebrewDate, HebrewDateDto } from "./HebrewDate";
-import { AliyaEvent, AliyaEventDto } from "./PrayerEvent";
+import { AliyaEvent, AliyaEventDto } from "./AliyaEvent";
 import { v4 as uuidv4 } from "uuid";
 // DTO interface for Firestore serialization
 

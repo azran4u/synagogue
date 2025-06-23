@@ -77,7 +77,13 @@ export const AppSideBar: React.FC<AppSideBarProps> = ({
           <SidebarItem text="זמני תפילות" onClick={() => onLinkClick("/")} />
           <WithLogin>
             <SidebarItem
-              text="כרטיס מתפלל"
+              text="כרטיס התפילה שלי"
+              onClick={() => onLinkClick("/prayer-card")}
+            />
+          </WithLogin>
+          <WithLogin>
+            <SidebarItem
+              text="כרטיס מתפלל חדש"
               onClick={() => onLinkClick("/new-prayer")}
             />
           </WithLogin>

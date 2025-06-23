@@ -1,80 +1,77 @@
-import React, { useState } from 'react';
-import { Box, Button, IconButton, TextField, Typography } from '@mui/material';
-import DeleteIcon from '@mui/icons-material/Delete';
+import React from "react";
+import {
+  Typography,
+  List,
+  ListItem,
+  ListItemText,
+  Box,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
+} from "@mui/material";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import { Prayer } from "../model/Prayer";
+import { AliyaEventsList } from "./AliyaEventsList";
 
 interface ChildrenListProps {
-  children: string[];
-  onChildrenChange: (children: string[]) => void;
+  children: Prayer[];
 }
 
-export const ChildrenList: React.FC<ChildrenListProps> = ({
-  children,
-  onChildrenChange
-}) => {
-  const [newChild, setNewChild] = useState('');
-
-  const handleAddChild = () => {
-    if (newChild.trim()) {
-      onChildrenChange([...children, newChild.trim()]);
-      setNewChild('');
-    }
-  };
-
-  const handleRemoveChild = (index: number) => {
-    const newChildren = children.filter((_, i) => i !== index);
-    onChildrenChange(newChildren);
-  };
+export const ChildrenList: React.FC<ChildrenListProps> = ({ children }) => {
+  if (!children || children.length === 0) {
+    return (
+      <Typography
+        variant="body2"
+        color="text.secondary"
+        sx={{ fontStyle: "italic" }}
+      >
+        אין ילדים רשומים
+      </Typography>
+    );
+  }
 
   return (
-    <Box>
-      <Typography variant="subtitle1" gutterBottom>
-        ילדים
-      </Typography>
-      
+    <List dense>
       {children.map((child, index) => (
-        <Box
+        <ListItem
           key={index}
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 1,
-            mb: 1
-          }}
+          sx={{ px: 0, flexDirection: "column", alignItems: "stretch" }}
         >
-          <TextField
-            value={child}
-            disabled
-            fullWidth
-            size="small"
-            dir="rtl"
-          />
-          <IconButton
-            onClick={() => handleRemoveChild(index)}
-            color="error"
-            size="small"
-          >
-            <DeleteIcon />
-          </IconButton>
-        </Box>
-      ))}
+          <Box sx={{ width: "100%" }}>
+            <ListItemText
+              primary={`${child.firstName} ${child.lastName}`}
+              secondary={
+                child.hebrewBirthDate && (
+                  <Typography variant="caption">
+                    תאריך לידה: {child.hebrewBirthDate.toString()}
+                  </Typography>
+                )
+              }
+            />
 
-      <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
-        <TextField
-          value={newChild}
-          onChange={(e) => setNewChild(e.target.value)}
-          placeholder="שם הילד/ה"
-          size="small"
-          fullWidth
-          dir="rtl"
-        />
-        <Button
-          onClick={handleAddChild}
-          variant="outlined"
-          disabled={!newChild.trim()}
-        >
-          הוסף
-        </Button>
-      </Box>
-    </Box>
+            {child.aliyaHistory && child.aliyaHistory.length > 0 && (
+              <Accordion
+                sx={{ mt: 1, boxShadow: "none", border: "1px solid #e0e0e0" }}
+              >
+                <AccordionSummary
+                  expandIcon={<ExpandMoreIcon />}
+                  sx={{
+                    minHeight: "40px",
+                    "& .MuiAccordionSummary-content": { margin: "8px 0" },
+                  }}
+                >
+                  <Typography variant="body2" color="primary">
+                    היסטוריית עליות ({child.aliyaHistory.length})
+                  </Typography>
+                </AccordionSummary>
+                <AccordionDetails sx={{ pt: 0 }}>
+                  <AliyaEventsList events={child.aliyaHistory} title="עליות" />
+                </AccordionDetails>
+              </Accordion>
+            )}
+          </Box>
+        </ListItem>
+      ))}
+    </List>
   );
-}; 
+};

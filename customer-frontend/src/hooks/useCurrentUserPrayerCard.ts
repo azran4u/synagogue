@@ -3,5 +3,5 @@ import { usePrayerCardById } from "./usePrayerCardById";
 
 export function useCurrentUserPrayerCard() {
   const { user } = useAuth();
-  return usePrayerCardById(user?.uid);
+  return usePrayerCardById(user?.email);
 }

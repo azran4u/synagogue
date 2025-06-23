@@ -1,6 +1,6 @@
 export enum UserRole {
   REGULAR_PRAYER = "regular_prayer",
-  GABAY = "gabay"
+  GABAY = "gabay",
 }
 
 export interface User {
@@ -12,4 +12,4 @@ export interface User {
   photoURL?: string;
   createdAt: Date;
   lastLoginAt: Date;
-} 
+}

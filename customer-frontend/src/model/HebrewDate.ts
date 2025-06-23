@@ -105,6 +105,9 @@ export class HebrewDate {
     }
   }
 
+  toString(): string {
+    return this._hDate.renderGematriya();
+  }
   // Convert to plain object (for backward compatibility)
   toDto(): HebrewDateDto {
     return {

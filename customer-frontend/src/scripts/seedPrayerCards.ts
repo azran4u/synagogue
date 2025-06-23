@@ -2,7 +2,7 @@ import { prayerCardsSrevice } from "../services/prayerCardsSrevice";
 import { PrayerCard } from "../model/PrayerCard";
 import { Prayer } from "../model/Prayer";
 import { PrayerEvent, PrayerEventType } from "../model/PrayerEvent";
-import { AliyaEvent, AliyaEventType } from "../model/PrayerEvent";
+import { AliyaEvent, AliyaEventType } from "../model/AliyaEvent";
 import { HebrewDate } from "../model/HebrewDate";
 
 // Hebrew names for realistic data
@@ -208,17 +208,32 @@ function generateRandomEvents(): PrayerEvent[] {
   return events;
 }
 
+// Generate random aliya
+function generateRandomAliya(): AliyaEvent[] {
+  const aliya: AliyaEvent[] = [];
+  const numAliya = getRandomNumber(0, 5); // 0-5 aliya per prayer card
+
+  for (let i = 0; i < numAliya; i++) {
+    const randomAliyaType = getRandomItem(Object.values(AliyaEventType));
+    const date = getRandomHebrewDate();
+    const aliyaEvent = AliyaEvent.create(randomAliyaType, date);
+    aliya.push(aliyaEvent);
+  }
+  return aliya;
+}
+
 // Generate random children
 function generateRandomChildren(): Prayer[] {
   const children: Prayer[] = [];
-  const numChildren = getRandomNumber(0, 4); // 0-4 children per prayer card
+  const numChildren = getRandomNumber(2, 4); // 0-4 children per prayer card
 
   for (let i = 0; i < numChildren; i++) {
     const firstName = getRandomItem(HEBREW_FIRST_NAMES);
     const lastName = getRandomItem(HEBREW_LAST_NAMES);
     const hebrewBirthDate = getRandomHebrewDate(5770, 5784); // Children born in recent years
+    const aliya = generateRandomAliya();
 
-    const child = Prayer.create(firstName, lastName, hebrewBirthDate);
+    const child = Prayer.create(firstName, lastName, hebrewBirthDate, aliya);
     children.push(child);
   }
 
@@ -234,12 +249,14 @@ function generatePrayerCard(): PrayerCard {
 
   const events = generateRandomEvents();
   const children = generateRandomChildren();
-
+  const aliya = generateRandomAliya();
   // Create the main prayer
-  const prayer = Prayer.create(firstName, lastName, hebrewBirthDate);
+  const prayer = Prayer.create(firstName, lastName, hebrewBirthDate, aliya);
 
   // Create a PrayerCard instance
-  return PrayerCard.create(prayer, events, children, email);
+  const prayerCard = PrayerCard.create(prayer, events, children, email);
+  prayerCard.id = email;
+  return prayerCard;
 }
 
 // Clear existing prayer cards
@@ -307,6 +324,11 @@ export async function runSeed(): Promise<void> {
     ? parseInt(process.env.NUM_PRAYER_CARDS)
     : 50;
   await seedPrayerCards(numCards);
+
+  const email = "azran4u@gmail.com";
+  const prayerCard = generatePrayerCard();
+  prayerCard.id = email;
+  await prayerCardsSrevice.insertWithId(prayerCard);
 }
 
 // Run if this file is executed directly
