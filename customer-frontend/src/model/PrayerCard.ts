@@ -1,3 +1,4 @@
+import { Mapper } from "../services/genericService";
 import { Prayer, PrayerDto } from "./Prayer";
 import { PrayerEvent, PrayerEventDto } from "./PrayerEvent";
 import { v4 as uuidv4 } from "uuid";
@@ -130,3 +131,8 @@ export class PrayerCard {
     );
   }
 }
+
+export const prayerCardMapper: Mapper<PrayerCard, PrayerCardDto> = {
+  fromDto: PrayerCard.fromDto,
+  toDto: (entity: PrayerCard) => entity.toDto(),
+};

@@ -192,7 +192,7 @@ function generateAddress(): string {
 // Generate random events
 function generateRandomEvents(): PrayerEvent[] {
   const events: PrayerEvent[] = [];
-  const numEvents = getRandomNumber(0, 5); // 0-5 events per prayer card
+  const numEvents = getRandomNumber(1, 5); // 0-5 events per prayer card
 
   for (let i = 0; i < numEvents; i++) {
     const eventType = getRandomItem(Object.values(PrayerEventType));
@@ -211,7 +211,7 @@ function generateRandomEvents(): PrayerEvent[] {
 // Generate random aliya
 function generateRandomAliya(): AliyaEvent[] {
   const aliya: AliyaEvent[] = [];
-  const numAliya = getRandomNumber(0, 5); // 0-5 aliya per prayer card
+  const numAliya = getRandomNumber(2, 5); // 0-5 aliya per prayer card
 
   for (let i = 0; i < numAliya; i++) {
     const randomAliyaType = getRandomItem(Object.values(AliyaEventType));
@@ -292,7 +292,10 @@ async function seedPrayerCards(numCards: number = 50): Promise<void> {
     for (let i = 0; i < numCards; i++) {
       const prayerCard = generatePrayerCard();
 
-      const promise = prayerCardsSrevice.insertWithId(prayerCard);
+      const promise = prayerCardsSrevice.insertWithId(
+        prayerCard.id,
+        prayerCard
+      );
       promises.push(promise);
 
       if ((i + 1) % 10 === 0) {
@@ -320,15 +323,16 @@ async function seedPrayerCards(numCards: number = 50): Promise<void> {
 
 // Main function to run the seed
 export async function runSeed(): Promise<void> {
-  const numCards = process.env.NUM_PRAYER_CARDS
-    ? parseInt(process.env.NUM_PRAYER_CARDS)
-    : 50;
-  await seedPrayerCards(numCards);
+  //   const numCards = process.env.NUM_PRAYER_CARDS
+  //     ? parseInt(process.env.NUM_PRAYER_CARDS)
+  //     : 50;
+  //   await seedPrayerCards(numCards);
 
+  await clearExistingPrayerCards();
   const email = "azran4u@gmail.com";
   const prayerCard = generatePrayerCard();
   prayerCard.id = email;
-  await prayerCardsSrevice.insertWithId(prayerCard);
+  await prayerCardsSrevice.insertWithId(prayerCard.id, prayerCard);
 }
 
 // Run if this file is executed directly

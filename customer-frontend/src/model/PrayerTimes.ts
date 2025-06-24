@@ -1,4 +1,5 @@
 import { v4 as uuidv4 } from "uuid";
+import { Mapper } from "../services/genericService";
 
 // Interface for a single prayer time entry
 export interface PrayerTimeEntry {
@@ -306,3 +307,8 @@ export class PrayerTimes {
     );
   }
 }
+
+export const prayerTimesMapper: Mapper<PrayerTimes, PrayerTimesDto> = {
+  fromDto: PrayerTimes.fromDto,
+  toDto: (entity: PrayerTimes) => entity.toDto(),
+};
