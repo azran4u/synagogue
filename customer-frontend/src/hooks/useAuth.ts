@@ -41,11 +41,5 @@ export function useAuth() {
     }
   }, [user, fetchToken]);
 
-  useEffect(() => {
-    if (user) {
-      console.log(user);
-    }
-  }, [user]);
-  
   return { isLoading, login, logout, error, isLoggedIn, user, token };
 }

@@ -4,8 +4,8 @@ import {
   List,
   ListItem,
   ListItemText,
-  Chip,
   Box,
+  Chip,
 } from "@mui/material";
 import { AliyaEvent } from "../model/AliyaEvent";
 
@@ -33,28 +33,31 @@ export const AliyaEventsList: React.FC<AliyaEventsListProps> = ({
   return (
     <List dense>
       {events.map((event, index) => (
-        <ListItem key={index} sx={{ px: 0 }}>
-          <ListItemText
-            primary={event.type}
-            secondary={
-              <Box>
-                {event.date && (
-                  <Typography variant="caption" display="block">
-                    תאריך: {event.date.toString()}
-                  </Typography>
-                )}
-                {event.description && (
-                  <Typography variant="caption" display="block">
-                    תיאור: {event.description}
-                  </Typography>
-                )}
+        <ListItem
+          key={index}
+          sx={{ px: 0, flexDirection: "column", alignItems: "stretch" }}
+        >
+          <Box sx={{ width: "100%" }}>
+            <ListItemText primary={event.type} />
+
+            <Box sx={{ mt: 1, ml: 2 }}>
+              {event.date && (
+                <Typography variant="caption" display="block">
+                  תאריך: {event.date.toString()}
+                </Typography>
+              )}
+              {event.description && (
+                <Typography variant="caption" display="block">
+                  תיאור: {event.description}
+                </Typography>
+              )}
+              <Box sx={{ mt: 1, display: "flex", gap: 1, flexWrap: "wrap" }}>
                 {event.isTorahReading && (
                   <Chip
                     label="קריאת תורה"
                     size="small"
                     color="primary"
                     variant="outlined"
-                    sx={{ mt: 0.5 }}
                   />
                 )}
                 {event.isSpecialAliya && (
@@ -63,12 +66,11 @@ export const AliyaEventsList: React.FC<AliyaEventsListProps> = ({
                     size="small"
                     color="secondary"
                     variant="outlined"
-                    sx={{ mt: 0.5 }}
                   />
                 )}
               </Box>
-            }
-          />
+            </Box>
+          </Box>
         </ListItem>
       ))}
     </List>

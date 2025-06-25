@@ -66,19 +66,32 @@ const PrayerTimesPage: React.FC = () => {
 
       {/* Prayer Times List */}
       <Box
-        display="grid"
-        gridTemplateColumns={{
-          xs: "1fr",
-          md: "repeat(2, 1fr)",
-          lg: "repeat(3, 1fr)",
-        }}
+        display="flex"
+        flexWrap="wrap"
+        justifyContent="center"
         gap={3}
+        sx={{
+          maxWidth: "1200px",
+          mx: "auto",
+        }}
       >
         {prayerTimes.map((prayerTime: PrayerTimes) => (
           <Card
             elevation={3}
             key={prayerTime.id}
-            sx={{ height: "fit-content" }}
+            sx={{
+              height: "fit-content",
+              width: {
+                xs: "100%",
+                md: "calc(50% - 12px)",
+                lg: "calc(33.333% - 16px)",
+              },
+              minWidth: {
+                xs: "100%",
+                md: "300px",
+                lg: "280px",
+              },
+            }}
           >
             <CardContent>
               {/* Header */}

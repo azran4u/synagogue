@@ -20,14 +20,14 @@ CURRENT_NODE_VERSION=$(nvm current)
 
 function build-react-app() {
   echo "Building React app"
-  nvm use v18.19.1
+  nvm use 20
   npm install
   npm run build
 }
 
 function firebase-cli-node() {
   echo "Deploying to Firebase"
-  nvm use v18.19.1
+  nvm use 20
 }
 
 # if the service name is "frontend", deploy the frontend service
@@ -51,4 +51,4 @@ if [ "$SERVICE_NAME" == "admin" ]; then
 fi
 
 cd $CWD
-nvm use $CURRENT_NODE_VERSION
+nvm use 20

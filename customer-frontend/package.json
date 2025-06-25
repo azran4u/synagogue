@@ -9,7 +9,9 @@
     "preview": "vite preview",
     "seed": "node scripts/seed.js",
     "seed:prayer-cards": "tsx src/scripts/seedPrayerCards.ts",
-    "seed:prayer-times": "tsx src/scripts/seedPrayerTimes.ts"
+    "seed:prayer-times": "tsx src/scripts/seedPrayerTimes.ts",
+    "seed:tora-lessons": "tsx src/scripts/seedToraLessons.ts",
+    "seed:financial-reports": "tsx src/scripts/seedFinancialReports.ts"
   },
   "dependencies": {
     "@date-io/core": "^3.2.0",

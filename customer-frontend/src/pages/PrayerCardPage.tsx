@@ -18,7 +18,6 @@ import PersonIcon from "@mui/icons-material/Person";
 import EventIcon from "@mui/icons-material/Event";
 import ChildCareIcon from "@mui/icons-material/ChildCare";
 import EmailIcon from "@mui/icons-material/Email";
-import { AliyaEvent } from "../model/AliyaEvent";
 import { PrayerEvent } from "../model/PrayerEvent";
 import { HebrewDate } from "../model/HebrewDate";
 
@@ -180,7 +179,7 @@ const PrayerCardContent: React.FC = () => {
   );
 };
 
-export const PrayerCardPage: React.FC = () => {
+export default () => {
   return (
     <WithLogin>
       <PrayerCardContent />

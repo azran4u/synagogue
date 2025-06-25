@@ -1,5 +1,20 @@
 import React, { useMemo } from "react";
-import { Drawer, ListItem, ListItemText, useTheme, Box } from "@mui/material";
+import {
+  Drawer,
+  ListItem,
+  ListItemText,
+  ListItemIcon,
+  useTheme,
+  Box,
+} from "@mui/material";
+import {
+  AttachMoney as DonationsIcon,
+  Book as ToraLessonsIcon,
+  AccessTime as PrayerTimesIcon,
+  Person as PrayerCardIcon,
+  Assessment as FinancialReportsIcon,
+  Logout as LogoutIcon,
+} from "@mui/icons-material";
 import { Logo } from "./Logo";
 import { useMobile } from "../hooks/useMobile";
 import { WithLogin } from "./WithLogin";
@@ -7,9 +22,10 @@ import { WithLogin } from "./WithLogin";
 interface SidebarItemProps {
   text: string;
   onClick: () => void;
+  icon: React.ReactNode;
 }
 
-const SidebarItem: React.FC<SidebarItemProps> = ({ text, onClick }) => {
+const SidebarItem: React.FC<SidebarItemProps> = ({ text, onClick, icon }) => {
   const theme = useTheme();
   return (
     <ListItem
@@ -21,6 +37,11 @@ const SidebarItem: React.FC<SidebarItemProps> = ({ text, onClick }) => {
         },
       }}
     >
+      <ListItemIcon
+        sx={{ color: theme.palette.primary.contrastText, minWidth: 40 }}
+      >
+        {icon}
+      </ListItemIcon>
       <ListItemText primary={text} onClick={onClick} />
     </ListItem>
   );
@@ -41,7 +62,7 @@ export const AppSideBar: React.FC<AppSideBarProps> = ({
 }) => {
   const theme = useTheme();
   const isMobile = useMobile();
-  const drawerWidth = useMemo(() => (isMobile ? "35%" : "20%"), [isMobile]);
+  const drawerWidth = useMemo(() => (isMobile ? "60%" : "20%"), [isMobile]);
 
   return (
     <Drawer
@@ -73,27 +94,40 @@ export const AppSideBar: React.FC<AppSideBarProps> = ({
           alignItems={"center"}
         >
           <Logo />
-          <SidebarItem text="שיעורי תורה" onClick={() => onLinkClick("/")} />
+          <SidebarItem
+            text="תרומות"
+            onClick={() => onLinkClick("/donations")}
+            icon={<DonationsIcon />}
+          />
+          <SidebarItem
+            text="שיעורי תורה"
+            onClick={() => onLinkClick("/tora-lessons")}
+            icon={<ToraLessonsIcon />}
+          />
           <SidebarItem
             text="זמני תפילות"
             onClick={() => onLinkClick("/prayer-times")}
+            icon={<PrayerTimesIcon />}
           />
           <WithLogin>
             <SidebarItem
               text="כרטיס התפילה שלי"
               onClick={() => onLinkClick("/prayer-card")}
+              icon={<PrayerCardIcon />}
             />
           </WithLogin>
+          <SidebarItem
+            text="דוחות כספיים"
+            onClick={() => onLinkClick("/financial-reports")}
+            icon={<FinancialReportsIcon />}
+          />
           <WithLogin>
             <SidebarItem
-              text="כרטיס מתפלל חדש"
-              onClick={() => onLinkClick("/new-prayer")}
+              text="התנתק"
+              onClick={onLogout}
+              icon={<LogoutIcon />}
             />
           </WithLogin>
-          <WithLogin>
-            <SidebarItem text="התנתק" onClick={onLogout} />
-          </WithLogin>
-          <SidebarItem text="צור קשר" onClick={() => onLinkClick("/contact")} />
         </Box>
       </Box>
     </Drawer>
