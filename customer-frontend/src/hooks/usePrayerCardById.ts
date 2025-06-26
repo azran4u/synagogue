@@ -3,16 +3,14 @@ import { PrayerCard } from "../model/PrayerCard";
 import { prayerCardsSrevice } from "../services/prayerCardsSrevice";
 
 export function usePrayerCardById(id?: string | null) {
-  if (!id) return { isLoading: false, card: null };
   const {
     isFetching: isLoading,
     data: card,
     error,
-  } = useQuery<PrayerCard>({
+  } = useQuery<PrayerCard | null>({
     queryKey: ["prayerCard", id],
-    queryFn: async () => prayerCardsSrevice.getById(id),
-    staleTime: 0,
-    gcTime: 0,
+    queryFn: async () => prayerCardsSrevice.getById(id!),
+    enabled: !!id,
   });
 
   return { isLoading, card, error };

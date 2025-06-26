@@ -11,12 +11,13 @@ export const Sidebar: React.FC = () => {
   const isSidebarOpen = useAppSelector(selectSidebarIsOpen);
   const dispatch = useDispatch();
   const handleDrawerToggle = () => dispatch(sidebarActions.toggle());
+  const closeDrawer = () => dispatch(sidebarActions.closeSidebar());
   const { logout } = useAuth();
   const navigate = useNavigate();
 
   const handleLinkClick = (path: string) => {
     navigate(path);
-    handleDrawerToggle();
+    closeDrawer();
   };
 
   const handleLogout = () => {

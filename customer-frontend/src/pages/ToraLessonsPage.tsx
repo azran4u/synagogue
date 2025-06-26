@@ -30,7 +30,7 @@ import { useToraLessons } from "../hooks/useToraLessons";
 import { HebrewDate } from "../model/HebrewDate";
 
 const ToraLessonsPage: React.FC = () => {
-  const { data: collections, isLoading, error } = useToraLessons();
+  const { data: toraLessons, isLoading, error } = useToraLessons();
 
   if (isLoading) {
     return (
@@ -55,7 +55,7 @@ const ToraLessonsPage: React.FC = () => {
     );
   }
 
-  if (!collections || collections.length === 0) {
+  if (!toraLessons || toraLessons.length === 0) {
     return (
       <Box p={3}>
         <Typography variant="h4" gutterBottom align="center">
@@ -87,7 +87,7 @@ const ToraLessonsPage: React.FC = () => {
         }}
         gap={3}
       >
-        {collections.map((collection: ToraLessonsCollection) => (
+        {toraLessons.map((collection: ToraLessonsCollection) => (
           <Card
             elevation={3}
             key={collection.id}

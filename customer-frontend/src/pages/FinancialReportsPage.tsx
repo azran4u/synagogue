@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import {
   Box,
   Typography,
@@ -8,10 +8,6 @@ import {
   CircularProgress,
   Alert,
   Divider,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemIcon,
   Button,
   Link,
 } from "@mui/material";
@@ -29,6 +25,17 @@ import { useFinancialReports } from "../hooks/useFinancialReports";
 
 const FinancialReportsPage: React.FC = () => {
   const { data: reports, isLoading, error } = useFinancialReports();
+
+  // Sort reports by publication date (newest first)
+  const sortedReports = useMemo(() => {
+    return (
+      reports?.sort(
+        (a, b) =>
+          b.publicationDate.toGregorianDate().getTime() -
+          a.publicationDate.toGregorianDate().getTime()
+      ) || []
+    );
+  }, [reports]);
 
   if (isLoading) {
     return (
@@ -65,13 +72,6 @@ const FinancialReportsPage: React.FC = () => {
       </Box>
     );
   }
-
-  // Sort reports by publication date (newest first)
-  const sortedReports = reports.sort(
-    (a, b) =>
-      b.publicationDate.toGregorianDate().getTime() -
-      a.publicationDate.toGregorianDate().getTime()
-  );
 
   return (
     <Box p={3}>

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import {
   Box,
   Card,
@@ -18,11 +18,17 @@ import PersonIcon from "@mui/icons-material/Person";
 import EventIcon from "@mui/icons-material/Event";
 import ChildCareIcon from "@mui/icons-material/ChildCare";
 import EmailIcon from "@mui/icons-material/Email";
-import { PrayerEvent } from "../model/PrayerEvent";
 import { HebrewDate } from "../model/HebrewDate";
 
 const PrayerCardContent: React.FC = () => {
   const { card: prayerCard, isLoading, error } = useCurrentUserPrayerCard();
+
+  // Separate aliya events from prayer events
+  const aliyaEvents = useMemo(
+    () => prayerCard?.prayer.aliyaHistory || [],
+    [prayerCard]
+  );
+  const prayerEvents = useMemo(() => prayerCard?.events || [], [prayerCard]);
 
   // Show loading state
   if (isLoading) {
@@ -53,10 +59,6 @@ const PrayerCardContent: React.FC = () => {
       </Box>
     );
   }
-
-  // Separate aliya events from prayer events
-  const aliyaEvents = prayerCard.prayer.aliyaHistory;
-  const prayerEvents = prayerCard.events;
 
   return (
     <Box sx={{ p: 3, maxWidth: 1200, mx: "auto" }}>

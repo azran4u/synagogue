@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { prayerTimesService } from "../services/prayerTimesService";
 import { PrayerTimes } from "../model/PrayerTimes";
 
@@ -6,6 +6,7 @@ import { PrayerTimes } from "../model/PrayerTimes";
 export const usePrayerTimes = () => {
   return useQuery<PrayerTimes[]>({
     queryKey: ["prayerTimes"],
-    queryFn: () => prayerTimesService.getAll(),
+    queryFn: async () => prayerTimesService.getAll(),
+    placeholderData: [],
   });
 };

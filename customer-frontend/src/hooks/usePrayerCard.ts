@@ -6,7 +6,7 @@ export function usePrayerCards() {
   const { isLoading, data: products } = useQuery<PrayerCard[]>({
     queryKey: ["prayerCards"],
     queryFn: async () => prayerCardsSrevice.getAll(),
-    initialData: [],
+    placeholderData: [],
   });
 
   return { isLoading, products };
