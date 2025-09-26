@@ -16,7 +16,6 @@ export const Sidebar: React.FC = () => {
   const navigate = useNavigate();
 
   const handleLinkClick = (path: string) => {
-    navigate(path);
     closeDrawer();
   };
 

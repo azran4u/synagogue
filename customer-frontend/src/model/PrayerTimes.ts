@@ -3,187 +3,143 @@ import { Mapper } from "../services/genericService";
 
 // Interface for a single prayer time entry
 export interface PrayerTimeEntry {
-  label: string;
-  time?: string; // HH:mm format, optional
-}
-
-// Interface for a section of prayer times
-export interface PrayerTimeSection {
-  id: string;
   title: string;
-  times: PrayerTimeEntry[];
+  hour: string;
+  displayOrder: number;
+  enabled: boolean;
+  notes?: string;
 }
 
 // Interface for the complete prayer times model
 export interface PrayerTimes {
   id: string;
   title: string;
-  sections: PrayerTimeSection[];
+  displayOrder: number;
+  enabled: boolean;
+  notes?: string;
+  times: PrayerTimeEntry[];
   createdAt: Date;
   updatedAt: Date;
 }
 
 // DTO interfaces for Firestore serialization
 export interface PrayerTimeEntryDto {
-  label: string;
-  time?: string;
-}
-
-export interface PrayerTimeSectionDto {
-  id: string;
   title: string;
-  times: PrayerTimeEntryDto[];
+  hour: string;
+  displayOrder: number;
+  enabled: boolean;
+  notes?: string;
 }
 
 export interface PrayerTimesDto {
   id: string;
   title: string;
-  sections: PrayerTimeSectionDto[];
+  displayOrder: number;
+  enabled: boolean;
+  notes?: string;
+  times: PrayerTimeEntryDto[];
   createdAt: number;
   updatedAt: number;
 }
 
 // Prayer Time Entry class
 export class PrayerTimeEntry {
-  public label: string;
-  public time?: string;
+  public title: string;
+  public hour: string;
+  public displayOrder: number;
+  public enabled: boolean;
+  public notes?: string;
 
-  constructor(label: string, time?: string) {
-    this.label = label;
-    this.time = time;
+  constructor(
+    title: string,
+    hour: string,
+    displayOrder: number = 1,
+    enabled: boolean = true,
+    notes?: string
+  ) {
+    this.title = title;
+    this.hour = hour;
+    this.displayOrder = displayOrder;
+    this.enabled = enabled;
+    this.notes = notes;
   }
 
   // Convert to DTO for Firestore storage
   toDto(): PrayerTimeEntryDto {
     return {
-      label: this.label,
-      time: this.time,
+      title: this.title,
+      hour: this.hour,
+      displayOrder: this.displayOrder,
+      enabled: this.enabled,
+      notes: this.notes,
     };
   }
 
   // Create from DTO from Firestore
   static fromDto(dto: PrayerTimeEntryDto): PrayerTimeEntry {
-    return new PrayerTimeEntry(dto.label, dto.time);
+    return new PrayerTimeEntry(
+      dto.title,
+      dto.hour,
+      dto.displayOrder,
+      dto.enabled,
+      dto.notes
+    );
   }
 
   // Create a new PrayerTimeEntry
-  static create(label: string, time?: string): PrayerTimeEntry {
-    return new PrayerTimeEntry(label, time);
+  static create(
+    title: string,
+    hour: string,
+    displayOrder: number = 1,
+    notes?: string
+  ): PrayerTimeEntry {
+    return new PrayerTimeEntry(title, hour, displayOrder, true, notes);
   }
 
-  // Check if the time is set
-  get hasTime(): boolean {
-    return !!this.time;
+  // Enable the entry
+  enable(): PrayerTimeEntry {
+    return this.update({ enabled: true });
   }
 
-  // Get formatted time (if available)
+  // Disable the entry
+  disable(): PrayerTimeEntry {
+    return this.update({ enabled: false });
+  }
+
+  // Check if the entry is enabled
+  get isEnabled(): boolean {
+    return this.enabled;
+  }
+
+  // Check if the entry has notes
+  get hasNotes(): boolean {
+    return !!(this.notes && this.notes.trim().length > 0);
+  }
+
+  // Get formatted time
   get formattedTime(): string {
-    return this.time || "לא נקבע";
+    return this.hour || "לא נקבע";
   }
 
   // Update the entry
   update(updates: Partial<PrayerTimeEntry>): PrayerTimeEntry {
     return new PrayerTimeEntry(
-      updates.label ?? this.label,
-      updates.time ?? this.time
+      updates.title ?? this.title,
+      updates.hour ?? this.hour,
+      updates.displayOrder ?? this.displayOrder,
+      updates.enabled ?? this.enabled,
+      updates.notes ?? this.notes
     );
   }
 
   // Clone the entry
   clone(): PrayerTimeEntry {
-    return new PrayerTimeEntry(this.label, this.time);
-  }
-}
-
-// Prayer Time Section class
-export class PrayerTimeSection {
-  public id: string;
-  public title: string;
-  public times: PrayerTimeEntry[];
-
-  constructor(id: string, title: string, times: PrayerTimeEntry[] = []) {
-    this.id = id;
-    this.title = title;
-    this.times = times;
-  }
-
-  // Convert to DTO for Firestore storage
-  toDto(): PrayerTimeSectionDto {
-    return {
-      id: this.id,
-      title: this.title,
-      times: this.times.map(time => time.toDto()),
-    };
-  }
-
-  // Create from DTO from Firestore
-  static fromDto(dto: PrayerTimeSectionDto): PrayerTimeSection {
-    return new PrayerTimeSection(
-      dto.id,
-      dto.title,
-      dto.times.map(timeDto => PrayerTimeEntry.fromDto(timeDto))
-    );
-  }
-
-  // Create a new PrayerTimeSection without ID (for creation)
-  static create(
-    title: string,
-    times: PrayerTimeEntry[] = []
-  ): PrayerTimeSection {
-    return new PrayerTimeSection(uuidv4(), title, times);
-  }
-
-  // Add a prayer time entry
-  addTimeEntry(entry: PrayerTimeEntry): PrayerTimeSection {
-    const updatedTimes = [...this.times, entry];
-    return this.update({ times: updatedTimes });
-  }
-
-  // Remove a prayer time entry by index
-  removeTimeEntry(index: number): PrayerTimeSection {
-    const updatedTimes = this.times.filter((_, i) => i !== index);
-    return this.update({ times: updatedTimes });
-  }
-
-  // Update a prayer time entry
-  updateTimeEntry(index: number, entry: PrayerTimeEntry): PrayerTimeSection {
-    const updatedTimes = [...this.times];
-    updatedTimes[index] = entry;
-    return this.update({ times: updatedTimes });
-  }
-
-  // Get times that have actual time values
-  get timesWithValues(): PrayerTimeEntry[] {
-    return this.times.filter(time => time.hasTime);
-  }
-
-  // Get times without time values
-  get timesWithoutValues(): PrayerTimeEntry[] {
-    return this.times.filter(time => !time.hasTime);
-  }
-
-  // Check if section has any times with values
-  get hasTimesWithValues(): boolean {
-    return this.timesWithValues.length > 0;
-  }
-
-  // Update the section
-  update(
-    updates: Partial<Omit<PrayerTimeSection, "id" | "createdAt">>
-  ): PrayerTimeSection {
-    return new PrayerTimeSection(
-      this.id,
-      updates.title ?? this.title,
-      updates.times ?? this.times
-    );
-  }
-
-  // Clone the section
-  clone(): PrayerTimeSection {
-    return new PrayerTimeSection(
-      this.id,
+    return new PrayerTimeEntry(
       this.title,
-      this.times.map(time => time.clone())
+      this.hour,
+      this.displayOrder,
+      this.enabled,
+      this.notes
     );
   }
 }
@@ -192,20 +148,29 @@ export class PrayerTimeSection {
 export class PrayerTimes {
   public id: string;
   public title: string;
-  public sections: PrayerTimeSection[];
+  public displayOrder: number;
+  public enabled: boolean;
+  public notes?: string;
+  public times: PrayerTimeEntry[];
   public createdAt: Date;
   public updatedAt: Date;
 
   constructor(
     id: string,
     title: string,
-    sections: PrayerTimeSection[] = [],
+    displayOrder: number = 1,
+    enabled: boolean = true,
+    notes?: string,
+    times: PrayerTimeEntry[] = [],
     createdAt: Date = new Date(),
     updatedAt: Date = new Date()
   ) {
     this.id = id;
     this.title = title;
-    this.sections = sections;
+    this.displayOrder = displayOrder;
+    this.enabled = enabled;
+    this.notes = notes;
+    this.times = times;
     this.createdAt = createdAt;
     this.updatedAt = updatedAt;
   }
@@ -215,7 +180,10 @@ export class PrayerTimes {
     return {
       id: this.id,
       title: this.title,
-      sections: this.sections.map(section => section.toDto()),
+      displayOrder: this.displayOrder,
+      enabled: this.enabled,
+      notes: this.notes,
+      times: this.times.map(time => time.toDto()),
       createdAt: this.createdAt.getTime(),
       updatedAt: this.updatedAt.getTime(),
     };
@@ -226,7 +194,10 @@ export class PrayerTimes {
     return new PrayerTimes(
       dto.id,
       dto.title,
-      dto.sections.map(sectionDto => PrayerTimeSection.fromDto(sectionDto)),
+      dto.displayOrder,
+      dto.enabled,
+      dto.notes,
+      dto.times.map(timeDto => PrayerTimeEntry.fromDto(timeDto)),
       new Date(dto.createdAt),
       new Date(dto.updatedAt)
     );
@@ -235,54 +206,74 @@ export class PrayerTimes {
   // Create a new PrayerTimes without ID (for creation)
   static create(
     title: string,
-    sections: PrayerTimeSection[] = []
+    displayOrder: number = 1,
+    notes?: string,
+    times: PrayerTimeEntry[] = []
   ): PrayerTimes {
-    return new PrayerTimes(uuidv4(), title, sections, new Date(), new Date());
-  }
-
-  // Add a section
-  addSection(section: PrayerTimeSection): PrayerTimes {
-    const updatedSections = [...this.sections, section];
-    return this.update({ sections: updatedSections });
-  }
-
-  // Remove a section by ID
-  removeSection(sectionId: string): PrayerTimes {
-    const updatedSections = this.sections.filter(
-      section => section.id !== sectionId
+    return new PrayerTimes(
+      uuidv4(),
+      title,
+      displayOrder,
+      true, // enabled by default
+      notes,
+      times,
+      new Date(),
+      new Date()
     );
-    return this.update({ sections: updatedSections });
   }
 
-  // Get section by ID
-  getSection(sectionId: string): PrayerTimeSection | undefined {
-    return this.sections.find(section => section.id === sectionId);
+  // Add a prayer time entry
+  addTimeEntry(entry: PrayerTimeEntry): PrayerTimes {
+    const updatedTimes = [...this.times, entry];
+    return this.update({ times: updatedTimes });
   }
 
-  // Update a section
-  updateSection(
-    sectionId: string,
-    updatedSection: PrayerTimeSection
-  ): PrayerTimes {
-    const updatedSections = this.sections.map(section =>
-      section.id === sectionId ? updatedSection : section
-    );
-    return this.update({ sections: updatedSections });
+  // Remove a prayer time entry by index
+  removeTimeEntry(index: number): PrayerTimes {
+    const updatedTimes = this.times.filter((_, i) => i !== index);
+    return this.update({ times: updatedTimes });
   }
 
-  // Get all times from all sections
-  getAllTimes(): PrayerTimeEntry[] {
-    return this.sections.flatMap(section => section.times);
+  // Update a prayer time entry
+  updateTimeEntry(index: number, entry: PrayerTimeEntry): PrayerTimes {
+    const updatedTimes = [...this.times];
+    updatedTimes[index] = entry;
+    return this.update({ times: updatedTimes });
   }
 
-  // Get all times with actual time values
-  getAllTimesWithValues(): PrayerTimeEntry[] {
-    return this.sections.flatMap(section => section.timesWithValues);
+  // Enable the prayer times
+  enable(): PrayerTimes {
+    return this.update({ enabled: true });
   }
 
-  // Check if any section has times with values
-  get hasAnyTimesWithValues(): boolean {
-    return this.sections.some(section => section.hasTimesWithValues);
+  // Disable the prayer times
+  disable(): PrayerTimes {
+    return this.update({ enabled: false });
+  }
+
+  // Get enabled times only
+  get enabledTimes(): PrayerTimeEntry[] {
+    return this.times.filter(time => time.enabled);
+  }
+
+  // Get disabled times only
+  get disabledTimes(): PrayerTimeEntry[] {
+    return this.times.filter(time => !time.enabled);
+  }
+
+  // Check if prayer times has any enabled times
+  get hasEnabledTimes(): boolean {
+    return this.enabledTimes.length > 0;
+  }
+
+  // Check if prayer times is enabled
+  get isEnabled(): boolean {
+    return this.enabled;
+  }
+
+  // Check if prayer times has notes
+  get hasNotes(): boolean {
+    return !!(this.notes && this.notes.trim().length > 0);
   }
 
   // Update the prayer times
@@ -290,7 +281,10 @@ export class PrayerTimes {
     return new PrayerTimes(
       this.id,
       updates.title ?? this.title,
-      updates.sections ?? this.sections,
+      updates.displayOrder ?? this.displayOrder,
+      updates.enabled ?? this.enabled,
+      updates.notes ?? this.notes,
+      updates.times ?? this.times,
       this.createdAt,
       new Date()
     );
@@ -301,7 +295,10 @@ export class PrayerTimes {
     return new PrayerTimes(
       this.id,
       this.title,
-      this.sections.map(section => section.clone()),
+      this.displayOrder,
+      this.enabled,
+      this.notes,
+      this.times.map(time => time.clone()),
       this.createdAt,
       this.updatedAt
     );

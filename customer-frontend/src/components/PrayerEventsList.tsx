@@ -41,25 +41,15 @@ export const PrayerEventsList: React.FC<PrayerEventsListProps> = ({
             <ListItemText primary={event.type} />
 
             <Box sx={{ mt: 1, ml: 2 }}>
-              {event.date && (
+              {event.hebrewDate && (
                 <Typography variant="caption" display="block">
-                  תאריך: {event.date.toString()}
+                  תאריך: {event.hebrewDate}
                 </Typography>
               )}
-              {event.description && (
+              {event.notes && (
                 <Typography variant="caption" display="block">
-                  תיאור: {event.description}
+                  הערות: {event.notes}
                 </Typography>
-              )}
-              {event.isRecurringEvent && (
-                <Box sx={{ mt: 1 }}>
-                  <Chip
-                    label="אירוע חוזר"
-                    size="small"
-                    color="primary"
-                    variant="outlined"
-                  />
-                </Box>
               )}
             </Box>
           </Box>

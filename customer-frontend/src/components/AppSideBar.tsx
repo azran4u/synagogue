@@ -14,10 +14,18 @@ import {
   Person as PrayerCardIcon,
   Assessment as FinancialReportsIcon,
   Logout as LogoutIcon,
+  Business as SynagogueIcon,
+  List as ListIcon,
+  Settings as AdminIcon,
+  Event as EventTypesIcon,
+  Group as AliyaTypesIcon,
+  Assignment as AliyaAssignmentIcon,
 } from "@mui/icons-material";
 import { Logo } from "./Logo";
 import { useMobile } from "../hooks/useMobile";
 import { WithLogin } from "./WithLogin";
+import { useIsAdmin } from "../hooks/useIsAdmin";
+import { useSynagogueNavigate } from "../hooks/useSynagogueNavigate";
 
 interface SidebarItemProps {
   text: string;
@@ -62,7 +70,9 @@ export const AppSideBar: React.FC<AppSideBarProps> = ({
 }) => {
   const theme = useTheme();
   const isMobile = useMobile();
+  const isAdmin = useIsAdmin();
   const drawerWidth = useMemo(() => (isMobile ? "60%" : "20%"), [isMobile]);
+  const navigate = useSynagogueNavigate();
 
   return (
     <Drawer
@@ -94,33 +104,76 @@ export const AppSideBar: React.FC<AppSideBarProps> = ({
           alignItems={"center"}
         >
           <Logo />
+
           <SidebarItem
-            text="תרומות"
-            onClick={() => onLinkClick("/donations")}
-            icon={<DonationsIcon />}
+            text="בתי כנסת"
+            onClick={() => navigate("synagogues", false)}
+            icon={<ListIcon />}
           />
           <SidebarItem
             text="שיעורי תורה"
-            onClick={() => onLinkClick("/tora-lessons")}
+            onClick={() => navigate("tora-lessons")}
             icon={<ToraLessonsIcon />}
           />
           <SidebarItem
             text="זמני תפילות"
-            onClick={() => onLinkClick("/prayer-times")}
+            onClick={() => navigate("prayer-times")}
             icon={<PrayerTimesIcon />}
           />
           <WithLogin>
             <SidebarItem
-              text="כרטיס התפילה שלי"
-              onClick={() => onLinkClick("/prayer-card")}
+              text="כרטיס המתפלל שלי"
+              onClick={() => navigate("prayer-card")}
               icon={<PrayerCardIcon />}
             />
           </WithLogin>
+
           <SidebarItem
             text="דוחות כספיים"
-            onClick={() => onLinkClick("/financial-reports")}
+            onClick={() => navigate("financial-reports")}
             icon={<FinancialReportsIcon />}
           />
+          <SidebarItem
+            text="תרומות"
+            onClick={() => navigate("donations")}
+            icon={<DonationsIcon />}
+          />
+
+          {/* Admin Section */}
+          {isAdmin && (
+            <>
+              <Box
+                sx={{
+                  width: "80%",
+                  height: "1px",
+                  backgroundColor: theme.palette.primary.contrastText,
+                  opacity: 0.3,
+                  margin: "16px auto",
+                }}
+              />
+              <SidebarItem
+                text="ניהול סוגי אירועים"
+                onClick={() => navigate("admin/prayer-event-types")}
+                icon={<EventTypesIcon />}
+              />
+              <SidebarItem
+                text="ניהול סוגי עליות"
+                onClick={() => navigate("admin/aliya-types")}
+                icon={<AliyaTypesIcon />}
+              />
+              <SidebarItem
+                text="ניהול עליות"
+                onClick={() => navigate("admin/aliya-assignment")}
+                icon={<AliyaAssignmentIcon />}
+              />
+              <SidebarItem
+                text="הגדרות מנהל"
+                onClick={() => navigate("admin/settings")}
+                icon={<AdminIcon />}
+              />
+            </>
+          )}
+
           <WithLogin>
             <SidebarItem
               text="התנתק"

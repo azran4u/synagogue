@@ -1,6 +1,7 @@
 export enum UserRole {
-  REGULAR_PRAYER = "regular_prayer",
-  GABAY = "gabay",
+  MEMBER = "member",
+  GABBAI = "gabbai",
+  ADMIN = "admin",
 }
 
 export interface User {

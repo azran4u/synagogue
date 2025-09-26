@@ -42,7 +42,29 @@ export class FirestoreService<T extends WithFieldValue<DocumentData>> {
 
   public async getById(id: string) {
     const docSnap = await getDoc(this.docById(id));
-    return this.documentSnapshotToObject(docSnap);
+    if (!docSnap.exists()) {
+      console.error(
+        `Document ${id} not found in collection ${this.collectionName}`
+      );
+      throw new Error(
+        `Document ${id} not found in collection ${this.collectionName}`
+      );
+    }
+    const data = this.documentSnapshotToObject(docSnap);
+    if (!data) {
+      console.error(
+        `Document ${id} is empty in collection ${this.collectionName}`
+      );
+      throw new Error(
+        `Document ${id} is empty in collection ${this.collectionName}`
+      );
+    }
+    return data;
+  }
+
+  public async isExists(id: string) {
+    const docSnap = await getDoc(this.docById(id));
+    return docSnap.exists();
   }
 
   public async getByQuery(

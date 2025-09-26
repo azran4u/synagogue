@@ -49,7 +49,7 @@ export const ChildrenList: React.FC<ChildrenListProps> = ({ children }) => {
               }
             />
 
-            {child.aliyaHistory && child.aliyaHistory.length > 0 && (
+            {child.aliyot && child.aliyot.length > 0 && (
               <Accordion
                 sx={{ mt: 1, boxShadow: "none", border: "1px solid #e0e0e0" }}
               >
@@ -61,11 +61,11 @@ export const ChildrenList: React.FC<ChildrenListProps> = ({ children }) => {
                   }}
                 >
                   <Typography variant="body2" color="primary">
-                    היסטוריית עליות ({child.aliyaHistory.length})
+                    היסטוריית עליות ({child.aliyot.length})
                   </Typography>
                 </AccordionSummary>
                 <AccordionDetails sx={{ pt: 0 }}>
-                  <AliyaEventsList events={child.aliyaHistory} title="עליות" />
+                  <AliyaEventsList events={child.aliyot} title="עליות" />
                 </AccordionDetails>
               </Accordion>
             )}

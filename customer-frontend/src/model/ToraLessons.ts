@@ -5,12 +5,13 @@ import { Mapper } from "../services/genericService";
 export interface ToraLesson {
   id: string;
   title: string;
-  isWeekly: boolean;
-  dayOfWeek?: number; // 0 = Sunday, 1 = Monday, etc.
-  time?: string; // HH:mm format
-  ledBy?: string;
-  topic?: string;
-  notes: string[]; // Free text notes
+  ledBy: string;
+  hour: string;
+  hebrewDate: string;
+  recurrenceType: "none" | "weekly" | "monthly";
+  displayOrder: number;
+  enabled: boolean;
+  notes?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -19,12 +20,13 @@ export interface ToraLesson {
 export interface ToraLessonDto {
   id: string;
   title: string;
-  isWeekly: boolean;
-  dayOfWeek?: number;
-  time?: string;
-  ledBy?: string;
-  topic?: string;
-  notes: string[];
+  ledBy: string;
+  hour: string;
+  hebrewDate: string;
+  recurrenceType: "none" | "weekly" | "monthly";
+  displayOrder: number;
+  enabled: boolean;
+  notes?: string;
   createdAt: number;
   updatedAt: number;
 }
@@ -33,34 +35,37 @@ export interface ToraLessonDto {
 export class ToraLesson {
   public id: string;
   public title: string;
-  public isWeekly: boolean;
-  public dayOfWeek?: number;
-  public time?: string;
-  public ledBy?: string;
-  public topic?: string;
-  public notes: string[];
+  public ledBy: string;
+  public hour: string;
+  public hebrewDate: string;
+  public recurrenceType: "none" | "weekly" | "monthly";
+  public displayOrder: number;
+  public enabled: boolean;
+  public notes?: string;
   public createdAt: Date;
   public updatedAt: Date;
 
   constructor(
     id: string,
     title: string,
-    isWeekly: boolean,
-    notes: string[] = [],
-    dayOfWeek?: number,
-    time?: string,
-    ledBy?: string,
-    topic?: string,
+    ledBy: string,
+    hour: string,
+    hebrewDate: string,
+    recurrenceType: "none" | "weekly" | "monthly" = "none",
+    displayOrder: number = 1,
+    enabled: boolean = true,
+    notes?: string,
     createdAt: Date = new Date(),
     updatedAt: Date = new Date()
   ) {
     this.id = id;
     this.title = title;
-    this.isWeekly = isWeekly;
-    this.dayOfWeek = dayOfWeek;
-    this.time = time;
     this.ledBy = ledBy;
-    this.topic = topic;
+    this.hour = hour;
+    this.hebrewDate = hebrewDate;
+    this.recurrenceType = recurrenceType;
+    this.displayOrder = displayOrder;
+    this.enabled = enabled;
     this.notes = notes;
     this.createdAt = createdAt;
     this.updatedAt = updatedAt;
@@ -71,11 +76,12 @@ export class ToraLesson {
     return {
       id: this.id,
       title: this.title,
-      isWeekly: this.isWeekly,
-      dayOfWeek: this.dayOfWeek,
-      time: this.time,
       ledBy: this.ledBy,
-      topic: this.topic,
+      hour: this.hour,
+      hebrewDate: this.hebrewDate,
+      recurrenceType: this.recurrenceType,
+      displayOrder: this.displayOrder,
+      enabled: this.enabled,
       notes: this.notes,
       createdAt: this.createdAt.getTime(),
       updatedAt: this.updatedAt.getTime(),
@@ -87,127 +93,88 @@ export class ToraLesson {
     return new ToraLesson(
       dto.id,
       dto.title,
-      dto.isWeekly,
-      dto.notes,
-      dto.dayOfWeek,
-      dto.time,
       dto.ledBy,
-      dto.topic,
+      dto.hour,
+      dto.hebrewDate,
+      dto.recurrenceType,
+      dto.displayOrder,
+      dto.enabled,
+      dto.notes,
       new Date(dto.createdAt),
       new Date(dto.updatedAt)
     );
   }
 
-  // Create a new weekly Torah lesson
-  static createWeekly(
+  // Create a new Torah lesson
+  static create(
     title: string,
-    dayOfWeek: number,
-    time: string,
-    ledBy?: string,
-    topic?: string,
-    notes: string[] = []
+    ledBy: string,
+    hour: string,
+    hebrewDate: string,
+    recurrenceType: "none" | "weekly" | "monthly" = "none",
+    displayOrder: number = 1,
+    notes?: string
   ): ToraLesson {
     return new ToraLesson(
       uuidv4(),
       title,
-      true,
-      notes,
-      dayOfWeek,
-      time,
       ledBy,
-      topic
+      hour,
+      hebrewDate,
+      recurrenceType,
+      displayOrder,
+      true, // enabled by default
+      notes
     );
   }
 
-  // Create a new one-time Torah lesson
-  static createOneTime(
-    title: string,
-    time?: string,
-    ledBy?: string,
-    topic?: string,
-    notes: string[] = []
-  ): ToraLesson {
-    return new ToraLesson(
-      uuidv4(),
-      title,
-      false,
-      notes,
-      undefined,
-      time,
-      ledBy,
-      topic
-    );
+  // Enable the lesson
+  enable(): ToraLesson {
+    return this.update({ enabled: true });
   }
 
-  // Add a note
-  addNote(note: string): ToraLesson {
-    const updatedNotes = [...this.notes, note];
-    return this.update({ notes: updatedNotes });
-  }
-
-  // Remove a note by index
-  removeNote(index: number): ToraLesson {
-    const updatedNotes = this.notes.filter((_, i) => i !== index);
-    return this.update({ notes: updatedNotes });
-  }
-
-  // Update a note
-  updateNote(index: number, note: string): ToraLesson {
-    const updatedNotes = [...this.notes];
-    updatedNotes[index] = note;
-    return this.update({ notes: updatedNotes });
+  // Disable the lesson
+  disable(): ToraLesson {
+    return this.update({ enabled: false });
   }
 
   // Check if lesson has notes
   get hasNotes(): boolean {
-    return this.notes.length > 0;
+    return !!(this.notes && this.notes.trim().length > 0);
   }
 
-  // Get number of notes
-  get notesCount(): number {
-    return this.notes.length;
-  }
-
-  // Get day of week name (Hebrew)
-  get dayOfWeekName(): string {
-    if (!this.dayOfWeek && this.dayOfWeek !== 0) return "";
-
-    const days = ["ראשון", "שני", "שלישי", "רביעי", "חמישי", "שישי", "שבת"];
-    return days[this.dayOfWeek] || "";
+  // Check if lesson is enabled
+  get isEnabled(): boolean {
+    return this.enabled;
   }
 
   // Get formatted time
   get formattedTime(): string {
-    return this.time || "לא נקבע";
+    return this.hour || "לא נקבע";
   }
 
-  // Check if lesson has time
-  get hasTime(): boolean {
-    return !!this.time;
-  }
-
-  // Check if lesson has day of week
-  get hasDayOfWeek(): boolean {
-    return this.dayOfWeek !== undefined && this.dayOfWeek !== null;
-  }
-
-  // Get lesson type description
-  get typeDescription(): string {
-    return this.isWeekly ? "שיעור שבועי" : "שיעור חד פעמי";
-  }
-
-  // Get lesson schedule description
-  get scheduleDescription(): string {
-    if (this.isWeekly) {
-      if (this.hasDayOfWeek && this.hasTime && this.time) {
-        return `${this.dayOfWeekName} ${this.time}`;
-      } else if (this.hasDayOfWeek) {
-        return this.dayOfWeekName;
-      } else if (this.hasTime && this.time) {
-        return this.time;
-      }
+  // Get recurrence type description (Hebrew)
+  get recurrenceTypeDescription(): string {
+    switch (this.recurrenceType) {
+      case "none":
+        return "חד פעמי";
+      case "weekly":
+        return "שבועי";
+      case "monthly":
+        return "חודשי";
+      default:
+        return "לא ידוע";
     }
-    return this.hasTime && this.time ? this.time : "לא נקבע";
+  }
+
+  // Check if lesson is recurring
+  get isRecurring(): boolean {
+    return this.recurrenceType !== "none";
+  }
+
+  // Check if lesson is one-time
+  get isOneTime(): boolean {
+    return this.recurrenceType === "none";
   }
 
   // Update the lesson
@@ -215,12 +182,13 @@ export class ToraLesson {
     return new ToraLesson(
       this.id,
       updates.title ?? this.title,
-      updates.isWeekly ?? this.isWeekly,
-      updates.notes ?? this.notes,
-      updates.dayOfWeek ?? this.dayOfWeek,
-      updates.time ?? this.time,
       updates.ledBy ?? this.ledBy,
-      updates.topic ?? this.topic,
+      updates.hour ?? this.hour,
+      updates.hebrewDate ?? this.hebrewDate,
+      updates.recurrenceType ?? this.recurrenceType,
+      updates.displayOrder ?? this.displayOrder,
+      updates.enabled ?? this.enabled,
+      updates.notes ?? this.notes,
       this.createdAt,
       new Date()
     );
@@ -231,12 +199,13 @@ export class ToraLesson {
     return new ToraLesson(
       this.id,
       this.title,
-      this.isWeekly,
-      [...this.notes],
-      this.dayOfWeek,
-      this.time,
       this.ledBy,
-      this.topic,
+      this.hour,
+      this.hebrewDate,
+      this.recurrenceType,
+      this.displayOrder,
+      this.enabled,
+      this.notes,
       this.createdAt,
       this.updatedAt
     );
@@ -247,7 +216,9 @@ export class ToraLesson {
 export interface ToraLessonsCollection {
   id: string;
   title: string;
-  description?: string;
+  displayOrder: number;
+  enabled: boolean;
+  notes?: string;
   lessons: ToraLesson[];
   createdAt: Date;
   updatedAt: Date;
@@ -257,7 +228,9 @@ export interface ToraLessonsCollection {
 export interface ToraLessonsCollectionDto {
   id: string;
   title: string;
-  description?: string;
+  displayOrder: number;
+  enabled: boolean;
+  notes?: string;
   lessons: ToraLessonDto[];
   createdAt: number;
   updatedAt: number;
@@ -267,7 +240,9 @@ export interface ToraLessonsCollectionDto {
 export class ToraLessonsCollection {
   public id: string;
   public title: string;
-  public description?: string;
+  public displayOrder: number;
+  public enabled: boolean;
+  public notes?: string;
   public lessons: ToraLesson[];
   public createdAt: Date;
   public updatedAt: Date;
@@ -275,14 +250,18 @@ export class ToraLessonsCollection {
   constructor(
     id: string,
     title: string,
+    displayOrder: number = 1,
+    enabled: boolean = true,
+    notes?: string,
     lessons: ToraLesson[] = [],
-    description?: string,
     createdAt: Date = new Date(),
     updatedAt: Date = new Date()
   ) {
     this.id = id;
     this.title = title;
-    this.description = description;
+    this.displayOrder = displayOrder;
+    this.enabled = enabled;
+    this.notes = notes;
     this.lessons = lessons;
     this.createdAt = createdAt;
     this.updatedAt = updatedAt;
@@ -293,7 +272,9 @@ export class ToraLessonsCollection {
     return {
       id: this.id,
       title: this.title,
-      description: this.description,
+      displayOrder: this.displayOrder,
+      enabled: this.enabled,
+      notes: this.notes,
       lessons: this.lessons.map(lesson => lesson.toDto()),
       createdAt: this.createdAt.getTime(),
       updatedAt: this.updatedAt.getTime(),
@@ -305,16 +286,29 @@ export class ToraLessonsCollection {
     return new ToraLessonsCollection(
       dto.id,
       dto.title,
+      dto.displayOrder,
+      dto.enabled,
+      dto.notes,
       dto.lessons.map(lessonDto => ToraLesson.fromDto(lessonDto)),
-      dto.description,
       new Date(dto.createdAt),
       new Date(dto.updatedAt)
     );
   }
 
   // Create a new collection
-  static create(title: string, description?: string): ToraLessonsCollection {
-    return new ToraLessonsCollection(uuidv4(), title, [], description);
+  static create(
+    title: string,
+    displayOrder: number = 1,
+    notes?: string
+  ): ToraLessonsCollection {
+    return new ToraLessonsCollection(
+      uuidv4(),
+      title,
+      displayOrder,
+      true, // enabled by default
+      notes,
+      []
+    );
   }
 
   // Add a lesson
@@ -336,29 +330,54 @@ export class ToraLessonsCollection {
     return this.lessons.find(lesson => lesson.id === lessonId);
   }
 
-  // Get weekly lessons
-  getWeeklyLessons(): ToraLesson[] {
-    return this.lessons.filter(lesson => lesson.isWeekly);
+  // Enable the collection
+  enable(): ToraLessonsCollection {
+    return this.update({ enabled: true });
+  }
+
+  // Disable the collection
+  disable(): ToraLessonsCollection {
+    return this.update({ enabled: false });
+  }
+
+  // Get enabled lessons only
+  get enabledLessons(): ToraLesson[] {
+    return this.lessons.filter(lesson => lesson.enabled);
+  }
+
+  // Get disabled lessons only
+  get disabledLessons(): ToraLesson[] {
+    return this.lessons.filter(lesson => !lesson.enabled);
+  }
+
+  // Get recurring lessons
+  get recurringLessons(): ToraLesson[] {
+    return this.lessons.filter(lesson => lesson.isRecurring);
   }
 
   // Get one-time lessons
-  getOneTimeLessons(): ToraLesson[] {
-    return this.lessons.filter(lesson => !lesson.isWeekly);
-  }
-
-  // Get lessons by day of week
-  getLessonsByDay(dayOfWeek: number): ToraLesson[] {
-    return this.lessons.filter(lesson => lesson.dayOfWeek === dayOfWeek);
-  }
-
-  // Get lessons with time
-  getLessonsWithTime(): ToraLesson[] {
-    return this.lessons.filter(lesson => lesson.hasTime);
+  get oneTimeLessons(): ToraLesson[] {
+    return this.lessons.filter(lesson => lesson.isOneTime);
   }
 
   // Get lessons with notes
-  getLessonsWithNotes(): ToraLesson[] {
+  get lessonsWithNotes(): ToraLesson[] {
     return this.lessons.filter(lesson => lesson.hasNotes);
+  }
+
+  // Check if collection is enabled
+  get isEnabled(): boolean {
+    return this.enabled;
+  }
+
+  // Check if collection has notes
+  get hasNotes(): boolean {
+    return !!(this.notes && this.notes.trim().length > 0);
+  }
+
+  // Check if collection has any enabled lessons
+  get hasEnabledLessons(): boolean {
+    return this.enabledLessons.length > 0;
   }
 
   // Update the collection
@@ -368,8 +387,10 @@ export class ToraLessonsCollection {
     return new ToraLessonsCollection(
       this.id,
       updates.title ?? this.title,
+      updates.displayOrder ?? this.displayOrder,
+      updates.enabled ?? this.enabled,
+      updates.notes ?? this.notes,
       updates.lessons ?? this.lessons,
-      updates.description ?? this.description,
       this.createdAt,
       new Date()
     );
@@ -380,8 +401,10 @@ export class ToraLessonsCollection {
     return new ToraLessonsCollection(
       this.id,
       this.title,
+      this.displayOrder,
+      this.enabled,
+      this.notes,
       this.lessons.map(lesson => lesson.clone()),
-      this.description,
       this.createdAt,
       this.updatedAt
     );

@@ -6,43 +6,43 @@ import { Mapper } from "../services/genericService";
 export interface FinancialReportDto {
   id: string;
   title: string;
-  publicationDate: HebrewDateDto;
-  pdfLink: string;
-  notes?: string;
-  publishedBy: string;
+  displayOrder: number;
+  linkToDocument: string;
+  enabled: boolean;
   createdAt: number;
-  updatedAt: number;
+  createdBy: string;
+  content: string;
 }
 
 // Financial Report class
 export class FinancialReport {
   public id: string;
   public title: string;
-  public publicationDate: HebrewDate;
-  public pdfLink: string;
-  public notes?: string;
-  public publishedBy: string;
+  public displayOrder: number;
+  public linkToDocument: string;
+  public enabled: boolean;
   public createdAt: Date;
-  public updatedAt: Date;
+  public createdBy: string;
+  public content: string;
 
   constructor(
     id: string,
     title: string,
-    publicationDate: HebrewDate,
-    pdfLink: string,
-    publishedBy: string,
-    notes?: string,
-    createdAt: Date = new Date(),
-    updatedAt: Date = new Date()
+    displayOrder: number,
+    linkToDocument: string,
+    createdBy: string,
+    content: string,
+    enabled: boolean = true,
+    createdAt: Date = new Date()
   ) {
     this.id = id;
     this.title = title;
-    this.publicationDate = publicationDate;
-    this.pdfLink = pdfLink;
-    this.notes = notes;
-    this.publishedBy = publishedBy;
+    this.displayOrder = displayOrder;
+    this.linkToDocument = linkToDocument;
+    this.createdBy = createdBy;
+    this.content = content;
+    this.enabled = enabled;
     this.createdAt = createdAt;
-    this.updatedAt = updatedAt;
   }
 
   // Convert to DTO for Firestore storage
@@ -50,12 +50,12 @@ export class FinancialReport {
     return {
       id: this.id,
       title: this.title,
-      publicationDate: this.publicationDate.toDto(),
-      pdfLink: this.pdfLink,
-      notes: this.notes,
-      publishedBy: this.publishedBy,
+      displayOrder: this.displayOrder,
+      linkToDocument: this.linkToDocument,
+      enabled: this.enabled,
       createdAt: this.createdAt.getTime(),
-      updatedAt: this.updatedAt.getTime(),
+      createdBy: this.createdBy,
+      content: this.content,
     };
   }
 
@@ -64,46 +64,47 @@ export class FinancialReport {
     return new FinancialReport(
       dto.id,
       dto.title,
-      HebrewDate.fromDto(dto.publicationDate),
-      dto.pdfLink,
-      dto.publishedBy,
-      dto.notes,
-      new Date(dto.createdAt),
-      new Date(dto.updatedAt)
+      dto.displayOrder,
+      dto.linkToDocument,
+      dto.createdBy,
+      dto.content,
+      dto.enabled,
+      new Date(dto.createdAt)
     );
   }
 
   // Create a new financial report
   static create(
     title: string,
-    publicationDate: HebrewDate,
-    pdfLink: string,
-    publishedBy: string,
-    notes?: string
+    linkToDocument: string,
+    createdBy: string,
+    content: string,
+    displayOrder: number = 1
   ): FinancialReport {
     return new FinancialReport(
       uuidv4(),
       title,
-      publicationDate,
-      pdfLink,
-      publishedBy,
-      notes
+      displayOrder,
+      linkToDocument,
+      createdBy,
+      content,
+      true // enabled by default
     );
   }
 
   // Update the report
   update(
-    updates: Partial<Omit<FinancialReport, "id" | "createdAt">>
+    updates: Partial<Omit<FinancialReport, "id" | "createdAt" | "createdBy">>
   ): FinancialReport {
     return new FinancialReport(
       this.id,
       updates.title ?? this.title,
-      updates.publicationDate ?? this.publicationDate,
-      updates.pdfLink ?? this.pdfLink,
-      updates.publishedBy ?? this.publishedBy,
-      updates.notes ?? this.notes,
-      this.createdAt,
-      new Date()
+      updates.displayOrder ?? this.displayOrder,
+      updates.linkToDocument ?? this.linkToDocument,
+      this.createdBy,
+      updates.content ?? this.content,
+      updates.enabled ?? this.enabled,
+      this.createdAt
     );
   }
 
@@ -112,24 +113,33 @@ export class FinancialReport {
     return new FinancialReport(
       this.id,
       this.title,
-      this.publicationDate,
-      this.pdfLink,
-      this.publishedBy,
-      this.notes,
-      this.createdAt,
-      this.updatedAt
+      this.displayOrder,
+      this.linkToDocument,
+      this.createdBy,
+      this.content,
+      this.enabled,
+      this.createdAt
     );
   }
 
-  // Check if report has notes
-  get hasNotes(): boolean {
-    if (!this.notes) return false;
-    return this.notes.trim().length > 0;
+  // Enable the report
+  enable(): FinancialReport {
+    return this.update({ enabled: true });
   }
 
-  // Get formatted publication date
-  get formattedPublicationDate(): string {
-    return this.publicationDate.toString();
+  // Disable the report
+  disable(): FinancialReport {
+    return this.update({ enabled: false });
+  }
+
+  // Check if report has content
+  get hasContent(): boolean {
+    return !!(this.content && this.content.trim().length > 0);
+  }
+
+  // Check if report is enabled
+  get isEnabled(): boolean {
+    return this.enabled;
   }
 
   // Get report age in days
@@ -142,6 +152,14 @@ export class FinancialReport {
   // Check if report is recent (within 30 days)
   get isRecent(): boolean {
     return this.ageInDays <= 30;
+  }
+
+  // Get content preview (first 200 characters)
+  get contentPreview(): string {
+    if (!this.content || this.content.length <= 200) {
+      return this.content || "";
+    }
+    return this.content.substring(0, 200) + "...";
   }
 }
 
