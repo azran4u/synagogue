@@ -804,3 +804,237 @@ Members: family-focused, read-only synagogue data.
 Gabbaim: operations-focused, CRUD on announcements, schedules, reports, donations, aliyot.
 
 Admins: full control, including settings and user/role management.
+
+<!-- rules backup -->
+
+rules_version = '2';
+service cloud.firestore {
+match /databases/{database}/documents {
+
+    // -------------------
+    // Guards & Role Helpers
+    // -------------------
+    function isLoggedIn() {
+      return request.auth != null;
+    }
+
+
+    function isAdmin() {
+      return isLoggedIn() && exists(
+        /databases/$(database)/documents/admins/$(request.auth.email)
+      );
+    }
+
+    function isEmail(email) {
+    	return isLoggedIn() && request.auth.email == email;
+    }
+
+
+    // -------------------
+    // DRY Type Helpers
+    // -------------------
+    function nonEmptyStr(v) {
+      return v is string && v.size() > 0;
+    }
+    function optionalStr(v) {
+      return v == null || v is string;
+    }
+    function optionalNonEmptyStr(v) {
+      return v == null || nonEmptyStr(v);
+    }
+    function isBoolean(v) { return v is bool; }
+    function isNumber(v)  { return v is number; }
+    function isTimestamp(v) { return v is timestamp; }
+
+    // -------------------
+    // Nested Validators
+    // -------------------
+    function validTimeEntry(t) {
+      return t is map &&
+             nonEmptyStr(t.title) &&
+             nonEmptyStr(t.hour) &&
+             isNumber(t.displayOrder) &&
+             isBoolean(t.enabled) &&
+             optionalStr(t.notes);
+    }
+
+    function validLessonEntry(l) {
+      return l is map &&
+             nonEmptyStr(l.title) &&
+             nonEmptyStr(l.ledBy) &&
+             nonEmptyStr(l.hour) &&
+             nonEmptyStr(l.hebrewDate) &&
+             (l.recurrenceType in ["none","weekly","monthly"]) &&
+             isNumber(l.displayOrder) &&
+             isBoolean(l.enabled) &&
+             optionalStr(l.notes);
+    }
+
+    // -------------------
+    // Document Validators
+    // -------------------
+    function validAnnouncementDoc() {
+      let d = request.resource.data;
+      return nonEmptyStr(d.title) &&
+             nonEmptyStr(d.content) &&
+             nonEmptyStr(d.createdBy) &&
+             isTimestamp(d.createdAt) &&
+             isBoolean(d.is_important) &&
+             isBoolean(d.enabled) &&
+             isNumber(d.displayOrder);
+    }
+
+    function validPrayerTimesDoc() {
+      let d = request.resource.data;
+      return nonEmptyStr(d.title) &&
+             isNumber(d.displayOrder) &&
+             isBoolean(d.enabled) &&
+             optionalStr(d.notes) &&
+             (!("times" in d) || d.times.all(t, validTimeEntry(t)));
+    }
+
+    function validTorahLessonsDoc() {
+      let d = request.resource.data;
+      return nonEmptyStr(d.title) &&
+             isNumber(d.displayOrder) &&
+             isBoolean(d.enabled) &&
+             optionalStr(d.notes) &&
+             (!("lessons" in d) || d.lessons.all(l, validLessonEntry(l)));
+    }
+
+    function validFinancialReportDoc() {
+      let d = request.resource.data;
+      return nonEmptyStr(d.title) &&
+             isNumber(d.displayOrder) &&
+             nonEmptyStr(d.linkToDocument) &&
+             isBoolean(d.enabled) &&
+             isTimestamp(d.createdAt) &&
+             nonEmptyStr(d.createdBy) &&
+             nonEmptyStr(d.content);
+    }
+
+    function validPrayerEventTypeDoc() {
+      let d = request.resource.data;
+      return nonEmptyStr(d.name) &&
+             nonEmptyStr(d.displayName) &&
+             (d.recurrenceType in ["none","yearly"]) &&
+             isBoolean(d.enabled) &&
+             optionalStr(d.description) &&
+             (!("displayOrder" in d) || isNumber(d.displayOrder));
+    }
+
+    function validAliyaTypeDoc() {
+      let d = request.resource.data;
+      return nonEmptyStr(d.name) &&
+             nonEmptyStr(d.displayName) &&
+             isNumber(d.weight) &&
+             isBoolean(d.enabled) &&
+             optionalStr(d.description) &&
+             (!("displayOrder" in d) || isNumber(d.displayOrder));
+    }
+
+    // -------------------
+    // Collection Rules
+    // -------------------
+
+    match /admins/{email} {
+    	allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /synagogues/{synId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    	}
+
+    match /synagogues/{synId}/prayerCards/{email} {
+      allow create, read, update, delete: if true;
+    }
+
+    match /synagogues/{synId}/prayerEventTypes/{id} {
+      allow create, read, update, delete: if true;
+    }
+
+    match /synagogues/{synId}/aliyaTypes/{id} {
+      allow create, read, update, delete: if true;
+    }
+
+    match /synagogues/{synId}/aliyaGroups/{id} {
+      allow create, read, update, delete: if true;
+    }
+
+    match /synagogues/{synId}/prayers/{memberId} {
+      allow read: if isInSynagogue(synId);
+      allow create: if isGabbaiOrHigher(synId) ||
+                     (isLoggedIn() && isSameFamily(synId, request.auth.uid));
+      allow update: if isGabbaiOrHigher(synId) ||
+                     (isLoggedIn() && (request.auth.uid == memberId || isSameFamily(synId, memberId)));
+      allow delete: if isGabbaiOrHigher(synId) ||
+                     (isLoggedIn() && (request.auth.uid == memberId || isSameFamily(synId, memberId)));
+    }
+
+    match /synagogues/{synId}/announcements/{id} {
+      allow read: if isInSynagogue(synId);
+      allow create, update: if isGabbaiOrHigher(synId) && validAnnouncementDoc();
+      allow delete: if isGabbaiOrHigher(synId);
+    }
+
+    match /synagogues/{synId}/prayer_times/{id} {
+      allow read: if isInSynagogue(synId);
+      allow create, update: if isGabbaiOrHigher(synId) && validPrayerTimesDoc();
+      allow delete: if isGabbaiOrHigher(synId);
+    }
+
+    match /synagogues/{synId}/torah_lessons/{id} {
+      allow read: if isInSynagogue(synId);
+      allow create, update: if isGabbaiOrHigher(synId) && validTorahLessonsDoc();
+      allow delete: if isGabbaiOrHigher(synId);
+    }
+
+    match /synagogues/{synId}/financialReports/{reportId} {
+      allow read: if isInSynagogue(synId);
+      allow create, update: if isGabbaiOrHigher(synId) && validFinancialReportDoc();
+      allow delete: if isGabbaiOrHigher(synId);
+    }
+
+    match /synagogues/{synId}/prayerEventTypes/{typeId} {
+      allow read: if true;
+      allow create, update: if isAdmin(synId) && validPrayerEventTypeDoc();
+      allow delete: if isAdmin(synId);
+    }
+
+    match /synagogues/{synId}/settings/aliyaTypes/{typeId} {
+      allow read: if isInSynagogue(synId);
+      allow create, update: if isAdmin(synId) && validAliyaTypeDoc();
+      allow delete: if isAdmin(synId);
+    }
+
+    match /synagogues/{synId}/settings/gabbaiBoard {
+      allow read: if isInSynagogue(synId);
+      allow update: if isAdmin(synId);
+    }
+
+    match /synagogues/{synId}/invitations/{inviteId} {
+      allow create: if isLoggedIn() && (
+        (mb(synId) != null && isAdult(mb(synId).role) && request.resource.data.inviteeRole == "member") ||
+        (isGabbai(synId) && request.resource.data.inviteeRole == "gabbai") ||
+        isAdmin(synId)
+      );
+
+      allow read: if isInSynagogue(synId) && (
+        request.auth.uid == resource.data.inviterUid ||
+        request.auth.uid == resource.data.inviteeUid
+      );
+
+      allow update: if isLoggedIn() &&
+        resource.data.status == "pending" &&
+        request.resource.data.inviteeUid == request.auth.uid &&
+        request.resource.data.status == "accepted" &&
+        (!("expiresAt" in resource.data) || request.time <= resource.data.expiresAt);
+
+      allow delete: if isLoggedIn() &&
+        (request.auth.uid == resource.data.inviterUid || isAdmin(synId));
+    }
+
+}
+}
