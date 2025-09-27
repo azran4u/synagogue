@@ -30,8 +30,3 @@ export const adminMapper: Mapper<Admin, AdminDto> = {
   fromDto: (dto: AdminDto, id: string) => Admin.fromDto(dto, id),
   toDto: (entity: Admin) => entity.toDto(),
 };
-
-export const adminService = new GenericService<Admin, AdminDto>(
-  "admins",
-  adminMapper
-);

@@ -26,10 +26,12 @@ import {
 import { useAuth } from "../hooks/useAuth";
 import { usePrayerCard } from "../hooks/usePrayerCard";
 import { useSynagogueNavigate } from "../hooks/useSynagogueNavigate";
+import { useSelectedSynagogue } from "../hooks/useSynagogueId";
 
 const SynagogueHomePage: React.FC = () => {
   const { isLoggedIn, login, isLoading: authLoading } = useAuth();
   const { data: prayerCard, isLoading: prayerCardLoading } = usePrayerCard();
+  const { data: synagogue } = useSelectedSynagogue();
 
   console.log("prayerCard", prayerCard);
   const navigate = useSynagogueNavigate();
@@ -183,14 +185,15 @@ const SynagogueHomePage: React.FC = () => {
           gutterBottom
           sx={{ fontWeight: "bold" }}
         >
-          ברוכים הבאים למערכת ניהול בית הכנסת
+          ברוכים הבאים לבית הכנסת
+          {synagogue && ` - ${synagogue.name}`}
         </Typography>
         <Typography
           variant="h6"
           color="text.secondary"
           sx={{ maxWidth: 600, mx: "auto" }}
         >
-          פלטפורמה דיגיטלית לניהול חיי הקהילה הדתית שלנו
+          פלטפורמה דיגיטלית לניהול בית הכנסת
         </Typography>
       </Box>
 

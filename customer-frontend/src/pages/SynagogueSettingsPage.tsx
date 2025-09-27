@@ -125,7 +125,9 @@ const SynagogueSettingsPage: React.FC = () => {
           >
             חזור
           </Button>
-          <Typography variant="h4">הגדרות בית כנסת</Typography>
+          <Typography variant="h4">
+            הגדרות בית כנסת {synagogue && `- ${synagogue.name}`}
+          </Typography>
         </Box>
       </Box>
 
