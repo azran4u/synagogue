@@ -8,7 +8,7 @@ export const synagogueService = new GenericService<Synagogue, SynagogueDto>(
 );
 
 // Query hooks
-export function useSynagogues() {
+export function useAllSynagogues() {
   return useQuery<Synagogue[]>({
     queryKey: ["synagogues"],
     queryFn: () => synagogueService.getAll(),
@@ -48,8 +48,9 @@ export function useUpdateSynagogue() {
   return useMutation({
     mutationFn: ({ id, synagogue }: { id: string; synagogue: Synagogue }) =>
       synagogueService.update(id, synagogue),
-    onSuccess: () => {
+    onSuccess: (_, { id }) => {
       queryClient.invalidateQueries({ queryKey: ["synagogues"] });
+      queryClient.invalidateQueries({ queryKey: ["synagogue", id] });
     },
   });
 }

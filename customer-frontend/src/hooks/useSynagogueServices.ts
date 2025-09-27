@@ -1,6 +1,4 @@
 import { useMemo } from "react";
-import { familyMapper } from "../model/Family";
-import { invitationMapper } from "../model/Invitation";
 import { prayerCardMapper } from "../model/Prayer";
 import { GenericService } from "../services/genericService";
 import { useAppSelector } from "../store/hooks";
@@ -14,22 +12,13 @@ export function useSynagogueServices() {
   return useMemo(() => {
     if (!synagogueId) {
       return {
-        invitationService: null,
-        familyService: null,
         prayerCardService: null,
         prayerEventTypeService: null,
         aliyaTypeService: null,
         aliyaGroupService: null,
-        membershipService: null,
       };
     }
     return {
-      invitationService: new GenericService(
-        "invitations",
-        invitationMapper,
-        synagogueId
-      ),
-      familyService: new GenericService("families", familyMapper, synagogueId),
       prayerCardService: new GenericService(
         "prayerCards",
         prayerCardMapper,

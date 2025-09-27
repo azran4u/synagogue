@@ -15,19 +15,16 @@ import {
   Home as HomeIcon,
   Person as PersonIcon,
   Event as EventIcon,
-  Group as GroupIcon,
+  Assignment as AliyotIcon,
   Schedule as ScheduleIcon,
   Announcement as AnnouncementIcon,
   AccountBalance as AccountBalanceIcon,
   CreditCard as CreditCardIcon,
-  Settings as SettingsIcon,
   Login as LoginIcon,
   Visibility as ViewIcon,
 } from "@mui/icons-material";
-import { useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { usePrayerCard } from "../hooks/usePrayerCard";
-import { WithLogin } from "../components/WithLogin";
 import { useSynagogueNavigate } from "../hooks/useSynagogueNavigate";
 
 const SynagogueHomePage: React.FC = () => {
@@ -51,7 +48,7 @@ const SynagogueHomePage: React.FC = () => {
 
   const comingSoonFeatures = [
     {
-      icon: <GroupIcon />,
+      icon: <AliyotIcon />,
       title: "ניהול משפחות",
       description: "הוספת משפחה, ילדים וחברים",
       status: "בפיתוח",
@@ -289,8 +286,8 @@ const SynagogueHomePage: React.FC = () => {
               }}
             />
             <Chip
-              icon={<GroupIcon />}
-              label="ניהול משפחה"
+              icon={<AliyotIcon />}
+              label="ניהול עליות"
               color="success"
               variant="filled"
               sx={{

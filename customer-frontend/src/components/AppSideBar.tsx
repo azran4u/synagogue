@@ -14,12 +14,12 @@ import {
   Person as PrayerCardIcon,
   Assessment as FinancialReportsIcon,
   Logout as LogoutIcon,
-  Business as SynagogueIcon,
   List as ListIcon,
   Settings as AdminIcon,
   Event as EventTypesIcon,
   Group as AliyaTypesIcon,
   Assignment as AliyaAssignmentIcon,
+  People as AdminPrayerCardsIcon,
 } from "@mui/icons-material";
 import { Logo } from "./Logo";
 import { useMobile } from "../hooks/useMobile";
@@ -74,6 +74,11 @@ export const AppSideBar: React.FC<AppSideBarProps> = ({
   const drawerWidth = useMemo(() => (isMobile ? "60%" : "20%"), [isMobile]);
   const navigate = useSynagogueNavigate();
 
+  const handleClick = (path: string, addSynagogueId: boolean = true) => {
+    onLinkClick(path);
+    navigate(path, addSynagogueId);
+  };
+
   return (
     <Drawer
       variant="temporary"
@@ -107,35 +112,35 @@ export const AppSideBar: React.FC<AppSideBarProps> = ({
 
           <SidebarItem
             text="בתי כנסת"
-            onClick={() => navigate("synagogues", false)}
+            onClick={() => handleClick("synagogues", false)}
             icon={<ListIcon />}
           />
           <SidebarItem
             text="שיעורי תורה"
-            onClick={() => navigate("tora-lessons")}
+            onClick={() => handleClick("tora-lessons")}
             icon={<ToraLessonsIcon />}
           />
           <SidebarItem
             text="זמני תפילות"
-            onClick={() => navigate("prayer-times")}
+            onClick={() => handleClick("prayer-times")}
             icon={<PrayerTimesIcon />}
           />
           <WithLogin>
             <SidebarItem
               text="כרטיס המתפלל שלי"
-              onClick={() => navigate("prayer-card")}
+              onClick={() => handleClick("prayer-card")}
               icon={<PrayerCardIcon />}
             />
           </WithLogin>
 
           <SidebarItem
             text="דוחות כספיים"
-            onClick={() => navigate("financial-reports")}
+            onClick={() => handleClick("financial-reports")}
             icon={<FinancialReportsIcon />}
           />
           <SidebarItem
             text="תרומות"
-            onClick={() => navigate("donations")}
+            onClick={() => handleClick("donations")}
             icon={<DonationsIcon />}
           />
 
@@ -152,23 +157,28 @@ export const AppSideBar: React.FC<AppSideBarProps> = ({
                 }}
               />
               <SidebarItem
+                text="ניהול עליות"
+                onClick={() => handleClick("admin/aliya-assignment")}
+                icon={<AliyaAssignmentIcon />}
+              />
+              <SidebarItem
+                text="ניהול כרטיסי מתפללים"
+                onClick={() => handleClick("admin/prayer-cards")}
+                icon={<AdminPrayerCardsIcon />}
+              />
+              <SidebarItem
                 text="ניהול סוגי אירועים"
-                onClick={() => navigate("admin/prayer-event-types")}
+                onClick={() => handleClick("admin/prayer-event-types")}
                 icon={<EventTypesIcon />}
               />
               <SidebarItem
                 text="ניהול סוגי עליות"
-                onClick={() => navigate("admin/aliya-types")}
+                onClick={() => handleClick("admin/aliya-types")}
                 icon={<AliyaTypesIcon />}
               />
               <SidebarItem
-                text="ניהול עליות"
-                onClick={() => navigate("admin/aliya-assignment")}
-                icon={<AliyaAssignmentIcon />}
-              />
-              <SidebarItem
                 text="הגדרות מנהל"
-                onClick={() => navigate("admin/settings")}
+                onClick={() => handleClick("admin/settings")}
                 icon={<AdminIcon />}
               />
             </>

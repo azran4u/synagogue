@@ -7,45 +7,96 @@ import {
   Container,
   Card,
   CardContent,
-  Divider,
-  Switch,
-  FormControlLabel,
   TextField,
   Alert,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  CircularProgress,
 } from "@mui/material";
 import {
   ArrowBack as ArrowBackIcon,
   Save as SaveIcon,
   Delete as DeleteIcon,
+  Check as CheckIcon,
 } from "@mui/icons-material";
 import { useSelectedSynagogue } from "../hooks/useSynagogueId";
-import { useState } from "react";
+import { useUpdateSynagogue, useDeleteSynagogue } from "../hooks/useSynagogues";
+import { useAuth } from "../hooks/useAuth";
+import { useState, useEffect } from "react";
 
 const SynagogueSettingsPage: React.FC = () => {
   const { synagogueId } = useParams<{ synagogueId: string }>();
   const navigate = useNavigate();
   const { data: synagogue, isLoading } = useSelectedSynagogue();
+  const { user } = useAuth();
+  const updateSynagogueMutation = useUpdateSynagogue();
+  const deleteSynagogueMutation = useDeleteSynagogue();
 
   const [synagogueName, setSynagogueName] = useState(synagogue?.name || "");
-  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
-  const [autoSave, setAutoSave] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+
+  // Update synagogue name when synagogue data loads (but not during save operation)
+  useEffect(() => {
+    if (synagogue?.name && !isSaving) {
+      setSynagogueName(synagogue.name);
+    }
+  }, [synagogue, isSaving]);
 
   const handleBackClick = () => {
     navigate(`/synagogue/${synagogueId}`);
   };
 
-  const handleSaveSettings = () => {
-    // TODO: Implement save settings functionality
-    console.log("Saving settings:", {
-      name: synagogueName,
-      notifications: notificationsEnabled,
-      autoSave,
-    });
+  const handleSaveSettings = async () => {
+    if (!synagogue || !synagogueId || !user) return;
+
+    if (synagogueName.trim() === "") {
+      alert("שם בית הכנסת לא יכול להיות ריק");
+      return;
+    }
+
+    if (synagogueName.trim() === synagogue.name) {
+      return; // No changes to save
+    }
+
+    try {
+      setIsSaving(true);
+      setShowSuccessMessage(false);
+      const updatedSynagogue = synagogue.update({ name: synagogueName.trim() });
+
+      await updateSynagogueMutation.mutateAsync({
+        id: synagogueId,
+        synagogue: updatedSynagogue,
+      });
+
+      // Show success message
+      setShowSuccessMessage(true);
+      // Hide success message after 3 seconds
+      setTimeout(() => {
+        setShowSuccessMessage(false);
+      }, 3000);
+    } catch (error) {
+      console.error("Error saving synagogue:", error);
+      alert("שגיאה בשמירת השינויים");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
-  const handleDeleteSynagogue = () => {
-    // TODO: Implement delete synagogue functionality
-    console.log("Delete synagogue:", synagogueId);
+  const handleDeleteSynagogue = async () => {
+    if (!synagogueId) return;
+
+    try {
+      await deleteSynagogueMutation.mutateAsync(synagogueId);
+      // Navigate to synagogues list after successful deletion
+      navigate("/synagogues");
+    } catch (error) {
+      console.error("Error deleting synagogue:", error);
+      alert("שגיאה במחיקת בית הכנסת");
+    }
   };
 
   if (isLoading) {
@@ -103,34 +154,12 @@ const SynagogueSettingsPage: React.FC = () => {
         </CardContent>
       </Card>
 
-      <Card sx={{ mb: 3 }}>
-        <CardContent>
-          <Typography variant="h6" gutterBottom>
-            העדפות
-          </Typography>
-
-          <FormControlLabel
-            control={
-              <Switch
-                checked={notificationsEnabled}
-                onChange={e => setNotificationsEnabled(e.target.checked)}
-              />
-            }
-            label="התראות"
-            sx={{ mb: 1 }}
-          />
-
-          <FormControlLabel
-            control={
-              <Switch
-                checked={autoSave}
-                onChange={e => setAutoSave(e.target.checked)}
-              />
-            }
-            label="שמירה אוטומטית"
-          />
-        </CardContent>
-      </Card>
+      {/* Success Message */}
+      {showSuccessMessage && (
+        <Alert severity="success" sx={{ mb: 3 }}>
+          השינויים נשמרו בהצלחה!
+        </Alert>
+      )}
 
       <Card sx={{ mb: 3 }}>
         <CardContent>
@@ -145,9 +174,10 @@ const SynagogueSettingsPage: React.FC = () => {
             variant="outlined"
             color="error"
             startIcon={<DeleteIcon />}
-            onClick={handleDeleteSynagogue}
+            onClick={() => setShowDeleteDialog(true)}
+            disabled={deleteSynagogueMutation.isPending}
           >
-            מחק בית כנסת
+            {deleteSynagogueMutation.isPending ? "מוחק..." : "מחק בית כנסת"}
           </Button>
         </CardContent>
       </Card>
@@ -158,12 +188,76 @@ const SynagogueSettingsPage: React.FC = () => {
         </Button>
         <Button
           variant="contained"
-          startIcon={<SaveIcon />}
+          startIcon={
+            showSuccessMessage ? (
+              <CheckIcon />
+            ) : isSaving ? (
+              <CircularProgress size={16} />
+            ) : (
+              <SaveIcon />
+            )
+          }
           onClick={handleSaveSettings}
+          disabled={isSaving || synagogueName.trim() === synagogue?.name}
+          color={showSuccessMessage ? "success" : "primary"}
         >
-          שמור הגדרות
+          {showSuccessMessage
+            ? "נשמר בהצלחה!"
+            : isSaving
+              ? "שומר..."
+              : "שמור הגדרות"}
         </Button>
       </Box>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog
+        open={showDeleteDialog}
+        onClose={() => setShowDeleteDialog(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>מחיקת בית כנסת</DialogTitle>
+        <DialogContent>
+          <Alert severity="error" sx={{ mb: 2 }}>
+            אתה עומד למחוק את בית הכנסת "{synagogue?.name}" לצמיתות.
+          </Alert>
+          <Typography>
+            פעולה זו תמחק את כל הנתונים הקשורים לבית הכנסת הזה, כולל:
+          </Typography>
+          <ul>
+            <li>כרטיסי מתפללים</li>
+            <li>עליות ואירועים</li>
+            <li>סוגי עליות ואירועים</li>
+            <li>קבוצות עליות</li>
+          </ul>
+          <Typography color="error" sx={{ fontWeight: "bold", mt: 2 }}>
+            פעולה זו אינה הפיכה!
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => setShowDeleteDialog(false)}
+            disabled={deleteSynagogueMutation.isPending}
+          >
+            ביטול
+          </Button>
+          <Button
+            onClick={handleDeleteSynagogue}
+            color="error"
+            variant="contained"
+            disabled={deleteSynagogueMutation.isPending}
+            startIcon={
+              deleteSynagogueMutation.isPending ? (
+                <CircularProgress size={16} />
+              ) : (
+                <DeleteIcon />
+              )
+            }
+          >
+            {deleteSynagogueMutation.isPending ? "מוחק..." : "מחק לצמיתות"}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Container>
   );
 };

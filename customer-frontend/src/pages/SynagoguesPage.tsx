@@ -29,7 +29,7 @@ import {
 import { Synagogue } from "../model/Synagogue";
 import {
   useCreateSynagogue,
-  useSynagogues,
+  useAllSynagogues,
   useDeleteSynagogue,
 } from "../hooks/useSynagogues";
 import { useNavigate } from "react-router-dom";
@@ -45,7 +45,7 @@ import { useSelectedSynagogue } from "../hooks/useSynagogueId";
 // and navigate to the synagogue page
 // an admin can also create a new synagogue
 const SynagoguesPage: React.FC = () => {
-  const { data: synagogues, isLoading, error } = useSynagogues();
+  const { data: synagogues, isLoading, error } = useAllSynagogues();
   const { mutate: createSynagogue } = useCreateSynagogue();
   const { mutate: deleteSynagogue } = useDeleteSynagogue();
   const { user } = useAuth();

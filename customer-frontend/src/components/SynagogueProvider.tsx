@@ -5,9 +5,10 @@ import {
   selectSelectedSynagogueId,
 } from "../store/synagogueSlice";
 import { useIsSynagogueExists } from "../hooks/useSynagogues";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useAppSelector } from "../store/hooks";
 import { useSynagogueServices } from "../hooks/useSynagogueServices";
+import { useSynagogueCacheClear } from "../hooks/useSynagogueCacheClear";
 
 interface SynagogueProviderProps {
   children: React.ReactNode;
@@ -18,7 +19,6 @@ export const SynagogueProvider: React.FC<SynagogueProviderProps> = ({
 }) => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const location = useLocation();
   const selectedSynagogueId = useAppSelector(selectSelectedSynagogueId);
 
   //   read current url
@@ -58,6 +58,9 @@ export const SynagogueProvider: React.FC<SynagogueProviderProps> = ({
   }, [isSynagogueExists]);
 
   useSynagogueServices();
+
+  // Clear React Query cache when switching synagogues to prevent stale data
+  useSynagogueCacheClear();
 
   return <>{children}</>;
 };

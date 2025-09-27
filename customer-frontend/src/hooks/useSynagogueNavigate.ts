@@ -1,7 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { selectSelectedSynagogueId } from "../store/synagogueSlice";
 import { useAppSelector } from "../store/hooks";
-import { add } from "lodash";
 
 export function useSynagogueNavigate() {
   const navigate = useNavigate();

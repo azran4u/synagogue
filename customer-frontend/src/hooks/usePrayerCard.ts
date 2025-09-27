@@ -3,6 +3,15 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSynagogueServices } from "./useSynagogueServices";
 import { useCurrentUserEmail } from "./useCurrentUserEmail";
 
+export function useAllPrayerCards() {
+  const { prayerCardService } = useSynagogueServices();
+  return useQuery<PrayerCard[]>({
+    queryKey: ["allPrayerCards"],
+    queryFn: async () => prayerCardService?.getAll() ?? [],
+    enabled: prayerCardService !== null,
+  });
+}
+
 export function usePrayerCard() {
   const { prayerCardService } = useSynagogueServices();
   const email = useCurrentUserEmail();
@@ -59,3 +68,19 @@ export const useUpdatePrayerCard = () => {
     },
   });
 };
+
+export function useDeletePrayerCard() {
+  const { prayerCardService } = useSynagogueServices();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (prayerCard: PrayerCard) =>
+      prayerCardService?.deleteById(prayerCard.id) ?? Promise.resolve(null),
+    onSuccess: (_, prayerCard) => {
+      queryClient.invalidateQueries({ queryKey: ["prayerCards"] });
+      queryClient.invalidateQueries({ queryKey: ["allPrayerCards"] });
+    },
+    onError: error => {
+      console.error("Failed to delete prayer card:", error);
+    },
+  });
+}
