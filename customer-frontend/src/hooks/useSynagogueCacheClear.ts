@@ -34,10 +34,6 @@ export function useSynagogueCacheClear() {
       );
     }
 
-    // Update the previous synagogue ID
-    if (previousSynagogueId.current === null && synagogueId) {
-      console.log(`🏛️ Initial synagogue set to: ${synagogueId}`);
-    }
     previousSynagogueId.current = synagogueId;
   }, [synagogueId, queryClient]);
 }

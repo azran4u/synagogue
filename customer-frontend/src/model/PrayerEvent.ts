@@ -1,16 +1,18 @@
+import { HebrewDate, HebrewDateDto } from "./HebrewDate";
+
 // Prayer Event DTO (matches Firebase schema)
 export interface PrayerEventDto {
   type: string;
-  hebrewDate: string;
+  hebrewDate: HebrewDateDto;
   notes?: string;
 }
 
 export class PrayerEvent {
   public type: string;
-  public hebrewDate: string;
+  public hebrewDate: HebrewDate;
   public notes?: string;
 
-  constructor(type: string, hebrewDate: string, notes?: string) {
+  constructor(type: string, hebrewDate: HebrewDate, notes?: string) {
     this.type = type;
     this.hebrewDate = hebrewDate;
     this.notes = notes;
@@ -20,18 +22,26 @@ export class PrayerEvent {
   toDto(): PrayerEventDto {
     return {
       type: this.type,
-      hebrewDate: this.hebrewDate,
+      hebrewDate: this.hebrewDate.toDto(),
       notes: this.notes,
     };
   }
 
   // Create from DTO from Firestore
   static fromDto(dto: PrayerEventDto): PrayerEvent {
-    return new PrayerEvent(dto.type, dto.hebrewDate, dto.notes);
+    return new PrayerEvent(
+      dto.type,
+      HebrewDate.fromDto(dto.hebrewDate),
+      dto.notes
+    );
   }
 
   // Create a new PrayerEvent
-  static create(type: string, hebrewDate: string, notes?: string): PrayerEvent {
+  static create(
+    type: string,
+    hebrewDate: HebrewDate,
+    notes?: string
+  ): PrayerEvent {
     return new PrayerEvent(type, hebrewDate, notes);
   }
 
@@ -46,7 +56,7 @@ export class PrayerEvent {
 
   // Get formatted date
   get formattedDate(): string {
-    return this.hebrewDate;
+    return this.hebrewDate.toString();
   }
 
   // Get event type description

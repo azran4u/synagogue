@@ -1,13 +1,13 @@
 import magenDavid from "../assets/images/magen_david.png";
 import Box from "@mui/material/Box";
-import { useNavigate } from "react-router-dom";
+import { useSynagogueNavigate } from "../hooks/useSynagogueNavigate";
 
 interface LogoProps {
   height?: string;
 }
 
 export const Logo: React.FC<LogoProps> = ({ height = "3rem" }) => {
-  const navigate = useNavigate();
+  const navigate = useSynagogueNavigate();
   return (
     <Box
       component="img"
@@ -17,7 +17,7 @@ export const Logo: React.FC<LogoProps> = ({ height = "3rem" }) => {
         height,
         width: "auto",
       }}
-      onClick={() => navigate("/")}
+      onClick={() => navigate("")}
     />
   );
 };

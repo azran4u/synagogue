@@ -29,7 +29,7 @@ export const LoginSection: React.FC = () => {
           onClick={() => login()}
           disabled={isLoading}
           size="small"
-          color="secondary"
+          color="success"
         >
           {isLoading ? "מתחבר..." : "התחבר"}
         </Button>

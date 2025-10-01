@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -22,6 +22,7 @@ import {
 import { Formik, Form, FormikHelpers } from "formik";
 import * as Yup from "yup";
 import { HebrewDateSelector } from "./HebrewDateSelector";
+import { EventTypeSelector } from "./EventTypeSelector";
 import { HebrewDate } from "../model/HebrewDate";
 import { PrayerCard, Prayer } from "../model/Prayer";
 import { PrayerEvent } from "../model/PrayerEvent";
@@ -49,7 +50,7 @@ interface PrayerCardFormValues {
 
 interface PrayerEventFormValues {
   eventTypeId: string;
-  hebrewDate: HebrewDate | null;
+  hebrewDate: HebrewDate;
   notes: string;
 }
 
@@ -71,7 +72,7 @@ const prayerCardValidationSchema = Yup.object({
 
 const prayerEventValidationSchema = Yup.object({
   eventTypeId: Yup.string().required("סוג האירוע נדרש"),
-  hebrewDate: Yup.mixed().required("תאריך נדרש").nullable(),
+  hebrewDate: Yup.mixed().required("תאריך נדרש"),
   notes: Yup.string().optional(),
 });
 
@@ -108,6 +109,15 @@ export const PrayerCardEditDialog: React.FC<PrayerCardEditDialogProps> = ({
   const [editingEventIndex, setEditingEventIndex] = useState<number | null>(
     null
   );
+
+  useEffect(() => {
+    if (prayerCard != null && editingEventIndex !== null) {
+      console.log(
+        "prayerCard?.prayer.events?[editingEventIndex]",
+        prayerCard?.prayer.events?.[editingEventIndex]
+      );
+    }
+  }, [prayerCard, editingEventIndex]);
 
   const handleSubmit = async (
     values: PrayerCardFormValues,
@@ -163,7 +173,7 @@ export const PrayerCardEditDialog: React.FC<PrayerCardEditDialogProps> = ({
       // Create new prayer event
       const newEvent = PrayerEvent.create(
         values.eventTypeId,
-        values.hebrewDate?.toString() || "",
+        values.hebrewDate,
         values.notes || undefined
       );
 
@@ -295,7 +305,7 @@ export const PrayerCardEditDialog: React.FC<PrayerCardEditDialogProps> = ({
       // Create updated event
       const updatedEvent = new PrayerEvent(
         values.eventTypeId,
-        values.hebrewDate?.toString() || "",
+        values.hebrewDate,
         values.notes || undefined
       );
 
@@ -430,7 +440,10 @@ export const PrayerCardEditDialog: React.FC<PrayerCardEditDialogProps> = ({
                         }
                         label="תאריך לידה"
                       />
-                      <Stack direction="row" spacing={2}>
+                      <Stack
+                        direction={{ xs: "column", sm: "row" }}
+                        spacing={2}
+                      >
                         <TextField
                           name="phoneNumber"
                           label="נייד"
@@ -587,7 +600,10 @@ export const PrayerCardEditDialog: React.FC<PrayerCardEditDialogProps> = ({
                                 }
                                 label="תאריך לידה"
                               />
-                              <Stack direction="row" spacing={2}>
+                              <Stack
+                                direction={{ xs: "column", sm: "row" }}
+                                spacing={2}
+                              >
                                 <TextField
                                   name={`children.${index}.phoneNumber`}
                                   label="נייד"
@@ -697,7 +713,10 @@ export const PrayerCardEditDialog: React.FC<PrayerCardEditDialogProps> = ({
                               variant="body2"
                               sx={{ fontWeight: 500 }}
                             >
-                              {event.type} - {event.hebrewDate}
+                              {prayerEventTypes?.find(
+                                type => type.id === event.type
+                              )?.displayName || event.type}{" "}
+                              - {event.hebrewDate.toString()}
                             </Typography>
                             {event.notes && (
                               <Typography
@@ -758,7 +777,7 @@ export const PrayerCardEditDialog: React.FC<PrayerCardEditDialogProps> = ({
           <Formik
             initialValues={{
               eventTypeId: "",
-              hebrewDate: null as HebrewDate | null,
+              hebrewDate: HebrewDate.now(),
               notes: "",
             }}
             validationSchema={prayerEventValidationSchema}
@@ -775,36 +794,22 @@ export const PrayerCardEditDialog: React.FC<PrayerCardEditDialogProps> = ({
             }) => (
               <Form>
                 <Stack spacing={3} sx={{ mt: 1 }}>
-                  <TextField
+                  <EventTypeSelector
                     name="eventTypeId"
                     label="סוג האירוע"
                     value={values.eventTypeId}
                     onChange={handleChange}
                     onBlur={handleBlur}
-                    error={touched.eventTypeId && Boolean(errors.eventTypeId)}
-                    helperText={touched.eventTypeId && errors.eventTypeId}
-                    select
-                    fullWidth
-                    SelectProps={{
-                      native: true,
-                    }}
-                  >
-                    <option value="">בחר סוג אירוע</option>
-                    {prayerEventTypes
-                      ?.filter(type => type.enabled)
-                      ?.map(eventType => (
-                        <option
-                          key={eventType.id}
-                          value={eventType.displayName}
-                        >
-                          {eventType.displayName}
-                        </option>
-                      ))}
-                  </TextField>
+                    error={Boolean(errors.eventTypeId)}
+                    helperText={errors.eventTypeId}
+                    touched={touched.eventTypeId}
+                  />
 
                   <HebrewDateSelector
                     value={values.hebrewDate}
-                    onChange={date => setFieldValue("hebrewDate", date || null)}
+                    onChange={date =>
+                      setFieldValue("hebrewDate", date || HebrewDate.now())
+                    }
                     label="תאריך האירוע"
                   />
 
@@ -911,7 +916,7 @@ export const PrayerCardEditDialog: React.FC<PrayerCardEditDialogProps> = ({
                       label="תאריך לידה"
                     />
 
-                    <Stack direction="row" spacing={2}>
+                    <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
                       <TextField
                         name="phoneNumber"
                         label="נייד"
@@ -985,8 +990,8 @@ export const PrayerCardEditDialog: React.FC<PrayerCardEditDialogProps> = ({
                 eventTypeId:
                   prayerCard.prayer.events[editingEventIndex]?.type || "",
                 hebrewDate:
-                  (prayerCard.prayer.events[editingEventIndex]
-                    ?.hebrewDate as any) || null,
+                  prayerCard.prayer.events[editingEventIndex]?.hebrewDate ||
+                  HebrewDate.now(),
                 notes: prayerCard.prayer.events[editingEventIndex]?.notes || "",
               }}
               validationSchema={prayerEventValidationSchema}
@@ -1003,34 +1008,21 @@ export const PrayerCardEditDialog: React.FC<PrayerCardEditDialogProps> = ({
               }) => (
                 <Form>
                   <Stack spacing={3} sx={{ mt: 1 }}>
-                    <TextField
+                    <EventTypeSelector
                       name="eventTypeId"
                       label="סוג אירוע"
                       value={values.eventTypeId}
                       onChange={handleChange}
                       onBlur={handleBlur}
-                      error={touched.eventTypeId && Boolean(errors.eventTypeId)}
-                      helperText={touched.eventTypeId && errors.eventTypeId}
-                      select
-                      fullWidth
-                      SelectProps={{
-                        native: true,
-                      }}
-                    >
-                      <option value="">בחר סוג אירוע</option>
-                      {prayerEventTypes
-                        ?.filter(type => type.enabled)
-                        ?.map(type => (
-                          <option key={type.id} value={type.id}>
-                            {type.displayName}
-                          </option>
-                        ))}
-                    </TextField>
+                      error={Boolean(errors.eventTypeId)}
+                      helperText={errors.eventTypeId}
+                      touched={touched.eventTypeId}
+                    />
 
                     <HebrewDateSelector
                       value={values.hebrewDate}
                       onChange={date =>
-                        setFieldValue("hebrewDate", date || null)
+                        setFieldValue("hebrewDate", date || HebrewDate.now())
                       }
                       label="תאריך האירוע"
                     />

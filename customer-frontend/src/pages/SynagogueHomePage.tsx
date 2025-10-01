@@ -33,7 +33,6 @@ const SynagogueHomePage: React.FC = () => {
   const { data: prayerCard, isLoading: prayerCardLoading } = usePrayerCard();
   const { data: synagogue } = useSelectedSynagogue();
 
-  console.log("prayerCard", prayerCard);
   const navigate = useSynagogueNavigate();
 
   const handleCreatePrayerCard = () => {

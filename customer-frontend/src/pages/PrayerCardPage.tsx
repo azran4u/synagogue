@@ -94,11 +94,6 @@ const PrayerCardContent: React.FC = () => {
   const { data: aliyaTypes } = useAliyaTypes();
   const { data: aliyaGroups } = useAliyaGroups();
   const navigate = useSynagogueNavigate();
-
-  useEffect(() => {
-    console.log("prayerCard", prayerCard);
-  }, [prayerCard]);
-
   // State for editing
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
@@ -535,7 +530,7 @@ const PrayerCardContent: React.FC = () => {
                               textOverflow: "ellipsis",
                             }}
                           >
-                            {event.hebrewDate}
+                            {event.hebrewDate.toString()}
                           </Typography>
                         </Box>
                       </Box>

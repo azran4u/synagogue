@@ -27,14 +27,18 @@ export const HebrewDateSelector: React.FC<HebrewDateSelectorProps> = ({
 }) => {
   const [dateType, setDateType] = useState<"georgian" | "hebrew">("georgian");
   const [georgianDate, setGeorgianDate] = useState<Date | null>(
-    value ? value.toGregorianDate() : null
+    value && typeof value.toGregorianDate === "function"
+      ? value.toGregorianDate()
+      : null
   );
   const [hebrewDate, setHebrewDate] = useState<HebrewDate>(
-    value || HebrewDate.now()
+    value && typeof value.toGregorianDate === "function"
+      ? value
+      : HebrewDate.now()
   );
 
   useEffect(() => {
-    if (value) {
+    if (value && typeof value.toGregorianDate === "function") {
       setHebrewDate(value);
       setGeorgianDate(value.toGregorianDate());
     }
