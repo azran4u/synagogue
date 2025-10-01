@@ -517,7 +517,11 @@ const PrayerCardContent: React.FC = () => {
                           }}
                         >
                           <Chip
-                            label={event.type}
+                            label={
+                              prayerEventTypes?.find(
+                                type => type.id === event.type
+                              )?.displayName || event.type
+                            }
                             size="small"
                             color="primary"
                           />
