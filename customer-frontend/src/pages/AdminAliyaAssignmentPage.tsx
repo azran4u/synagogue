@@ -43,7 +43,7 @@ import {
   useDeleteAliyaGroup,
 } from "../hooks/useAliyaGroups";
 import { useAllPrayerCards } from "../hooks/usePrayerCard";
-import { useIsAdmin } from "../hooks/useIsAdmin";
+import { useUser } from "../hooks/useUser";
 import { useSynagogueNavigate } from "../hooks/useSynagogueNavigate";
 import { HebrewDateSelector } from "../components/HebrewDateSelector";
 import { HebrewDate } from "../model/HebrewDate";
@@ -107,7 +107,7 @@ const editGroupValidationSchema = Yup.object({
 
 const AdminAliyaAssignmentContent = () => {
   const navigate = useSynagogueNavigate();
-  const isAdmin = useIsAdmin();
+  const { isGabaiOrHigher } = useUser();
 
   // State for dialogs
   const [showAssignmentDialog, setShowAssignmentDialog] = useState(false);
@@ -676,7 +676,7 @@ const AdminAliyaAssignmentContent = () => {
     navigate("");
   };
 
-  if (!isAdmin) {
+  if (!isGabaiOrHigher) {
     return (
       <Box sx={{ p: 3, maxWidth: 800, mx: "auto" }}>
         <Alert severity="error">

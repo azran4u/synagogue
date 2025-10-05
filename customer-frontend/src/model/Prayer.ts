@@ -45,11 +45,16 @@ export class PrayerCard {
   }
 
   static fromDto(dto: PrayerCardDto): PrayerCard {
-    return new PrayerCard(
-      dto.id,
-      Prayer.fromDto(dto.prayer),
-      dto.children.map(child => Prayer.fromDto(child))
-    );
+    try {
+      return new PrayerCard(
+        dto.id,
+        Prayer.fromDto(dto.prayer),
+        dto.children.map(child => Prayer.fromDto(child))
+      );
+    } catch (error) {
+      console.error("Error creating prayer card from DTO:", error, dto);
+      throw error;
+    }
   }
 
   static create(prayer: Prayer, children: Prayer[]): PrayerCard {

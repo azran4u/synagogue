@@ -27,11 +27,13 @@ import { useAuth } from "../hooks/useAuth";
 import { usePrayerCard } from "../hooks/usePrayerCard";
 import { useSynagogueNavigate } from "../hooks/useSynagogueNavigate";
 import { useSelectedSynagogue } from "../hooks/useSynagogueId";
+import { useUser } from "../hooks/useUser";
 
 const SynagogueHomePage: React.FC = () => {
   const { isLoggedIn, login, isLoading: authLoading } = useAuth();
   const { data: prayerCard, isLoading: prayerCardLoading } = usePrayerCard();
   const { data: synagogue } = useSelectedSynagogue();
+  const { displayName } = useUser();
 
   const navigate = useSynagogueNavigate();
 
@@ -177,6 +179,17 @@ const SynagogueHomePage: React.FC = () => {
     <Container maxWidth="lg" sx={{ py: 4 }}>
       {/* Welcome Section */}
       <Box sx={{ textAlign: "center", mb: 6 }}>
+        {displayName && (
+          <Typography
+            variant="h6"
+            sx={{
+              mb: 2,
+              color: "text.secondary",
+            }}
+          >
+            שלום {displayName}
+          </Typography>
+        )}
         <HomeIcon sx={{ fontSize: 80, color: "primary.main", mb: 2 }} />
         <Typography
           variant="h3"

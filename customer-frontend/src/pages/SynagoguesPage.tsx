@@ -33,7 +33,7 @@ import {
   useDeleteSynagogue,
 } from "../hooks/useSynagogues";
 import { useNavigate } from "react-router-dom";
-import { useIsAdmin } from "../hooks/useIsAdmin";
+import { useUser } from "../hooks/useUser";
 import { Formik, FormikHelpers, Form, Field } from "formik";
 import { useAuth } from "../hooks/useAuth";
 import { useDispatch, useSelector } from "react-redux";
@@ -49,7 +49,7 @@ const SynagoguesPage: React.FC = () => {
   const { mutate: createSynagogue } = useCreateSynagogue();
   const { mutate: deleteSynagogue } = useDeleteSynagogue();
   const { user } = useAuth();
-  const isAdmin = useIsAdmin();
+  const { isAdmin } = useUser();
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const selectedSynagogue = useSelectedSynagogue();

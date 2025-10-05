@@ -131,8 +131,11 @@ export const HebrewDateSelector: React.FC<HebrewDateSelectorProps> = ({
         </Stack>
       ) : (
         <Stack spacing={1}>
-          <Stack direction="row" spacing={2}>
-            <FormControl sx={{ minWidth: 80 }}>
+          <Stack
+            direction={{ xs: "column", sm: "row" }}
+            spacing={{ xs: 1, sm: 2 }}
+          >
+            <FormControl sx={{ minWidth: { xs: "auto", sm: 80 } }}>
               <Typography variant="caption">יום</Typography>
               <Select
                 value={hebrewDate.day}
@@ -149,7 +152,7 @@ export const HebrewDateSelector: React.FC<HebrewDateSelectorProps> = ({
               </Select>
             </FormControl>
 
-            <FormControl sx={{ minWidth: 120 }}>
+            <FormControl sx={{ minWidth: { xs: "auto", sm: 120 } }}>
               <Typography variant="caption">חודש</Typography>
               <Select
                 value={hebrewDate.month}
@@ -166,7 +169,7 @@ export const HebrewDateSelector: React.FC<HebrewDateSelectorProps> = ({
               </Select>
             </FormControl>
 
-            <FormControl sx={{ minWidth: 100 }}>
+            <FormControl sx={{ minWidth: { xs: "auto", sm: 100 } }}>
               <Typography variant="caption">שנה</Typography>
               <Select
                 value={hebrewDate.year}

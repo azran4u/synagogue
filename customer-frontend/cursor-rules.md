@@ -1,7 +1,17 @@
 # todo
 
+/admins/elirantzadok@gmail.com
+
+/synagogues/zFH6FhDnsJDjuQtF2ANq/prayerCards/elirantzadok@gmail.com
+/synagogues/zFH6FhDnsJDjuQtF2ANq/prayerEventTypes/042f2582-509c-42d0-af24-a8fcdf51d09a
+
 TODO:
+add the peayer name in the home page
+this page is not available yet
 replace prayer with praying
+isGabai vs isAdmin - change to useUser
+
+kids over 13
 
 DONE:
 

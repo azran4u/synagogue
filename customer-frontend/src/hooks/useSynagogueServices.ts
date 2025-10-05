@@ -6,6 +6,7 @@ import { selectSelectedSynagogueId } from "../store/synagogueSlice";
 import { prayerEventTypeMapper } from "../model/PrayerEventType";
 import { aliyaTypeMapper } from "../model/AliyaType";
 import { aliyaGroupMapper } from "../model/AliyaGroup";
+import { adminMapper } from "../model/Admin";
 
 export function useSynagogueServices() {
   const synagogueId = useAppSelector(selectSelectedSynagogueId);
@@ -16,6 +17,7 @@ export function useSynagogueServices() {
         prayerEventTypeService: null,
         aliyaTypeService: null,
         aliyaGroupService: null,
+        gabaimService: null,
       };
     }
     return {
@@ -39,6 +41,7 @@ export function useSynagogueServices() {
         aliyaGroupMapper,
         synagogueId
       ),
+      gabaimService: new GenericService("gabaim", adminMapper, synagogueId),
     };
   }, [synagogueId]);
 }

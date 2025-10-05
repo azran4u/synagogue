@@ -11,7 +11,7 @@ export const adminService = new GenericService<Admin, AdminDto>(
 export function useAdmin(email?: string | null) {
   return useQuery({
     queryKey: ["admins", email],
-    queryFn: () => adminService.getById(email!),
+    queryFn: () => adminService.isExists(email!),
     enabled: !!email,
   });
 }
@@ -19,6 +19,6 @@ export function useAdmin(email?: string | null) {
 export function useIsAdmin(): boolean {
   const { user } = useAuth();
   const { data: admin } = useAdmin(user?.email);
-  if (!user || !user.email || !admin) return false;
-  return true;
+  if (user?.email && admin) return true;
+  return false;
 }

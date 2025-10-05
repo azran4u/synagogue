@@ -3,10 +3,12 @@ import Box from "@mui/material/Box";
 import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
 import React from "react";
+import { useSelectedSynagogue } from "../hooks/useSynagogueId";
 
 const Footer: React.FC = () => {
   const year = new Date().getFullYear();
-  const company = "בית הכנסת רבבה דרום";
+  const { data: synagogue } = useSelectedSynagogue();
+  const company = synagogue?.name || "בית הכנסת";
   return (
     <AppBar position="static" color="primary" sx={{ top: "auto", bottom: 0 }}>
       <Toolbar>

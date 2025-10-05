@@ -1,5 +1,6 @@
 import React, { Component, ErrorInfo, ReactNode } from "react";
 import { Box, Typography, Button, Alert } from "@mui/material";
+import { errorService } from "../services/errorService";
 
 interface Props {
   children: ReactNode;
@@ -21,6 +22,9 @@ export class ErrorBoundary extends Component<Props, State> {
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error("ErrorBoundary caught an error:", error, errorInfo);
+
+    // Log error to Firebase
+    errorService.logReactError(error, errorInfo);
   }
 
   private handleReload = () => {

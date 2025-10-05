@@ -15,6 +15,7 @@ import AdminPrayerEventTypesPage from "./pages/AdminPrayerEventTypesPage";
 import AdminAliyaTypesPage from "./pages/AdminAliyaTypesPage";
 import AdminAliyaAssignmentPage from "./pages/AdminAliyaAssignmentPage";
 import AdminPrayerCardsPage from "./pages/AdminPrayerCardsPage";
+import { ErrorServiceProvider } from "./components/ErrorServiceProvider";
 
 export const App: React.FC = () => {
   return (
@@ -28,46 +29,48 @@ export const App: React.FC = () => {
       >
         <Router>
           <SynagogueProvider>
-            <Sidebar />
-            <Box sx={{ flex: 1, marginTop: "4rem" }}>
-              <Routes>
-                <Route path="/" element={<SynagogueHomePage />} />
-                <Route
-                  path="/synagogue/:synagogueId/prayer-card"
-                  element={<PrayerCardPage />}
-                />
-                <Route
-                  path="/synagogue/:synagogueId/admin/settings"
-                  element={<SynagogueSettingsPage />}
-                />
-                <Route
-                  path="/synagogue/:synagogueId/prayer-event-types"
-                  element={<PrayerEventTypesPage />}
-                />
-                <Route
-                  path="/synagogue/:synagogueId"
-                  element={<SynagogueHomePage />}
-                />
-                <Route path="/synagogues" element={<SynagoguesPage />} />
-                <Route
-                  path="/synagogue/:synagogueId/admin/prayer-event-types"
-                  element={<AdminPrayerEventTypesPage />}
-                />
-                <Route
-                  path="/synagogue/:synagogueId/admin/aliya-types"
-                  element={<AdminAliyaTypesPage />}
-                />
-                <Route
-                  path="/synagogue/:synagogueId/admin/aliya-assignment"
-                  element={<AdminAliyaAssignmentPage />}
-                />
-                <Route
-                  path="/synagogue/:synagogueId/admin/prayer-cards"
-                  element={<AdminPrayerCardsPage />}
-                />
-              </Routes>
-            </Box>
-            <Footer />
+            <ErrorServiceProvider>
+              <Sidebar />
+              <Box sx={{ flex: 1, marginTop: "4rem" }}>
+                <Routes>
+                  <Route path="/" element={<SynagogueHomePage />} />
+                  <Route
+                    path="/synagogue/:synagogueId/prayer-card"
+                    element={<PrayerCardPage />}
+                  />
+                  <Route
+                    path="/synagogue/:synagogueId/admin/settings"
+                    element={<SynagogueSettingsPage />}
+                  />
+                  <Route
+                    path="/synagogue/:synagogueId/prayer-event-types"
+                    element={<PrayerEventTypesPage />}
+                  />
+                  <Route
+                    path="/synagogue/:synagogueId"
+                    element={<SynagogueHomePage />}
+                  />
+                  <Route path="/synagogues" element={<SynagoguesPage />} />
+                  <Route
+                    path="/synagogue/:synagogueId/admin/prayer-event-types"
+                    element={<AdminPrayerEventTypesPage />}
+                  />
+                  <Route
+                    path="/synagogue/:synagogueId/admin/aliya-types"
+                    element={<AdminAliyaTypesPage />}
+                  />
+                  <Route
+                    path="/synagogue/:synagogueId/admin/aliya-assignment"
+                    element={<AdminAliyaAssignmentPage />}
+                  />
+                  <Route
+                    path="/synagogue/:synagogueId/admin/prayer-cards"
+                    element={<AdminPrayerCardsPage />}
+                  />
+                </Routes>
+              </Box>
+              <Footer />
+            </ErrorServiceProvider>
           </SynagogueProvider>
         </Router>
       </Box>

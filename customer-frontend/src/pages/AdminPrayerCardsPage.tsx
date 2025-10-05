@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
   Box,
   Card,
@@ -24,16 +24,17 @@ import { useAllPrayerCards } from "../hooks/usePrayerCard";
 import { useCreatePrayerCard } from "../hooks/usePrayerCard";
 import { useDeletePrayerCard } from "../hooks/usePrayerCard";
 import { PrayerCard } from "../model/Prayer";
-import { useAliyaTypes } from "../hooks/useAliyaTypes";
-import { useAliyaGroups } from "../hooks/useAliyaGroups";
 import { PrayerCardEditDialog } from "../components/PrayerCardEditDialog";
 
 const AdminPrayerCardsPage: React.FC = () => {
   const { data: prayerCards, isLoading } = useAllPrayerCards();
+
+  useEffect(() => {
+    console.log("prayerCards", prayerCards);
+  }, [prayerCards]);
+
   const createPrayerMutation = useCreatePrayerCard();
   const deletePrayerMutation = useDeletePrayerCard();
-  const { data: aliyaTypes } = useAliyaTypes();
-  const { data: aliyaGroups } = useAliyaGroups();
 
   // State for search
   const [searchTerm, setSearchTerm] = useState("");

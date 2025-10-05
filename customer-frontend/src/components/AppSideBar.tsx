@@ -20,12 +20,13 @@ import {
   Group as AliyaTypesIcon,
   Assignment as AliyaAssignmentIcon,
   People as AdminPrayerCardsIcon,
+  HolidayVillage as SynagogueIcon,
 } from "@mui/icons-material";
 import { Logo } from "./Logo";
 import { useMobile } from "../hooks/useMobile";
 import { WithLogin } from "./WithLogin";
-import { useIsAdmin } from "../hooks/useIsAdmin";
 import { useSynagogueNavigate } from "../hooks/useSynagogueNavigate";
+import { useUser } from "../hooks/useUser";
 
 interface SidebarItemProps {
   text: string;
@@ -70,7 +71,8 @@ export const AppSideBar: React.FC<AppSideBarProps> = ({
 }) => {
   const theme = useTheme();
   const isMobile = useMobile();
-  const isAdmin = useIsAdmin();
+  const { isGabaiOrHigher } = useUser();
+
   const drawerWidth = useMemo(() => (isMobile ? "60%" : "20%"), [isMobile]);
   const navigate = useSynagogueNavigate();
 
@@ -110,11 +112,13 @@ export const AppSideBar: React.FC<AppSideBarProps> = ({
         >
           <Logo />
 
-          <SidebarItem
-            text="בתי כנסת"
-            onClick={() => handleClick("synagogues", false)}
-            icon={<ListIcon />}
-          />
+          <WithLogin>
+            <SidebarItem
+              text="כרטיס המתפלל שלי"
+              onClick={() => handleClick("prayer-card")}
+              icon={<PrayerCardIcon />}
+            />
+          </WithLogin>
           <SidebarItem
             text="שיעורי תורה"
             onClick={() => handleClick("tora-lessons")}
@@ -125,13 +129,6 @@ export const AppSideBar: React.FC<AppSideBarProps> = ({
             onClick={() => handleClick("prayer-times")}
             icon={<PrayerTimesIcon />}
           />
-          <WithLogin>
-            <SidebarItem
-              text="כרטיס המתפלל שלי"
-              onClick={() => handleClick("prayer-card")}
-              icon={<PrayerCardIcon />}
-            />
-          </WithLogin>
 
           <SidebarItem
             text="דוחות כספיים"
@@ -144,8 +141,13 @@ export const AppSideBar: React.FC<AppSideBarProps> = ({
             icon={<DonationsIcon />}
           />
 
+          <SidebarItem
+            text="בתי כנסת"
+            onClick={() => handleClick("synagogues", false)}
+            icon={<SynagogueIcon />}
+          />
           {/* Admin Section */}
-          {isAdmin && (
+          {isGabaiOrHigher && (
             <>
               <Box
                 sx={{

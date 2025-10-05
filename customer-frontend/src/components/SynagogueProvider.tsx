@@ -24,7 +24,6 @@ export const SynagogueProvider: React.FC<SynagogueProviderProps> = ({
   //   read current url
   const currentUrl = window.location.href;
   const synagogueId = useMemo(() => {
-    console.log("currentUrl", currentUrl);
     let synagogueId = currentUrl.split("/synagogue/")[1];
     if (synagogueId == undefined) {
       return null;

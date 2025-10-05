@@ -38,7 +38,7 @@ import {
   useUpdatePrayerEventType,
   useDeletePrayerEventType,
 } from "../hooks/usePrayerEventTypes";
-import { useIsAdmin } from "../hooks/useIsAdmin";
+import { useUser } from "../hooks/useUser";
 import { useSynagogueNavigate } from "../hooks/useSynagogueNavigate";
 
 interface PrayerEventTypeFormValues {
@@ -66,7 +66,7 @@ const validationSchema = Yup.object({
 
 const AdminPrayerEventTypesContent = () => {
   const navigate = useSynagogueNavigate();
-  const isAdmin = useIsAdmin();
+  const { isGabaiOrHigher } = useUser();
 
   // State for dialogs
   const [showCreateDialog, setShowCreateDialog] = useState(false);
@@ -161,7 +161,7 @@ const AdminPrayerEventTypesContent = () => {
   };
 
   // Check if user is admin
-  if (!isAdmin) {
+  if (!isGabaiOrHigher) {
     return (
       <Box sx={{ p: 3, maxWidth: 800, mx: "auto" }}>
         <Alert severity="error" sx={{ mb: 3 }}>

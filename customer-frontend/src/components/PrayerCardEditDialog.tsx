@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -27,17 +27,10 @@ import { HebrewDate } from "../model/HebrewDate";
 import { PrayerCard, Prayer } from "../model/Prayer";
 import { PrayerEvent } from "../model/PrayerEvent";
 import { usePrayerEventTypes } from "../hooks/usePrayerEventTypes";
-
-// Form interfaces
-interface ChildFormValues {
-  firstName: string;
-  lastName: string;
-  hebrewBirthDate: HebrewDate | null;
-  phoneNumber: string;
-  email: string;
-  notes: string;
-}
-
+import { useUser } from "../hooks/useUser";
+import { useSynagogueNavigate } from "../hooks/useSynagogueNavigate";
+import { isNil } from "lodash";
+// Unified form interface
 interface PrayerCardFormValues {
   firstName: string;
   lastName: string;
@@ -45,35 +38,42 @@ interface PrayerCardFormValues {
   phoneNumber: string;
   email: string;
   notes: string;
-  children: ChildFormValues[];
+  children: {
+    firstName: string;
+    lastName: string;
+    hebrewBirthDate: HebrewDate | null;
+    phoneNumber: string;
+    email: string;
+    notes: string;
+  }[];
+  events: {
+    eventTypeId: string;
+    hebrewDate: HebrewDate;
+    notes: string;
+  }[];
 }
 
-interface PrayerEventFormValues {
-  eventTypeId: string;
-  hebrewDate: HebrewDate;
-  notes: string;
-}
-
-// Validation schemas
-const childValidationSchema = Yup.object({
-  firstName: Yup.string().required("שם פרטי נדרש"),
-  lastName: Yup.string().required("שם משפחה נדרש"),
-  phoneNumber: Yup.string().optional(),
-  email: Yup.string().email("כתובת אימייל לא תקינה").optional(),
-});
-
+// Unified validation schema
 const prayerCardValidationSchema = Yup.object({
   firstName: Yup.string().required("שם פרטי נדרש"),
   lastName: Yup.string().required("שם משפחה נדרש"),
   phoneNumber: Yup.string().optional(),
   email: Yup.string().email("כתובת אימייל לא תקינה").optional(),
-  children: Yup.array().of(childValidationSchema),
-});
-
-const prayerEventValidationSchema = Yup.object({
-  eventTypeId: Yup.string().required("סוג האירוע נדרש"),
-  hebrewDate: Yup.mixed().required("תאריך נדרש"),
-  notes: Yup.string().optional(),
+  children: Yup.array().of(
+    Yup.object({
+      firstName: Yup.string().required("שם פרטי נדרש"),
+      lastName: Yup.string().required("שם משפחה נדרש"),
+      phoneNumber: Yup.string().optional(),
+      email: Yup.string().email("כתובת אימייל לא תקינה").optional(),
+    })
+  ),
+  events: Yup.array().of(
+    Yup.object({
+      eventTypeId: Yup.string().required("סוג האירוע נדרש"),
+      hebrewDate: Yup.mixed().required("תאריך נדרש"),
+      notes: Yup.string().optional(),
+    })
+  ),
 });
 
 interface PrayerCardEditDialogProps {
@@ -91,53 +91,86 @@ export const PrayerCardEditDialog: React.FC<PrayerCardEditDialogProps> = ({
   prayerCard,
   onSave,
   isLoading = false,
-  title = "ערוך כרטיס מתפלל",
+  title,
 }) => {
   const { data: prayerEventTypes } = usePrayerEventTypes();
+  const navigate = useSynagogueNavigate();
+  const { email } = useUser();
 
-  // State for child editing
-  const [showEditChildDialog, setShowEditChildDialog] = useState(false);
-  const [editingChildIndex, setEditingChildIndex] = useState<number | null>(
-    null
-  );
-  const [currentFormValues, setCurrentFormValues] =
-    useState<PrayerCardFormValues | null>(null);
-
-  // State for event management
-  const [showEventDialog, setShowEventDialog] = useState(false);
-  const [showEditEventDialog, setShowEditEventDialog] = useState(false);
-  const [editingEventIndex, setEditingEventIndex] = useState<number | null>(
-    null
-  );
-
-  useEffect(() => {
-    if (prayerCard != null && editingEventIndex !== null) {
-      console.log(
-        "prayerCard?.prayer.events?[editingEventIndex]",
-        prayerCard?.prayer.events?.[editingEventIndex]
-      );
+  // Get random event type for initial value
+  const initialEventType = useMemo(() => {
+    if (!prayerEventTypes || prayerEventTypes.length === 0) {
+      return null;
     }
-  }, [prayerCard, editingEventIndex]);
+    return prayerEventTypes[0];
+  }, [prayerEventTypes]);
 
   const handleSubmit = async (
     values: PrayerCardFormValues,
     { setSubmitting }: FormikHelpers<PrayerCardFormValues>
   ) => {
-    if (!prayerCard) return;
-
+    if (isNil(email)) {
+      console.error("Email is not set");
+      navigate("");
+      return;
+    }
+    if (isNil(initialEventType)) {
+      console.error("Initial event type is not set");
+      navigate("");
+      return;
+    }
     try {
-      // Update main prayer
-      const updatedPrayer = prayerCard.prayer.update({
-        firstName: values.firstName,
-        lastName: values.lastName,
-        hebrewBirthDate: values.hebrewBirthDate || undefined,
-        phoneNumber: values.phoneNumber || undefined,
-        email: values.email || undefined,
-        notes: values.notes,
-      });
+      // Create events
+      const events = values.events.map(
+        event =>
+          new PrayerEvent(
+            event.eventTypeId,
+            event.hebrewDate,
+            event.notes || undefined
+          )
+      );
 
-      // Update children prayers
-      const updatedChildrenPrayers = values.children.map(child =>
+      // Create main prayer
+      let mainPrayer: Prayer;
+      if (prayerCard) {
+        // Edit mode - update existing prayer
+        mainPrayer = prayerCard.prayer.update({
+          firstName: values.firstName,
+          lastName: values.lastName,
+          hebrewBirthDate: values.hebrewBirthDate ?? undefined,
+          phoneNumber: values.phoneNumber ?? undefined,
+          email: values.email ?? undefined,
+          notes: values.notes ?? undefined,
+        });
+        // Update events
+        mainPrayer = new Prayer(
+          mainPrayer.id,
+          mainPrayer.firstName,
+          mainPrayer.lastName,
+          mainPrayer.hebrewBirthDate,
+          mainPrayer.phoneNumber,
+          mainPrayer.email,
+          mainPrayer.notes,
+          mainPrayer.aliyot,
+          events
+        );
+      } else {
+        // Create mode - create new prayer
+        mainPrayer = new Prayer(
+          email,
+          values.firstName,
+          values.lastName,
+          values.hebrewBirthDate ?? undefined,
+          values.phoneNumber ?? undefined,
+          values.email ?? undefined,
+          values.notes ?? undefined,
+          [], // aliyaHistory
+          events
+        );
+      }
+
+      // Create children prayers
+      const childrenPrayers = values.children.map(child =>
         Prayer.create(
           child.firstName,
           child.lastName,
@@ -148,203 +181,21 @@ export const PrayerCardEditDialog: React.FC<PrayerCardEditDialogProps> = ({
         )
       );
 
-      // Create updated prayer card
-      const updatedPrayerCard = PrayerCard.create(
-        updatedPrayer,
-        updatedChildrenPrayers
-      );
+      // Create prayer card
+      const prayerCardToSave = PrayerCard.create(mainPrayer, childrenPrayers);
 
-      await onSave(updatedPrayerCard);
+      await onSave(prayerCardToSave);
       onClose();
       setSubmitting(false);
     } catch (error) {
-      console.error("Error updating prayer card:", error);
+      console.error("Error saving prayer card:", error);
       setSubmitting(false);
     }
   };
 
-  const handleCreatePrayerEvent = async (
-    values: PrayerEventFormValues,
-    { setSubmitting }: FormikHelpers<PrayerEventFormValues>
-  ) => {
-    if (!prayerCard || !currentFormValues) return;
-
-    try {
-      // Create new prayer event
-      const newEvent = PrayerEvent.create(
-        values.eventTypeId,
-        values.hebrewDate,
-        values.notes || undefined
-      );
-
-      // Add event to prayer
-      const updatedPrayer = prayerCard.prayer.addPrayerEvent(newEvent);
-
-      // Create updated prayer card
-      const updatedPrayerCard = PrayerCard.create(
-        updatedPrayer,
-        prayerCard.children
-      );
-
-      await onSave(updatedPrayerCard);
-      setShowEventDialog(false);
-      setSubmitting(false);
-    } catch (error) {
-      console.error("Error creating prayer event:", error);
-      setSubmitting(false);
-    }
-  };
-
-  const handleDeletePrayerEvent = async (eventIndex: number) => {
-    if (!prayerCard) return;
-
-    if (window.confirm("האם אתה בטוח שברצונך למחוק את האירוע הזה?")) {
-      try {
-        // Remove event from prayer
-        const updatedPrayer = prayerCard.prayer.removePrayerEvent(eventIndex);
-
-        // Create updated prayer card
-        const updatedPrayerCard = PrayerCard.create(
-          updatedPrayer,
-          prayerCard.children
-        );
-
-        await onSave(updatedPrayerCard);
-      } catch (error) {
-        console.error("Error deleting prayer event:", error);
-      }
-    }
-  };
-
-  const handleDeleteChild = async (childIndex: number) => {
-    if (!prayerCard) return;
-
-    const child = prayerCard.children[childIndex];
-    const childName = `${child.firstName} ${child.lastName}`;
-
-    if (window.confirm(`האם אתה בטוח שברצונך למחוק את ${childName}?`)) {
-      try {
-        // Remove child from children array
-        const updatedChildren = prayerCard.children.filter(
-          (_, index) => index !== childIndex
-        );
-
-        // Create updated prayer card
-        const updatedPrayerCard = PrayerCard.create(
-          prayerCard.prayer,
-          updatedChildren
-        );
-
-        await onSave(updatedPrayerCard);
-      } catch (error) {
-        console.error("Error deleting child:", error);
-      }
-    }
-  };
-
-  const handleEditChild = (
-    childIndex: number,
-    formValues: PrayerCardFormValues
-  ) => {
-    setEditingChildIndex(childIndex);
-    setCurrentFormValues(formValues);
-    setShowEditChildDialog(true);
-  };
-
-  const handleUpdateChild = async (
-    values: ChildFormValues,
-    { setSubmitting }: FormikHelpers<ChildFormValues>
-  ) => {
-    if (!prayerCard || editingChildIndex === null || !currentFormValues) return;
-
-    try {
-      // Create updated child
-      const updatedChild = Prayer.create(
-        values.firstName,
-        values.lastName,
-        values.hebrewBirthDate || undefined,
-        values.phoneNumber || undefined,
-        values.email || undefined,
-        values.notes
-      );
-
-      // Update children array
-      const updatedChildren = prayerCard.children.map((child, index) =>
-        index === editingChildIndex ? updatedChild : child
-      );
-
-      // Create updated prayer card
-      const updatedPrayerCard = PrayerCard.create(
-        prayerCard.prayer,
-        updatedChildren
-      );
-
-      await onSave(updatedPrayerCard);
-      setShowEditChildDialog(false);
-      setEditingChildIndex(null);
-      setCurrentFormValues(null);
-      setSubmitting(false);
-    } catch (error) {
-      console.error("Error updating child:", error);
-      setSubmitting(false);
-    }
-  };
-
-  const handleEditPrayerEvent = (eventIndex: number) => {
-    setEditingEventIndex(eventIndex);
-    setShowEditEventDialog(true);
-  };
-
-  const handleUpdatePrayerEvent = async (
-    values: PrayerEventFormValues,
-    { setSubmitting }: FormikHelpers<PrayerEventFormValues>
-  ) => {
-    if (!prayerCard || editingEventIndex === null) return;
-
-    try {
-      // Create updated event
-      const updatedEvent = new PrayerEvent(
-        values.eventTypeId,
-        values.hebrewDate,
-        values.notes || undefined
-      );
-
-      // Update events array
-      const updatedEvents = prayerCard.prayer.events.map((event, index) =>
-        index === editingEventIndex ? updatedEvent : event
-      );
-
-      // Create updated prayer
-      const updatedPrayer = new Prayer(
-        prayerCard.prayer.id,
-        prayerCard.prayer.firstName,
-        prayerCard.prayer.lastName,
-        prayerCard.prayer.hebrewBirthDate,
-        prayerCard.prayer.phoneNumber,
-        prayerCard.prayer.email,
-        prayerCard.prayer.notes,
-        prayerCard.prayer.aliyot,
-        updatedEvents
-      );
-
-      // Create updated prayer card
-      const updatedPrayerCard = PrayerCard.create(
-        updatedPrayer,
-        prayerCard.children
-      );
-
-      await onSave(updatedPrayerCard);
-      setShowEditEventDialog(false);
-      setEditingEventIndex(null);
-      setSubmitting(false);
-    } catch (error) {
-      console.error("Error updating prayer event:", error);
-      setSubmitting(false);
-    }
-  };
-
-  const addChild = (setFieldValue: any, children: ChildFormValues[]) => {
-    const newChild: ChildFormValues = {
+  // Simple helper functions for form manipulation
+  const addChild = (setFieldValue: any, children: any[]) => {
+    const newChild = {
       firstName: "",
       lastName: "",
       hebrewBirthDate: null,
@@ -355,16 +206,24 @@ export const PrayerCardEditDialog: React.FC<PrayerCardEditDialogProps> = ({
     setFieldValue("children", [...children, newChild]);
   };
 
-  const removeChild = (
-    setFieldValue: any,
-    children: ChildFormValues[],
-    index: number
-  ) => {
+  const removeChild = (setFieldValue: any, children: any[], index: number) => {
     const updatedChildren = children.filter((_, i) => i !== index);
     setFieldValue("children", updatedChildren);
   };
 
-  if (!prayerCard) return null;
+  const addEvent = (setFieldValue: any, events: any[]) => {
+    const newEvent = {
+      eventTypeId: initialEventType?.id || "", // TODO: review this
+      hebrewDate: HebrewDate.now(),
+      notes: "",
+    };
+    setFieldValue("events", [...events, newEvent]);
+  };
+
+  const removeEvent = (setFieldValue: any, events: any[], index: number) => {
+    const updatedEvents = events.filter((_, i) => i !== index);
+    setFieldValue("events", updatedEvents);
+  };
 
   return (
     <>
@@ -374,20 +233,27 @@ export const PrayerCardEditDialog: React.FC<PrayerCardEditDialogProps> = ({
         <DialogContent>
           <Formik
             initialValues={{
-              firstName: prayerCard.prayer.firstName || "",
-              lastName: prayerCard.prayer.lastName || "",
-              hebrewBirthDate: prayerCard.prayer.hebrewBirthDate || null,
-              phoneNumber: prayerCard.prayer.phoneNumber || "",
-              email: prayerCard.prayer.email || "",
-              notes: prayerCard.prayer.notes || "",
-              children: prayerCard.children.map(child => ({
-                firstName: child.firstName || "",
-                lastName: child.lastName || "",
-                hebrewBirthDate: child.hebrewBirthDate || null,
-                phoneNumber: child.phoneNumber || "",
-                email: child.email || "",
-                notes: child.notes || "",
-              })),
+              firstName: prayerCard?.prayer.firstName || "",
+              lastName: prayerCard?.prayer.lastName || "",
+              hebrewBirthDate: prayerCard?.prayer.hebrewBirthDate || null,
+              phoneNumber: prayerCard?.prayer.phoneNumber || "",
+              email: prayerCard?.prayer.email || "",
+              notes: prayerCard?.prayer.notes || "",
+              children:
+                prayerCard?.children.map(child => ({
+                  firstName: child.firstName || "",
+                  lastName: child.lastName || "",
+                  hebrewBirthDate: child.hebrewBirthDate || null,
+                  phoneNumber: child.phoneNumber || "",
+                  email: child.email || "",
+                  notes: child.notes || "",
+                })) || [],
+              events:
+                prayerCard?.prayer.events.map(event => ({
+                  eventTypeId: event.type,
+                  hebrewDate: event.hebrewDate,
+                  notes: event.notes || "",
+                })) || [],
             }}
             validationSchema={prayerCardValidationSchema}
             onSubmit={handleSubmit}
@@ -409,7 +275,10 @@ export const PrayerCardEditDialog: React.FC<PrayerCardEditDialogProps> = ({
                       פרטים אישיים
                     </Typography>
                     <Stack spacing={2}>
-                      <Stack direction="row" spacing={2}>
+                      <Stack
+                        direction={{ xs: "column", sm: "row" }}
+                        spacing={2}
+                      >
                         <TextField
                           name="firstName"
                           label="שם פרטי"
@@ -519,32 +388,26 @@ export const PrayerCardEditDialog: React.FC<PrayerCardEditDialogProps> = ({
                               <Typography variant="subtitle1">
                                 ילד {index + 1}
                               </Typography>
-                              <Box sx={{ display: "flex", gap: 1 }}>
-                                <IconButton
-                                  type="button"
-                                  onClick={() => handleEditChild(index, values)}
-                                  size="small"
-                                >
-                                  <EditIcon />
-                                </IconButton>
-                                <IconButton
-                                  type="button"
-                                  onClick={() =>
-                                    removeChild(
-                                      setFieldValue,
-                                      values.children,
-                                      index
-                                    )
-                                  }
-                                  color="error"
-                                  size="small"
-                                >
-                                  <DeleteIcon />
-                                </IconButton>
-                              </Box>
+                              <IconButton
+                                type="button"
+                                onClick={() =>
+                                  removeChild(
+                                    setFieldValue,
+                                    values.children,
+                                    index
+                                  )
+                                }
+                                color="error"
+                                size="small"
+                              >
+                                <DeleteIcon />
+                              </IconButton>
                             </Box>
                             <Stack spacing={2}>
-                              <Stack direction="row" spacing={2}>
+                              <Stack
+                                direction={{ xs: "column", sm: "row" }}
+                                spacing={2}
+                              >
                                 <TextField
                                   name={`children.${index}.firstName`}
                                   label="שם פרטי"
@@ -679,69 +542,85 @@ export const PrayerCardEditDialog: React.FC<PrayerCardEditDialogProps> = ({
                       }}
                     >
                       <Typography variant="h6">
-                        אירועים ({prayerCard.prayer.events.length})
+                        אירועים ({values.events.length})
                       </Typography>
                       <Button
                         type="button"
                         variant="outlined"
                         startIcon={<AddIcon />}
-                        onClick={() => {
-                          setCurrentFormValues(values);
-                          setShowEventDialog(true);
-                        }}
+                        onClick={() => addEvent(setFieldValue, values.events)}
                         size="small"
                       >
                         הוסף אירוע
                       </Button>
                     </Box>
                     <Stack spacing={1}>
-                      {prayerCard.prayer.events.map((event, index) => (
+                      {values.events.map((event, index) => (
                         <Box
                           key={index}
                           sx={{
-                            display: "flex",
-                            justifyContent: "space-between",
-                            alignItems: "center",
-                            p: 1,
+                            p: 2,
                             border: "1px solid",
                             borderColor: "divider",
                             borderRadius: 1,
                           }}
                         >
-                          <Box>
-                            <Typography
-                              variant="body2"
-                              sx={{ fontWeight: 500 }}
+                          <Stack spacing={2}>
+                            <Stack
+                              direction={{ xs: "column", sm: "row" }}
+                              spacing={2}
                             >
-                              {prayerEventTypes?.find(
-                                type => type.id === event.type
-                              )?.displayName || event.type}{" "}
-                              - {event.hebrewDate.toString()}
-                            </Typography>
-                            {event.notes && (
-                              <Typography
-                                variant="caption"
-                                color="text.secondary"
+                              <EventTypeSelector
+                                name={`events.${index}.eventTypeId`}
+                                value={event.eventTypeId}
+                                onChange={handleChange}
+                                onBlur={handleBlur}
+                                label="סוג אירוע"
+                              />
+                              <Box sx={{ minWidth: { xs: "auto", sm: 200 } }}>
+                                <HebrewDateSelector
+                                  value={event.hebrewDate}
+                                  onChange={date =>
+                                    setFieldValue(
+                                      `events.${index}.hebrewDate`,
+                                      date
+                                    )
+                                  }
+                                  label="תאריך"
+                                />
+                              </Box>
+                            </Stack>
+                            <TextField
+                              name={`events.${index}.notes`}
+                              label="הערות"
+                              value={event.notes}
+                              onChange={handleChange}
+                              onBlur={handleBlur}
+                              multiline
+                              rows={2}
+                              fullWidth
+                            />
+                            <Box
+                              sx={{
+                                display: "flex",
+                                justifyContent: "flex-end",
+                              }}
+                            >
+                              <IconButton
+                                size="small"
+                                onClick={() =>
+                                  removeEvent(
+                                    setFieldValue,
+                                    values.events,
+                                    index
+                                  )
+                                }
+                                color="error"
                               >
-                                {event.notes}
-                              </Typography>
-                            )}
-                          </Box>
-                          <Box sx={{ display: "flex", gap: 1 }}>
-                            <IconButton
-                              size="small"
-                              onClick={() => handleEditPrayerEvent(index)}
-                            >
-                              <EditIcon />
-                            </IconButton>
-                            <IconButton
-                              size="small"
-                              onClick={() => handleDeletePrayerEvent(index)}
-                              color="error"
-                            >
-                              <DeleteIcon />
-                            </IconButton>
-                          </Box>
+                                <DeleteIcon />
+                              </IconButton>
+                            </Box>
+                          </Stack>
                         </Box>
                       ))}
                     </Stack>
@@ -762,301 +641,6 @@ export const PrayerCardEditDialog: React.FC<PrayerCardEditDialogProps> = ({
               </Form>
             )}
           </Formik>
-        </DialogContent>
-      </Dialog>
-
-      {/* Create Prayer Event Dialog */}
-      <Dialog
-        open={showEventDialog}
-        onClose={() => setShowEventDialog(false)}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogTitle>הוסף אירוע</DialogTitle>
-        <DialogContent>
-          <Formik
-            initialValues={{
-              eventTypeId: "",
-              hebrewDate: HebrewDate.now(),
-              notes: "",
-            }}
-            validationSchema={prayerEventValidationSchema}
-            onSubmit={handleCreatePrayerEvent}
-          >
-            {({
-              values,
-              errors,
-              touched,
-              handleChange,
-              handleBlur,
-              setFieldValue,
-              isSubmitting,
-            }) => (
-              <Form>
-                <Stack spacing={3} sx={{ mt: 1 }}>
-                  <EventTypeSelector
-                    name="eventTypeId"
-                    label="סוג האירוע"
-                    value={values.eventTypeId}
-                    onChange={handleChange}
-                    onBlur={handleBlur}
-                    error={Boolean(errors.eventTypeId)}
-                    helperText={errors.eventTypeId}
-                    touched={touched.eventTypeId}
-                  />
-
-                  <HebrewDateSelector
-                    value={values.hebrewDate}
-                    onChange={date =>
-                      setFieldValue("hebrewDate", date || HebrewDate.now())
-                    }
-                    label="תאריך האירוע"
-                  />
-
-                  <TextField
-                    name="notes"
-                    label="הערות (אופציונלי)"
-                    value={values.notes}
-                    onChange={handleChange}
-                    onBlur={handleBlur}
-                    multiline
-                    rows={3}
-                    fullWidth
-                  />
-                </Stack>
-                <DialogActions>
-                  <Button
-                    type="button"
-                    onClick={() => setShowEventDialog(false)}
-                  >
-                    ביטול
-                  </Button>
-                  <Button
-                    type="submit"
-                    variant="contained"
-                    disabled={isSubmitting}
-                  >
-                    {isSubmitting ? "יוצר..." : "צור אירוע"}
-                  </Button>
-                </DialogActions>
-              </Form>
-            )}
-          </Formik>
-        </DialogContent>
-      </Dialog>
-
-      {/* Edit Child Dialog */}
-      <Dialog
-        open={showEditChildDialog}
-        onClose={() => setShowEditChildDialog(false)}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogTitle>ערוך ילד</DialogTitle>
-        <DialogContent>
-          {editingChildIndex !== null && prayerCard && (
-            <Formik
-              initialValues={{
-                firstName:
-                  prayerCard.children[editingChildIndex]?.firstName || "",
-                lastName:
-                  prayerCard.children[editingChildIndex]?.lastName || "",
-                hebrewBirthDate:
-                  prayerCard.children[editingChildIndex]?.hebrewBirthDate ||
-                  null,
-                phoneNumber:
-                  prayerCard.children[editingChildIndex]?.phoneNumber || "",
-                email: prayerCard.children[editingChildIndex]?.email || "",
-                notes: prayerCard.children[editingChildIndex]?.notes || "",
-              }}
-              validationSchema={childValidationSchema}
-              onSubmit={handleUpdateChild}
-            >
-              {({
-                values,
-                errors,
-                touched,
-                handleChange,
-                handleBlur,
-                setFieldValue,
-                isSubmitting,
-              }) => (
-                <Form>
-                  <Stack spacing={3} sx={{ mt: 1 }}>
-                    <Stack direction="row" spacing={2}>
-                      <TextField
-                        name="firstName"
-                        label="שם פרטי"
-                        value={values.firstName}
-                        onChange={handleChange}
-                        onBlur={handleBlur}
-                        error={touched.firstName && Boolean(errors.firstName)}
-                        helperText={touched.firstName && errors.firstName}
-                        required
-                        fullWidth
-                      />
-                      <TextField
-                        name="lastName"
-                        label="שם משפחה"
-                        value={values.lastName}
-                        onChange={handleChange}
-                        onBlur={handleBlur}
-                        error={touched.lastName && Boolean(errors.lastName)}
-                        helperText={touched.lastName && errors.lastName}
-                        required
-                        fullWidth
-                      />
-                    </Stack>
-
-                    <HebrewDateSelector
-                      value={values.hebrewBirthDate}
-                      onChange={date =>
-                        setFieldValue("hebrewBirthDate", date || null)
-                      }
-                      label="תאריך לידה"
-                    />
-
-                    <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
-                      <TextField
-                        name="phoneNumber"
-                        label="נייד"
-                        value={values.phoneNumber}
-                        onChange={handleChange}
-                        onBlur={handleBlur}
-                        error={
-                          touched.phoneNumber && Boolean(errors.phoneNumber)
-                        }
-                        helperText={touched.phoneNumber && errors.phoneNumber}
-                        fullWidth
-                      />
-                      <TextField
-                        name="email"
-                        label="אימייל"
-                        type="email"
-                        value={values.email}
-                        onChange={handleChange}
-                        onBlur={handleBlur}
-                        error={touched.email && Boolean(errors.email)}
-                        helperText={touched.email && errors.email}
-                        fullWidth
-                      />
-                    </Stack>
-
-                    <TextField
-                      name="notes"
-                      label="הערות (אופציונלי)"
-                      value={values.notes}
-                      onChange={handleChange}
-                      onBlur={handleBlur}
-                      multiline
-                      rows={3}
-                      fullWidth
-                    />
-                  </Stack>
-                  <DialogActions>
-                    <Button
-                      type="button"
-                      onClick={() => setShowEditChildDialog(false)}
-                    >
-                      ביטול
-                    </Button>
-                    <Button
-                      type="submit"
-                      variant="contained"
-                      disabled={isSubmitting}
-                    >
-                      {isSubmitting ? "שומר..." : "שמור שינויים"}
-                    </Button>
-                  </DialogActions>
-                </Form>
-              )}
-            </Formik>
-          )}
-        </DialogContent>
-      </Dialog>
-
-      {/* Edit Prayer Event Dialog */}
-      <Dialog
-        open={showEditEventDialog}
-        onClose={() => setShowEditEventDialog(false)}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogTitle>ערוך אירוע</DialogTitle>
-        <DialogContent>
-          {editingEventIndex !== null && prayerCard && (
-            <Formik
-              initialValues={{
-                eventTypeId:
-                  prayerCard.prayer.events[editingEventIndex]?.type || "",
-                hebrewDate:
-                  prayerCard.prayer.events[editingEventIndex]?.hebrewDate ||
-                  HebrewDate.now(),
-                notes: prayerCard.prayer.events[editingEventIndex]?.notes || "",
-              }}
-              validationSchema={prayerEventValidationSchema}
-              onSubmit={handleUpdatePrayerEvent}
-            >
-              {({
-                values,
-                errors,
-                touched,
-                handleChange,
-                handleBlur,
-                setFieldValue,
-                isSubmitting,
-              }) => (
-                <Form>
-                  <Stack spacing={3} sx={{ mt: 1 }}>
-                    <EventTypeSelector
-                      name="eventTypeId"
-                      label="סוג אירוע"
-                      value={values.eventTypeId}
-                      onChange={handleChange}
-                      onBlur={handleBlur}
-                      error={Boolean(errors.eventTypeId)}
-                      helperText={errors.eventTypeId}
-                      touched={touched.eventTypeId}
-                    />
-
-                    <HebrewDateSelector
-                      value={values.hebrewDate}
-                      onChange={date =>
-                        setFieldValue("hebrewDate", date || HebrewDate.now())
-                      }
-                      label="תאריך האירוע"
-                    />
-
-                    <TextField
-                      name="notes"
-                      label="הערות (אופציונלי)"
-                      value={values.notes}
-                      onChange={handleChange}
-                      onBlur={handleBlur}
-                      multiline
-                      rows={3}
-                      fullWidth
-                    />
-                  </Stack>
-                  <DialogActions>
-                    <Button
-                      type="button"
-                      onClick={() => setShowEditEventDialog(false)}
-                    >
-                      ביטול
-                    </Button>
-                    <Button
-                      type="submit"
-                      variant="contained"
-                      disabled={isSubmitting}
-                    >
-                      {isSubmitting ? "שומר..." : "שמור שינויים"}
-                    </Button>
-                  </DialogActions>
-                </Form>
-              )}
-            </Formik>
-          )}
         </DialogContent>
       </Dialog>
     </>

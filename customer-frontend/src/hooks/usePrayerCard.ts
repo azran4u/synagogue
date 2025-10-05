@@ -5,10 +5,10 @@ import { useCurrentUserEmail } from "./useCurrentUserEmail";
 
 export function useAllPrayerCards() {
   const { prayerCardService } = useSynagogueServices();
-  return useQuery<PrayerCard[]>({
+  return useQuery({
     queryKey: ["allPrayerCards"],
-    queryFn: async () => prayerCardService?.getAll() ?? [],
-    enabled: prayerCardService !== null,
+    queryFn: async () => prayerCardService?.getAll(),
+    enabled: prayerCardService !== null && prayerCardService !== undefined,
   });
 }
 
@@ -17,7 +17,11 @@ export function usePrayerCard() {
   const email = useCurrentUserEmail();
   return useQuery({
     queryKey: ["prayerCards", email],
-    queryFn: () => prayerCardService?.getById(email),
+    queryFn: async () => {
+      const prayerCardExists = await prayerCardService?.isExists(email!);
+      if (!prayerCardExists) return null;
+      return prayerCardService?.getById(email);
+    },
     enabled: prayerCardService != null && email != null && email != undefined,
   });
 }

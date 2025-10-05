@@ -9,12 +9,6 @@ import {
   IconButton,
   Chip,
   Stack,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  TextField,
-  Divider,
 } from "@mui/material";
 import {
   Edit as EditIcon,
@@ -22,15 +16,9 @@ import {
   Event as EventIcon,
   ChildCare as ChildCareIcon,
   Group as GroupIcon,
-  Add as AddIcon,
-  Delete as DeleteIcon,
 } from "@mui/icons-material";
-import { Formik, Form, FormikHelpers } from "formik";
-import * as Yup from "yup";
 import { useAuth } from "../hooks/useAuth";
 import { usePrayerCard, useCreatePrayerCard } from "../hooks/usePrayerCard";
-import { HebrewDateSelector } from "../components/HebrewDateSelector";
-import { HebrewDate } from "../model/HebrewDate";
 import { PrayerCard, Prayer } from "../model/Prayer";
 import { PrayerEvent } from "../model/PrayerEvent";
 import { usePrayerEventTypes } from "../hooks/usePrayerEventTypes";
@@ -39,55 +27,7 @@ import { useAliyaGroups } from "../hooks/useAliyaGroups";
 import { useSynagogueNavigate } from "../hooks/useSynagogueNavigate";
 import { PrayerCardEditDialog } from "../components/PrayerCardEditDialog";
 
-// Form interfaces
-interface ChildFormValues {
-  firstName: string;
-  lastName: string;
-  hebrewBirthDate: HebrewDate | null;
-  phoneNumber: string;
-  email: string;
-  notes: string;
-}
-
-interface PrayerCardFormValues {
-  firstName: string;
-  lastName: string;
-  hebrewBirthDate: HebrewDate | null;
-  phoneNumber: string;
-  email: string;
-  notes: string;
-  children: ChildFormValues[];
-}
-
-// Validation schemas
-const childValidationSchema = Yup.object({
-  firstName: Yup.string().required("שם פרטי נדרש"),
-  lastName: Yup.string().required("שם משפחה נדרש"),
-  phoneNumber: Yup.string().optional(),
-  email: Yup.string().email("כתובת אימייל לא תקינה").optional(),
-});
-
-const prayerCardValidationSchema = Yup.object({
-  firstName: Yup.string().required("שם פרטי נדרש"),
-  lastName: Yup.string().required("שם משפחה נדרש"),
-  phoneNumber: Yup.string().optional(),
-  email: Yup.string().email("כתובת אימייל לא תקינה").optional(),
-  children: Yup.array().of(childValidationSchema),
-});
-
-// Initial values
-const initialPrayerCardFormValues: PrayerCardFormValues = {
-  firstName: "",
-  lastName: "",
-  hebrewBirthDate: null,
-  phoneNumber: "",
-  email: "",
-  notes: "",
-  children: [],
-};
-
 const PrayerCardContent: React.FC = () => {
-  const { user } = useAuth();
   const { data: prayerCard, isLoading } = usePrayerCard();
   const createPrayerMutation = useCreatePrayerCard();
   const { data: prayerEventTypes } = usePrayerEventTypes();
@@ -98,45 +38,13 @@ const PrayerCardContent: React.FC = () => {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
 
-  const handleCreatePrayerCard = async (
-    values: PrayerCardFormValues,
-    { setSubmitting }: FormikHelpers<PrayerCardFormValues>
-  ) => {
-    if (!user) return;
-
+  const handleCreatePrayerCard = async (prayerCard: PrayerCard) => {
     try {
-      // Create main prayer
-      const prayer = new Prayer(
-        user?.email!,
-        values.firstName,
-        values.lastName,
-        values.hebrewBirthDate || undefined,
-        values.phoneNumber || undefined,
-        values.email || undefined,
-        values.notes
-      );
-
-      // Create children prayers
-      const childrenPrayers = values.children.map(child =>
-        Prayer.create(
-          child.firstName,
-          child.lastName,
-          child.hebrewBirthDate || undefined,
-          child.phoneNumber || undefined,
-          child.email || undefined,
-          child.notes
-        )
-      );
-
-      // Create prayer card with children
-      const newPrayerCard = PrayerCard.create(prayer, childrenPrayers);
-
-      await createPrayerMutation.mutateAsync(newPrayerCard);
+      await createPrayerMutation.mutateAsync(prayerCard);
       setShowCreateDialog(false);
-      setSubmitting(false);
+      navigate("");
     } catch (error) {
       console.error("Error creating prayer card:", error);
-      setSubmitting(false);
     }
   };
 
@@ -150,27 +58,6 @@ const PrayerCardContent: React.FC = () => {
 
   const handleBackToHome = () => {
     navigate("");
-  };
-
-  const addChild = (setFieldValue: any, children: ChildFormValues[]) => {
-    const newChild: ChildFormValues = {
-      firstName: "",
-      lastName: "",
-      hebrewBirthDate: null,
-      phoneNumber: "",
-      email: "",
-      notes: "",
-    };
-    setFieldValue("children", [...children, newChild]);
-  };
-
-  const removeChild = (
-    setFieldValue: any,
-    children: ChildFormValues[],
-    index: number
-  ) => {
-    const updatedChildren = children.filter((_, i) => i !== index);
-    setFieldValue("children", updatedChildren);
   };
 
   // Show loading state
@@ -743,6 +630,7 @@ const PrayerCardContent: React.FC = () => {
           prayerCard={prayerCard}
           onSave={handleSavePrayerCard}
           isLoading={createPrayerMutation.isPending}
+          title="ערוך כרטיס מתפלל"
         />
       </Box>
     );
@@ -787,263 +675,14 @@ const PrayerCardContent: React.FC = () => {
       </Card>
 
       {/* Create Prayer Card Dialog */}
-      <Dialog
+      <PrayerCardEditDialog
         open={showCreateDialog}
         onClose={() => setShowCreateDialog(false)}
-        maxWidth="md"
-        fullWidth
-      >
-        <DialogTitle>צור כרטיס מתפלל</DialogTitle>
-        <DialogContent>
-          <Formik
-            initialValues={initialPrayerCardFormValues}
-            validationSchema={prayerCardValidationSchema}
-            onSubmit={handleCreatePrayerCard}
-          >
-            {({
-              values,
-              errors,
-              touched,
-              handleChange,
-              handleBlur,
-              setFieldValue,
-              isSubmitting,
-            }) => (
-              <Form>
-                <Stack spacing={3} sx={{ mt: 1 }}>
-                  {/* Personal Information */}
-                  <Box>
-                    <Typography variant="h6" gutterBottom>
-                      פרטים אישיים
-                    </Typography>
-                    <Stack spacing={2}>
-                      <Stack direction="row" spacing={2}>
-                        <TextField
-                          name="firstName"
-                          label="שם פרטי"
-                          value={values.firstName}
-                          onChange={handleChange}
-                          onBlur={handleBlur}
-                          error={touched.firstName && Boolean(errors.firstName)}
-                          helperText={
-                            touched.firstName && (errors.firstName as string)
-                          }
-                          required
-                          fullWidth
-                        />
-                        <TextField
-                          name="lastName"
-                          label="שם משפחה"
-                          value={values.lastName}
-                          onChange={handleChange}
-                          onBlur={handleBlur}
-                          error={touched.lastName && Boolean(errors.lastName)}
-                          helperText={
-                            touched.lastName && (errors.lastName as string)
-                          }
-                          required
-                          fullWidth
-                        />
-                      </Stack>
-                      <HebrewDateSelector
-                        value={values.hebrewBirthDate}
-                        onChange={date =>
-                          setFieldValue("hebrewBirthDate", date || null)
-                        }
-                        label="תאריך לידה"
-                      />
-
-                      <Stack direction="row" spacing={2}>
-                        <TextField
-                          name="phoneNumber"
-                          label="נייד"
-                          value={values.phoneNumber}
-                          onChange={handleChange}
-                          onBlur={handleBlur}
-                          error={
-                            touched.phoneNumber && Boolean(errors.phoneNumber)
-                          }
-                          helperText={touched.phoneNumber && errors.phoneNumber}
-                          fullWidth
-                        />
-                        <TextField
-                          name="email"
-                          label="אימייל"
-                          type="email"
-                          value={values.email}
-                          onChange={handleChange}
-                          onBlur={handleBlur}
-                          error={touched.email && Boolean(errors.email)}
-                          helperText={touched.email && errors.email}
-                          fullWidth
-                        />
-                      </Stack>
-
-                      <TextField
-                        name="notes"
-                        label="הערות אישיות"
-                        value={values.notes}
-                        onChange={handleChange}
-                        onBlur={handleBlur}
-                        multiline
-                        rows={2}
-                        fullWidth
-                      />
-                    </Stack>
-                  </Box>
-
-                  <Divider />
-
-                  {/* Children */}
-                  <Box>
-                    <Box
-                      sx={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        mb: 2,
-                      }}
-                    >
-                      <Typography variant="h6">ילדים</Typography>
-                      <Button
-                        type="button"
-                        variant="outlined"
-                        startIcon={<AddIcon />}
-                        onClick={() => addChild(setFieldValue, values.children)}
-                        size="small"
-                      >
-                        הוסף ילד
-                      </Button>
-                    </Box>
-                    <Stack spacing={2}>
-                      {values.children.map((child: any, index: number) => (
-                        <Card key={index} variant="outlined">
-                          <CardContent>
-                            <Box
-                              sx={{
-                                display: "flex",
-                                justifyContent: "space-between",
-                                alignItems: "center",
-                                mb: 2,
-                              }}
-                            >
-                              <Typography variant="subtitle1">
-                                ילד {index + 1}
-                              </Typography>
-                              <IconButton
-                                type="button"
-                                onClick={() =>
-                                  removeChild(
-                                    setFieldValue,
-                                    values.children,
-                                    index
-                                  )
-                                }
-                                color="error"
-                                size="small"
-                              >
-                                <DeleteIcon />
-                              </IconButton>
-                            </Box>
-                            <Stack spacing={2}>
-                              <Stack direction="row" spacing={2}>
-                                <TextField
-                                  name={`children.${index}.firstName`}
-                                  label="שם פרטי"
-                                  value={child.firstName}
-                                  onChange={handleChange}
-                                  onBlur={handleBlur}
-                                  error={
-                                    (touched.children as any)?.[index]
-                                      ?.firstName &&
-                                    Boolean(
-                                      ((errors.children as any)?.[index] as any)
-                                        ?.firstName
-                                    )
-                                  }
-                                  helperText={
-                                    (touched.children as any)?.[index]
-                                      ?.firstName &&
-                                    ((errors.children as any)?.[index] as any)
-                                      ?.firstName
-                                  }
-                                  size="small"
-                                  fullWidth
-                                />
-                                <TextField
-                                  name={`children.${index}.lastName`}
-                                  label="שם משפחה"
-                                  value={child.lastName}
-                                  onChange={handleChange}
-                                  onBlur={handleBlur}
-                                  error={
-                                    (touched.children as any)?.[index]
-                                      ?.lastName &&
-                                    Boolean(
-                                      ((errors.children as any)?.[index] as any)
-                                        ?.lastName
-                                    )
-                                  }
-                                  helperText={
-                                    (touched.children as any)?.[index]
-                                      ?.lastName &&
-                                    ((errors.children as any)?.[index] as any)
-                                      ?.lastName
-                                  }
-                                  size="small"
-                                  fullWidth
-                                />
-                              </Stack>
-                              <HebrewDateSelector
-                                value={child.hebrewBirthDate}
-                                onChange={date =>
-                                  setFieldValue(
-                                    `children.${index}.hebrewBirthDate`,
-                                    date || null
-                                  )
-                                }
-                                label="תאריך לידה"
-                              />
-                              <TextField
-                                name={`children.${index}.notes`}
-                                label="הערות"
-                                value={child.notes}
-                                onChange={handleChange}
-                                onBlur={handleBlur}
-                                multiline
-                                rows={1}
-                                size="small"
-                                fullWidth
-                              />
-                            </Stack>
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </Stack>
-                  </Box>
-                </Stack>
-                <DialogActions>
-                  <Button
-                    type="button"
-                    onClick={() => setShowCreateDialog(false)}
-                  >
-                    ביטול
-                  </Button>
-                  <Button
-                    type="submit"
-                    variant="contained"
-                    disabled={isSubmitting || createPrayerMutation.isPending}
-                  >
-                    {createPrayerMutation.isPending
-                      ? "יוצר..."
-                      : "צור כרטיס מתפלל"}
-                  </Button>
-                </DialogActions>
-              </Form>
-            )}
-          </Formik>
-        </DialogContent>
-      </Dialog>
+        prayerCard={null}
+        onSave={handleCreatePrayerCard}
+        isLoading={createPrayerMutation.isPending}
+        title="צור כרטיס מתפלל"
+      />
     </Box>
   );
 };
