@@ -15,7 +15,14 @@ import AdminPrayerEventTypesPage from "./pages/AdminPrayerEventTypesPage";
 import AdminAliyaTypesPage from "./pages/AdminAliyaTypesPage";
 import AdminAliyaAssignmentPage from "./pages/AdminAliyaAssignmentPage";
 import AdminPrayerCardsPage from "./pages/AdminPrayerCardsPage";
+import ComingSoonPage from "./pages/ComingSoonPage";
 import { ErrorServiceProvider } from "./components/ErrorServiceProvider";
+import {
+  Book as BookIcon,
+  AccessTime as TimeIcon,
+  Assessment as ReportIcon,
+  AttachMoney as MoneyIcon,
+} from "@mui/icons-material";
 
 export const App: React.FC = () => {
   return (
@@ -66,6 +73,63 @@ export const App: React.FC = () => {
                   <Route
                     path="/synagogue/:synagogueId/admin/prayer-cards"
                     element={<AdminPrayerCardsPage />}
+                  />
+                  {/* Coming Soon Pages */}
+                  <Route
+                    path="/synagogue/:synagogueId/tora-lessons"
+                    element={
+                      <ComingSoonPage
+                        title="שיעורי תורה"
+                        description="הדף לניהול שיעורי התורה נמצא בפיתוח ויושק בקרוב"
+                        icon={
+                          <BookIcon
+                            sx={{ fontSize: 80, color: "primary.main", mb: 3 }}
+                          />
+                        }
+                      />
+                    }
+                  />
+                  <Route
+                    path="/synagogue/:synagogueId/prayer-times"
+                    element={
+                      <ComingSoonPage
+                        title="זמני תפילות"
+                        description="הדף לניהול זמני התפילות נמצא בפיתוח ויושק בקרוב"
+                        icon={
+                          <TimeIcon
+                            sx={{ fontSize: 80, color: "primary.main", mb: 3 }}
+                          />
+                        }
+                      />
+                    }
+                  />
+                  <Route
+                    path="/synagogue/:synagogueId/financial-reports"
+                    element={
+                      <ComingSoonPage
+                        title="דוחות כספיים"
+                        description="הדף לדוחות הכספיים נמצא בפיתוח ויושק בקרוב"
+                        icon={
+                          <ReportIcon
+                            sx={{ fontSize: 80, color: "primary.main", mb: 3 }}
+                          />
+                        }
+                      />
+                    }
+                  />
+                  <Route
+                    path="/synagogue/:synagogueId/donations"
+                    element={
+                      <ComingSoonPage
+                        title="תרומות"
+                        description="הדף לניהול תרומות נמצא בפיתוח ויושק בקרוב"
+                        icon={
+                          <MoneyIcon
+                            sx={{ fontSize: 80, color: "primary.main", mb: 3 }}
+                          />
+                        }
+                      />
+                    }
                   />
                 </Routes>
               </Box>
