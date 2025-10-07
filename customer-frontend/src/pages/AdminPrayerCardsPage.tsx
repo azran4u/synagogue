@@ -29,10 +29,6 @@ import { PrayerCardEditDialog } from "../components/PrayerCardEditDialog";
 const AdminPrayerCardsPage: React.FC = () => {
   const { data: prayerCards, isLoading } = useAllPrayerCards();
 
-  useEffect(() => {
-    console.log("prayerCards", prayerCards);
-  }, [prayerCards]);
-
   const createPrayerMutation = useCreatePrayerCard();
   const deletePrayerMutation = useDeletePrayerCard();
 

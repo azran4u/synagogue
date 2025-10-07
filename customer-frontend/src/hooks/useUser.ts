@@ -10,6 +10,10 @@ export function useUser() {
   const { user } = useAuth();
   const { data: prayerCard } = usePrayerCard();
 
+  const isLoggedIn = useMemo(() => {
+    return user != null;
+  }, [user]);
+
   const isMember = useMemo(() => {
     return prayerCard != null;
   }, [prayerCard]);
@@ -30,6 +34,7 @@ export function useUser() {
   }, [user]);
 
   return {
+    isLoggedIn,
     isAdmin,
     isGabai,
     isGabaiOrHigher,

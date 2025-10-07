@@ -15,8 +15,9 @@ import AdminPrayerEventTypesPage from "./pages/AdminPrayerEventTypesPage";
 import AdminAliyaTypesPage from "./pages/AdminAliyaTypesPage";
 import AdminAliyaAssignmentPage from "./pages/AdminAliyaAssignmentPage";
 import AdminPrayerCardsPage from "./pages/AdminPrayerCardsPage";
+import AdminFrontendErrorsPage from "./pages/AdminFrontendErrorsPage";
 import ComingSoonPage from "./pages/ComingSoonPage";
-import { ErrorServiceProvider } from "./components/ErrorServiceProvider";
+import { FrontendErrorServiceProvider } from "./components/FrontendErrorServiceProvider";
 import {
   Book as BookIcon,
   AccessTime as TimeIcon,
@@ -36,7 +37,7 @@ export const App: React.FC = () => {
       >
         <Router>
           <SynagogueProvider>
-            <ErrorServiceProvider>
+            <FrontendErrorServiceProvider>
               <Sidebar />
               <Box sx={{ flex: 1, marginTop: "4rem" }}>
                 <Routes>
@@ -73,6 +74,10 @@ export const App: React.FC = () => {
                   <Route
                     path="/synagogue/:synagogueId/admin/prayer-cards"
                     element={<AdminPrayerCardsPage />}
+                  />
+                  <Route
+                    path="/synagogue/:synagogueId/admin/frontend-errors"
+                    element={<AdminFrontendErrorsPage />}
                   />
                   {/* Coming Soon Pages */}
                   <Route
@@ -134,7 +139,7 @@ export const App: React.FC = () => {
                 </Routes>
               </Box>
               <Footer />
-            </ErrorServiceProvider>
+            </FrontendErrorServiceProvider>
           </SynagogueProvider>
         </Router>
       </Box>

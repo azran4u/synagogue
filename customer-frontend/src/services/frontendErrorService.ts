@@ -1,12 +1,8 @@
-import React from "react";
 import { GenericService } from "./genericService";
 import { FrontendError, ErrorDto, errorMapper } from "../model/FrontendError";
-import { selectSelectedSynagogueId } from "../store/synagogueSlice";
-import { useAppSelector } from "../store/hooks";
-import { useAuth } from "../hooks/useAuth";
 
-class ErrorService {
-  private static instance: ErrorService;
+export class FrontendErrorService {
+  private static instance: FrontendErrorService;
   private synagogueId: string | null = null;
   private userId: string | null = null;
   private userEmail: string | null = null;
@@ -27,11 +23,11 @@ class ErrorService {
     this.overrideConsoleError();
   }
 
-  public static getInstance(): ErrorService {
-    if (!ErrorService.instance) {
-      ErrorService.instance = new ErrorService();
+  public static getInstance(): FrontendErrorService {
+    if (!FrontendErrorService.instance) {
+      FrontendErrorService.instance = new FrontendErrorService();
     }
-    return ErrorService.instance;
+    return FrontendErrorService.instance;
   }
 
   /**
@@ -99,6 +95,14 @@ class ErrorService {
     }
   }
 
+  public async getAll(): Promise<FrontendError[]> {
+    return this.errorService.getAll();
+  }
+
+  public async deleteById(id: string): Promise<void> {
+    return this.errorService.deleteById(id);
+  }
+
   /**
    * Initialize global error handlers
    */
@@ -146,21 +150,4 @@ class ErrorService {
 }
 
 // Export singleton instance
-export const errorService = ErrorService.getInstance();
-
-// Hook for easy access to error service in React components
-export const useErrorService = () => {
-  const synagogueId = useAppSelector(selectSelectedSynagogueId);
-  const { user } = useAuth();
-
-  // Update user context whenever it changes
-  React.useEffect(() => {
-    errorService.updateUserContext(
-      synagogueId || undefined,
-      user?.uid,
-      user?.email || undefined
-    );
-  }, [synagogueId, user?.uid, user?.email]);
-
-  return errorService;
-};
+export const frontendErrorService = FrontendErrorService.getInstance();

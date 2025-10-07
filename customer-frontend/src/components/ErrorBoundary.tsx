@@ -1,6 +1,6 @@
 import React, { Component, ErrorInfo, ReactNode } from "react";
 import { Box, Typography, Button, Alert } from "@mui/material";
-import { errorService } from "../services/errorService";
+import { FrontendErrorService } from "../services/frontendErrorService";
 
 interface Props {
   children: ReactNode;
@@ -24,7 +24,7 @@ export class ErrorBoundary extends Component<Props, State> {
     console.error("ErrorBoundary caught an error:", error, errorInfo);
 
     // Log error to Firebase
-    errorService.logReactError(error, errorInfo);
+    FrontendErrorService.getInstance().logReactError(error, errorInfo);
   }
 
   private handleReload = () => {

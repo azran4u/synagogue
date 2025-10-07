@@ -20,6 +20,7 @@ import {
   Group as AliyaTypesIcon,
   Assignment as AliyaAssignmentIcon,
   People as AdminPrayerCardsIcon,
+  BugReport as FrontendErrorsIcon,
   HolidayVillage as SynagogueIcon,
 } from "@mui/icons-material";
 import { Logo } from "./Logo";
@@ -167,6 +168,11 @@ export const AppSideBar: React.FC<AppSideBarProps> = ({
                 text="ניהול כרטיסי מתפללים"
                 onClick={() => handleClick("admin/prayer-cards")}
                 icon={<AdminPrayerCardsIcon />}
+              />
+              <SidebarItem
+                text="שגיאות Frontend"
+                onClick={() => handleClick("admin/frontend-errors")}
+                icon={<FrontendErrorsIcon />}
               />
               <SidebarItem
                 text="ניהול סוגי אירועים"
