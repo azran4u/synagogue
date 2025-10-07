@@ -72,7 +72,7 @@ export const AppSideBar: React.FC<AppSideBarProps> = ({
 }) => {
   const theme = useTheme();
   const isMobile = useMobile();
-  const { isGabaiOrHigher } = useUser();
+  const { isGabaiOrHigher, isAdmin } = useUser();
 
   const drawerWidth = useMemo(() => (isMobile ? "60%" : "20%"), [isMobile]);
   const navigate = useSynagogueNavigate();
@@ -170,11 +170,6 @@ export const AppSideBar: React.FC<AppSideBarProps> = ({
                 icon={<AdminPrayerCardsIcon />}
               />
               <SidebarItem
-                text="שגיאות Frontend"
-                onClick={() => handleClick("admin/frontend-errors")}
-                icon={<FrontendErrorsIcon />}
-              />
-              <SidebarItem
                 text="ניהול סוגי אירועים"
                 onClick={() => handleClick("admin/prayer-event-types")}
                 icon={<EventTypesIcon />}
@@ -183,6 +178,15 @@ export const AppSideBar: React.FC<AppSideBarProps> = ({
                 text="ניהול סוגי עליות"
                 onClick={() => handleClick("admin/aliya-types")}
                 icon={<AliyaTypesIcon />}
+              />
+            </>
+          )}
+          {isAdmin && (
+            <>
+              <SidebarItem
+                text="שגיאות Frontend"
+                onClick={() => handleClick("admin/frontend-errors")}
+                icon={<FrontendErrorsIcon />}
               />
               <SidebarItem
                 text="הגדרות מנהל"
