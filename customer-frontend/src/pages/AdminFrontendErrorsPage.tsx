@@ -294,7 +294,7 @@ const AdminFrontendErrorsPage: React.FC = () => {
                     <Typography variant="caption" color="text.secondary">
                       {formatTimestamp(error.timestamp)}
                     </Typography>
-                    <Stack direction="row" spacing={1} sx={{ mb: 2 }}>
+                    <Stack direction="row" spacing={3} sx={{ mb: 2, gap: 1 }}>
                       <Chip
                         label={error.errorType}
                         color={getErrorTypeColor(error.errorType) as any}
