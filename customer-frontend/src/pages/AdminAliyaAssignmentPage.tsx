@@ -19,6 +19,8 @@ import {
   MenuItem,
   FormControl,
   InputLabel,
+  Autocomplete,
+  Tooltip,
 } from "@mui/material";
 import {
   Add as AddIcon,
@@ -28,9 +30,11 @@ import {
   Person as PersonIcon,
   ChildCare as ChildIcon,
   CalendarToday as CalendarIcon,
+  Search as SearchIcon,
 } from "@mui/icons-material";
 import { Formik, Form, FormikHelpers } from "formik";
 import * as Yup from "yup";
+import { useQueryClient } from "@tanstack/react-query";
 import { AliyaEvent } from "../model/AliyaEvent";
 import { Prayer } from "../model/Prayer";
 import { PrayerCard } from "../model/Prayer";
@@ -51,10 +55,8 @@ import { useUpdatePrayerCard } from "../hooks/usePrayerCard";
 
 interface AliyaAssignmentFormValues {
   aliyaGroupId: string;
-  assignments: Array<{
-    aliyaTypeId: string;
-    assignedPrayerId: string;
-  }>;
+  assignments: Record<string, string>; // aliyaTypeId -> assignedPrayerId
+  deletions: string[]; // aliyaTypeIds to delete from database
 }
 
 interface AliyaReassignmentFormValues {
@@ -67,22 +69,14 @@ interface AliyaGroupFormValues {
 }
 
 interface EditGroupFormValues {
-  assignments: Array<{
-    aliyaTypeId: string;
-    assignedPrayerId: string;
-  }>;
+  assignments: Record<string, string>; // aliyaTypeId -> assignedPrayerId
+  deletions: string[]; // aliyaTypeIds to delete from database
 }
 
 const aliyaAssignmentValidationSchema = Yup.object({
   aliyaGroupId: Yup.string().required("קבוצת עליות נדרשת"),
-  assignments: Yup.array()
-    .of(
-      Yup.object({
-        aliyaTypeId: Yup.string().required("סוג עלייה נדרש"),
-        assignedPrayerId: Yup.string().required("מתפלל נדרש"),
-      })
-    )
-    .min(1, "יש לבחור לפחות עלייה אחת"),
+  assignments: Yup.object(),
+  deletions: Yup.array(),
 });
 
 const reassignmentValidationSchema = Yup.object({
@@ -95,15 +89,39 @@ const aliyaGroupValidationSchema = Yup.object({
 });
 
 const editGroupValidationSchema = Yup.object({
-  assignments: Yup.array()
-    .of(
-      Yup.object({
-        aliyaTypeId: Yup.string().required("סוג עלייה נדרש"),
-        assignedPrayerId: Yup.string().required("מתפלל נדרש"),
-      })
-    )
-    .min(1, "יש להוסיף לפחות עלייה אחת"),
+  assignments: Yup.object(),
+  deletions: Yup.array(),
 });
+
+// Helper function to calculate age from Hebrew birthdate
+const calculateAgeFromHebrewDate = (hebrewBirthDate: HebrewDate): number => {
+  const today = new Date();
+  const birthDate = hebrewBirthDate.toGregorianDate();
+
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const monthDiff = today.getMonth() - birthDate.getMonth();
+
+  if (
+    monthDiff < 0 ||
+    (monthDiff === 0 && today.getDate() < birthDate.getDate())
+  ) {
+    age--;
+  }
+
+  return age;
+};
+
+// Helper function to check if prayer is eligible for aliya (13+ or no birthdate)
+const isEligibleForAliya = (prayer: Prayer): boolean => {
+  // If no birthdate, include them
+  if (!prayer.hebrewBirthDate) {
+    return true;
+  }
+
+  // Check if 13 years or older
+  const age = calculateAgeFromHebrewDate(prayer.hebrewBirthDate);
+  return age >= 13;
+};
 
 const AdminAliyaAssignmentContent = () => {
   const navigate = useSynagogueNavigate();
@@ -123,6 +141,18 @@ const AdminAliyaAssignmentContent = () => {
   } | null>(null);
   const [editingGroup, setEditingGroup] = useState<AliyaGroup | null>(null);
   const [expandedGroupId, setExpandedGroupId] = useState<string | null>(null);
+  const [showPrayerSelectionDialog, setShowPrayerSelectionDialog] =
+    useState(false);
+  const [selectedAliyaTypeForAssignment, setSelectedAliyaTypeForAssignment] =
+    useState<string | null>(null);
+  const [currentAssignmentGroupId, setCurrentAssignmentGroupId] = useState<
+    string | null
+  >(null);
+  const assignmentFormikRef = React.useRef<any>(null);
+  const editGroupFormikRef = React.useRef<any>(null);
+
+  // Query client for cache invalidation
+  const queryClient = useQueryClient();
 
   // Data fetching
   const { data: aliyaTypes, isLoading: aliyaTypesLoading } = useAliyaTypes();
@@ -137,7 +167,8 @@ const AdminAliyaAssignmentContent = () => {
   // Initial form values
   const initialAssignmentFormValues: AliyaAssignmentFormValues = {
     aliyaGroupId: "",
-    assignments: [],
+    assignments: {},
+    deletions: [],
   };
 
   const initialReassignmentFormValues: AliyaReassignmentFormValues = {
@@ -150,10 +181,12 @@ const AdminAliyaAssignmentContent = () => {
   };
 
   const initialEditGroupFormValues: EditGroupFormValues = {
-    assignments: [],
+    assignments: {},
+    deletions: [],
   };
 
   // Get all prayers (adults and children) from all prayer cards
+  // Filter to only show those 13+ years old or with no birthdate
   const allPrayers = React.useMemo(() => {
     if (!prayerCards) return [];
 
@@ -164,19 +197,23 @@ const AdminAliyaAssignmentContent = () => {
     }> = [];
 
     prayerCards.forEach(card => {
-      // Add the main prayer (adult)
-      prayers.push({
-        prayer: card.prayer,
-        isChild: false,
-      });
-
-      // Add children
-      card.children.forEach(child => {
+      // Add the main prayer (adult) if eligible
+      if (isEligibleForAliya(card.prayer)) {
         prayers.push({
-          prayer: child,
-          isChild: true,
-          parentName: `${card.prayer.firstName} ${card.prayer.lastName}`,
+          prayer: card.prayer,
+          isChild: false,
         });
+      }
+
+      // Add children if eligible (13+ or no birthdate)
+      card.children.forEach(child => {
+        if (isEligibleForAliya(child)) {
+          prayers.push({
+            prayer: child,
+            isChild: true,
+            parentName: `${card.prayer.firstName} ${card.prayer.lastName}`,
+          });
+        }
       });
     });
 
@@ -226,21 +263,6 @@ const AdminAliyaAssignmentContent = () => {
     });
   }, [prayerCards]);
 
-  // Group aliyot by group ID
-  const groupedAliyot = React.useMemo(() => {
-    const groups: { [key: string]: typeof allAliyot } = {};
-
-    allAliyot.forEach(aliyaData => {
-      const key = aliyaData.aliya.aliyaGroupId;
-      if (!groups[key]) {
-        groups[key] = [];
-      }
-      groups[key].push(aliyaData);
-    });
-
-    return groups;
-  }, [allAliyot]);
-
   // Get groups with aliyot counts
   const groupsWithCounts = React.useMemo(() => {
     if (!aliyaGroups) return [];
@@ -257,24 +279,12 @@ const AdminAliyaAssignmentContent = () => {
         };
       })
       .sort((a, b) => {
-        // Sort by Hebrew date (closest first)
-        return a.group.hebrewDate
-          .toString()
-          .localeCompare(b.group.hebrewDate.toString());
+        // Sort by Hebrew date (newest first)
+        const dateA = a.group.hebrewDate.toGregorianDate().getTime();
+        const dateB = b.group.hebrewDate.toGregorianDate().getTime();
+        return dateB - dateA; // Descending order (newest first)
       });
   }, [aliyaGroups, allAliyot]);
-
-  // Get assigned aliya types for a specific group
-  const getAssignedAliyaTypesForGroup = React.useCallback(
-    (aliyaGroupId: string) => {
-      const groupAliyot = allAliyot.filter(
-        aliyaData => aliyaData.aliya.aliyaGroupId === aliyaGroupId
-      );
-
-      return groupAliyot.map(aliyaData => aliyaData.aliya.aliyaType);
-    },
-    [allAliyot]
-  );
 
   // Handlers
   const handleAliyaAssignment = async (
@@ -282,33 +292,97 @@ const AdminAliyaAssignmentContent = () => {
     { setSubmitting }: FormikHelpers<AliyaAssignmentFormValues>
   ) => {
     try {
-      // Process each assignment
-      for (const assignment of values.assignments) {
+      // Collect all aliya types we're working with (assignments + deletions)
+      const allAliyaTypesToProcess = new Set([
+        ...Object.keys(values.assignments),
+        ...values.deletions,
+      ]);
+
+      // First, remove ALL existing assignments for these (groupId, typeId) combinations from ALL prayers
+      for (const aliyaTypeId of allAliyaTypesToProcess) {
+        // Find all prayer cards that have this aliya assignment
+        const affectedPrayerCards = prayerCards?.filter(card => {
+          // Check if main prayer has this aliya
+          const mainHasAliya = card.prayer.aliyot.some(
+            aliya =>
+              aliya.aliyaGroupId === values.aliyaGroupId &&
+              aliya.aliyaType === aliyaTypeId
+          );
+
+          // Check if any child has this aliya
+          const childHasAliya = card.children.some(child =>
+            child.aliyot.some(
+              aliya =>
+                aliya.aliyaGroupId === values.aliyaGroupId &&
+                aliya.aliyaType === aliyaTypeId
+            )
+          );
+
+          return mainHasAliya || childHasAliya;
+        });
+
+        // Remove the aliya from all affected prayer cards
+        if (affectedPrayerCards) {
+          for (const prayerCard of affectedPrayerCards) {
+            // Remove from main prayer
+            const updatedMainPrayer = prayerCard.prayer.update({
+              aliyot: prayerCard.prayer.aliyot.filter(
+                aliya =>
+                  !(
+                    aliya.aliyaGroupId === values.aliyaGroupId &&
+                    aliya.aliyaType === aliyaTypeId
+                  )
+              ),
+            });
+
+            // Remove from children
+            const updatedChildren = prayerCard.children.map(child =>
+              child.update({
+                aliyot: child.aliyot.filter(
+                  aliya =>
+                    !(
+                      aliya.aliyaGroupId === values.aliyaGroupId &&
+                      aliya.aliyaType === aliyaTypeId
+                    )
+                ),
+              })
+            );
+
+            const updatedPrayerCard = new PrayerCard(
+              prayerCard.id,
+              updatedMainPrayer,
+              updatedChildren
+            );
+
+            await updatePrayerCardMutation.mutateAsync(updatedPrayerCard);
+          }
+        }
+      }
+
+      // Then, add new assignments (skip deletions)
+      for (const [aliyaTypeId, assignedPrayerId] of Object.entries(
+        values.assignments
+      )) {
         // Find the prayer card containing the target prayer
         const targetPrayerCard = prayerCards?.find(
           card =>
-            card.prayer.id === assignment.assignedPrayerId ||
-            card.children.some(
-              child => child.id === assignment.assignedPrayerId
-            )
+            card.prayer.id === assignedPrayerId ||
+            card.children.some(child => child.id === assignedPrayerId)
         );
 
         if (!targetPrayerCard) {
           throw new Error(
-            `Prayer card not found for prayer ${assignment.assignedPrayerId}`
+            `Prayer card not found for prayer ${assignedPrayerId}`
           );
         }
 
         // Create new aliya event
-        const newAliya = AliyaEvent.create(
-          values.aliyaGroupId,
-          assignment.aliyaTypeId
-        );
+        const newAliya = AliyaEvent.create(values.aliyaGroupId, aliyaTypeId);
 
         // Update the prayer card
         let updatedPrayerCard = targetPrayerCard;
 
-        if (targetPrayerCard.prayer.id === assignment.assignedPrayerId) {
+        if (targetPrayerCard.prayer.id === assignedPrayerId) {
           // Assign to main prayer
           const updatedPrayer = targetPrayerCard.prayer.update({
             aliyot: [...targetPrayerCard.prayer.aliyot, newAliya],
@@ -321,7 +395,7 @@ const AdminAliyaAssignmentContent = () => {
         } else {
           // Assign to child
           const updatedChildren = targetPrayerCard.children.map(child => {
-            if (child.id === assignment.assignedPrayerId) {
+            if (child.id === assignedPrayerId) {
               return child.update({
                 aliyot: [...child.aliyot, newAliya],
               });
@@ -338,6 +412,9 @@ const AdminAliyaAssignmentContent = () => {
         // Update in database
         await updatePrayerCardMutation.mutateAsync(updatedPrayerCard);
       }
+
+      // Invalidate prayer cards cache to refresh the UI
+      await queryClient.invalidateQueries({ queryKey: ["prayerCards"] });
 
       setShowAssignmentDialog(false);
       setSubmitting(false);
@@ -433,6 +510,9 @@ const AdminAliyaAssignmentContent = () => {
         await updatePrayerCardMutation.mutateAsync(updatedTargetPrayerCard);
       }
 
+      // Invalidate prayer cards cache to refresh the UI
+      await queryClient.invalidateQueries({ queryKey: ["prayerCards"] });
+
       setShowReassignDialog(false);
       setEditingAliya(null);
       setSubmitting(false);
@@ -477,6 +557,9 @@ const AdminAliyaAssignmentContent = () => {
 
         // Update in database
         await updatePrayerCardMutation.mutateAsync(updatedPrayerCard);
+
+        // Invalidate prayer cards cache to refresh the UI
+        await queryClient.invalidateQueries({ queryKey: ["prayerCards"] });
       } catch (error) {
         console.error("Error deleting aliya:", error);
       }
@@ -588,6 +671,9 @@ const AdminAliyaAssignmentContent = () => {
 
         // Then delete the aliya group
         await deleteAliyaGroupMutation.mutateAsync(group.id);
+
+        // Invalidate prayer cards cache to refresh the UI
+        await queryClient.invalidateQueries({ queryKey: ["prayerCards"] });
       } catch (error) {
         console.error("Error deleting aliya group:", error);
       }
@@ -606,33 +692,97 @@ const AdminAliyaAssignmentContent = () => {
     try {
       if (!editingGroup) return;
 
-      // Process each assignment
-      for (const assignment of values.assignments) {
+      // Collect all aliya types we're working with (assignments + deletions)
+      const allAliyaTypesToProcess = new Set([
+        ...Object.keys(values.assignments),
+        ...values.deletions,
+      ]);
+
+      // First, remove ALL existing assignments for these (groupId, typeId) combinations from ALL prayers
+      for (const aliyaTypeId of allAliyaTypesToProcess) {
+        // Find all prayer cards that have this aliya assignment
+        const affectedPrayerCards = prayerCards?.filter(card => {
+          // Check if main prayer has this aliya
+          const mainHasAliya = card.prayer.aliyot.some(
+            aliya =>
+              aliya.aliyaGroupId === editingGroup.id &&
+              aliya.aliyaType === aliyaTypeId
+          );
+
+          // Check if any child has this aliya
+          const childHasAliya = card.children.some(child =>
+            child.aliyot.some(
+              aliya =>
+                aliya.aliyaGroupId === editingGroup.id &&
+                aliya.aliyaType === aliyaTypeId
+            )
+          );
+
+          return mainHasAliya || childHasAliya;
+        });
+
+        // Remove the aliya from all affected prayer cards
+        if (affectedPrayerCards) {
+          for (const prayerCard of affectedPrayerCards) {
+            // Remove from main prayer
+            const updatedMainPrayer = prayerCard.prayer.update({
+              aliyot: prayerCard.prayer.aliyot.filter(
+                aliya =>
+                  !(
+                    aliya.aliyaGroupId === editingGroup.id &&
+                    aliya.aliyaType === aliyaTypeId
+                  )
+              ),
+            });
+
+            // Remove from children
+            const updatedChildren = prayerCard.children.map(child =>
+              child.update({
+                aliyot: child.aliyot.filter(
+                  aliya =>
+                    !(
+                      aliya.aliyaGroupId === editingGroup.id &&
+                      aliya.aliyaType === aliyaTypeId
+                    )
+                ),
+              })
+            );
+
+            const updatedPrayerCard = new PrayerCard(
+              prayerCard.id,
+              updatedMainPrayer,
+              updatedChildren
+            );
+
+            await updatePrayerCardMutation.mutateAsync(updatedPrayerCard);
+          }
+        }
+      }
+
+      // Then, add new assignments (skip deletions)
+      for (const [aliyaTypeId, assignedPrayerId] of Object.entries(
+        values.assignments
+      )) {
         // Find the prayer card containing the target prayer
         const targetPrayerCard = prayerCards?.find(
           card =>
-            card.prayer.id === assignment.assignedPrayerId ||
-            card.children.some(
-              child => child.id === assignment.assignedPrayerId
-            )
+            card.prayer.id === assignedPrayerId ||
+            card.children.some(child => child.id === assignedPrayerId)
         );
 
         if (!targetPrayerCard) {
           throw new Error(
-            `Prayer card not found for prayer ${assignment.assignedPrayerId}`
+            `Prayer card not found for prayer ${assignedPrayerId}`
           );
         }
 
         // Create new aliya event
-        const newAliya = AliyaEvent.create(
-          editingGroup.id,
-          assignment.aliyaTypeId
-        );
+        const newAliya = AliyaEvent.create(editingGroup.id, aliyaTypeId);
 
         // Update the prayer card
         let updatedPrayerCard = targetPrayerCard;
 
-        if (targetPrayerCard.prayer.id === assignment.assignedPrayerId) {
+        if (targetPrayerCard.prayer.id === assignedPrayerId) {
           // Assign to main prayer
           const updatedPrayer = targetPrayerCard.prayer.update({
             aliyot: [...targetPrayerCard.prayer.aliyot, newAliya],
@@ -645,7 +795,7 @@ const AdminAliyaAssignmentContent = () => {
         } else {
           // Assign to child
           const updatedChildren = targetPrayerCard.children.map(child => {
-            if (child.id === assignment.assignedPrayerId) {
+            if (child.id === assignedPrayerId) {
               return child.update({
                 aliyot: [...child.aliyot, newAliya],
               });
@@ -662,6 +812,9 @@ const AdminAliyaAssignmentContent = () => {
         // Update in database
         await updatePrayerCardMutation.mutateAsync(updatedPrayerCard);
       }
+
+      // Invalidate prayer cards cache to refresh the UI
+      await queryClient.invalidateQueries({ queryKey: ["prayerCards"] });
 
       setShowEditGroupDialog(false);
       setEditingGroup(null);
@@ -767,6 +920,14 @@ const AdminAliyaAssignmentContent = () => {
               </Box>
               <Box sx={{ textAlign: "center" }}>
                 <Typography variant="h4" color="primary">
+                  {aliyaGroups?.length || 0}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  קבוצות עליות
+                </Typography>
+              </Box>
+              <Box sx={{ textAlign: "center" }}>
+                <Typography variant="h4" color="primary">
                   {aliyaTypes?.length || 0}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
@@ -775,10 +936,18 @@ const AdminAliyaAssignmentContent = () => {
               </Box>
               <Box sx={{ textAlign: "center" }}>
                 <Typography variant="h4" color="primary">
+                  {allPrayers.length}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  מתפללים מעל גיל 13
+                </Typography>
+              </Box>
+              <Box sx={{ textAlign: "center" }}>
+                <Typography variant="h4" color="primary">
                   {prayerCards?.length || 0}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  כרטיסי תפילה
+                  כרטיסי מתפלל
                 </Typography>
               </Box>
             </Box>
@@ -938,7 +1107,7 @@ const AdminAliyaAssignmentContent = () => {
                             color="secondary"
                             fullWidth
                           >
-                            הוסף עליות
+                            {count > 0 ? "ערוך עליות" : "הוסף עליות"}
                           </Button>
                         </Box>
                       </Box>
@@ -1110,6 +1279,7 @@ const AdminAliyaAssignmentContent = () => {
             initialValues={initialAssignmentFormValues}
             validationSchema={aliyaAssignmentValidationSchema}
             onSubmit={handleAliyaAssignment}
+            innerRef={assignmentFormikRef}
           >
             {({
               values,
@@ -1130,7 +1300,10 @@ const AdminAliyaAssignmentContent = () => {
                     <Select
                       name="aliyaGroupId"
                       value={values.aliyaGroupId}
-                      onChange={handleChange}
+                      onChange={e => {
+                        handleChange(e);
+                        setCurrentAssignmentGroupId(e.target.value);
+                      }}
                       onBlur={handleBlur}
                       label="קבוצת עליות"
                     >
@@ -1156,155 +1329,202 @@ const AdminAliyaAssignmentContent = () => {
                     </Select>
                   </FormControl>
 
-                  <Box>
-                    <Typography variant="h6" gutterBottom>
-                      הקצאת עליות
-                    </Typography>
-                    {values.assignments.map((assignment, index) => (
-                      <Card key={index} sx={{ mb: 2, p: 2 }}>
-                        <Box
-                          sx={{
-                            display: "grid",
-                            gridTemplateColumns: {
-                              xs: "1fr",
-                              sm: "1fr 1fr auto",
-                            },
-                            gap: 2,
-                            alignItems: "center",
-                          }}
-                        >
-                          <Box>
-                            <FormControl fullWidth>
-                              <InputLabel>סוג עלייה</InputLabel>
-                              <Select
-                                value={assignment.aliyaTypeId}
-                                onChange={e => {
-                                  const newAssignments = [
-                                    ...values.assignments,
-                                  ];
-                                  newAssignments[index].aliyaTypeId =
-                                    e.target.value;
-                                  setFieldValue("assignments", newAssignments);
-                                }}
-                                label="סוג עלייה"
-                              >
-                                {aliyaTypes
-                                  ?.sort(
-                                    (a, b) =>
-                                      (a.displayOrder || 0) -
-                                      (b.displayOrder || 0)
-                                  )
-                                  .map(type => (
-                                    <MenuItem key={type.id} value={type.id}>
-                                      <Box
-                                        sx={{
-                                          display: "flex",
-                                          alignItems: "center",
-                                          gap: 1,
-                                        }}
+                  {values.aliyaGroupId && (
+                    <Box>
+                      <Typography variant="h6" gutterBottom>
+                        סוגי עליות
+                      </Typography>
+                      <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        gutterBottom
+                      >
+                        לחץ על הכפתור ליד כל עלייה כדי להקצות מתפלל
+                      </Typography>
+                      <Stack spacing={1} sx={{ mt: 2 }}>
+                        {aliyaTypes
+                          ?.sort(
+                            (a, b) =>
+                              (a.displayOrder || 0) - (b.displayOrder || 0)
+                          )
+                          .filter(type => {
+                            // Show enabled types
+                            if (type.enabled) return true;
+
+                            // For disabled types, only show if they have an existing assignment in this group
+                            if (values.aliyaGroupId) {
+                              const hasExistingAssignment = allAliyot.some(
+                                aliyaData =>
+                                  aliyaData.aliya.aliyaGroupId ===
+                                    values.aliyaGroupId &&
+                                  aliyaData.aliya.aliyaType === type.id
+                              );
+                              return hasExistingAssignment;
+                            }
+
+                            return false;
+                          })
+                          .map(type => {
+                            // Check if this aliya type is marked for deletion
+                            const isMarkedForDeletion =
+                              values.deletions.includes(type.id);
+
+                            // First check if there's a new assignment in the form
+                            let assignedPrayerId = values.assignments[type.id];
+
+                            // If not and not marked for deletion, check if there's an existing assignment in the database
+                            if (
+                              !assignedPrayerId &&
+                              !isMarkedForDeletion &&
+                              values.aliyaGroupId
+                            ) {
+                              const existingAliya = allAliyot.find(
+                                aliyaData =>
+                                  aliyaData.aliya.aliyaGroupId ===
+                                    values.aliyaGroupId &&
+                                  aliyaData.aliya.aliyaType === type.id
+                              );
+                              if (existingAliya) {
+                                assignedPrayerId = existingAliya.prayer.id;
+                              }
+                            }
+
+                            const assignedPrayer = assignedPrayerId
+                              ? allPrayers.find(
+                                  p => p.prayer.id === assignedPrayerId
+                                )
+                              : null;
+
+                            return (
+                              <Card key={type.id} variant="outlined">
+                                <CardContent sx={{ py: 1, px: 2 }}>
+                                  {/* First row: Aliya type name and buttons */}
+                                  <Box
+                                    sx={{
+                                      display: "flex",
+                                      justifyContent: "space-between",
+                                      alignItems: "center",
+                                    }}
+                                  >
+                                    <Typography variant="h6">
+                                      {type.displayName}
+                                    </Typography>
+                                    <Box sx={{ display: "flex", gap: 1 }}>
+                                      <Tooltip
+                                        title={
+                                          !type.enabled && !assignedPrayer
+                                            ? "סוג עלייה זה לא פעיל"
+                                            : assignedPrayer
+                                              ? "שנה מתפלל"
+                                              : "הקצה מתפלל"
+                                        }
                                       >
-                                        <Typography>
-                                          {type.displayName}
-                                        </Typography>
+                                        <span>
+                                          <IconButton
+                                            size="small"
+                                            color="primary"
+                                            disabled={
+                                              !type.enabled && !assignedPrayer
+                                            }
+                                            onClick={() => {
+                                              setSelectedAliyaTypeForAssignment(
+                                                type.id
+                                              );
+                                              setShowPrayerSelectionDialog(
+                                                true
+                                              );
+                                            }}
+                                          >
+                                            {assignedPrayer ? (
+                                              <EditIcon />
+                                            ) : (
+                                              <AddIcon />
+                                            )}
+                                          </IconButton>
+                                        </span>
+                                      </Tooltip>
+                                      {assignedPrayer && (
+                                        <Tooltip title="הסר הקצאה">
+                                          <IconButton
+                                            size="small"
+                                            color="error"
+                                            onClick={() => {
+                                              // Check if this is a new assignment in the form or existing in DB
+                                              if (values.assignments[type.id]) {
+                                                // It's in the form, just remove it from form state
+                                                const newAssignments = {
+                                                  ...values.assignments,
+                                                };
+                                                delete newAssignments[type.id];
+                                                setFieldValue(
+                                                  "assignments",
+                                                  newAssignments
+                                                );
+                                              } else {
+                                                // It's in the database, mark for deletion
+                                                const newDeletions = [
+                                                  ...values.deletions,
+                                                  type.id,
+                                                ];
+                                                setFieldValue(
+                                                  "deletions",
+                                                  newDeletions
+                                                );
+                                              }
+                                            }}
+                                          >
+                                            <DeleteIcon />
+                                          </IconButton>
+                                        </Tooltip>
+                                      )}
+                                    </Box>
+                                  </Box>
+
+                                  {/* Second row: Assigned prayer (only if assigned) */}
+                                  {assignedPrayer && (
+                                    <Box
+                                      sx={{
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: 1,
+                                        mt: 1,
+                                      }}
+                                    >
+                                      {assignedPrayer.isChild ? (
+                                        <ChildIcon
+                                          fontSize="small"
+                                          color="action"
+                                        />
+                                      ) : (
+                                        <PersonIcon
+                                          fontSize="small"
+                                          color="action"
+                                        />
+                                      )}
+                                      <Typography
+                                        variant="body2"
+                                        color="text.secondary"
+                                      >
+                                        {assignedPrayer.prayer.firstName}{" "}
+                                        {assignedPrayer.prayer.lastName}
+                                      </Typography>
+                                      {assignedPrayer.isChild && (
                                         <Chip
-                                          label={`משקל: ${type.weight}`}
+                                          label="ילד"
                                           size="small"
-                                          color={
-                                            type.isHighPriority
-                                              ? "error"
-                                              : type.isMediumPriority
-                                                ? "warning"
-                                                : "default"
-                                          }
+                                          color="secondary"
                                           variant="outlined"
                                         />
-                                      </Box>
-                                    </MenuItem>
-                                  ))}
-                              </Select>
-                            </FormControl>
-                          </Box>
-                          <Box>
-                            <FormControl fullWidth>
-                              <InputLabel>מתפלל</InputLabel>
-                              <Select
-                                value={assignment.assignedPrayerId}
-                                onChange={e => {
-                                  const newAssignments = [
-                                    ...values.assignments,
-                                  ];
-                                  newAssignments[index].assignedPrayerId =
-                                    e.target.value;
-                                  setFieldValue("assignments", newAssignments);
-                                }}
-                                label="מתפלל"
-                              >
-                                {allPrayers.map(
-                                  ({ prayer, isChild, parentName }) => (
-                                    <MenuItem key={prayer.id} value={prayer.id}>
-                                      <Box
-                                        sx={{
-                                          display: "flex",
-                                          alignItems: "center",
-                                          gap: 1,
-                                        }}
-                                      >
-                                        {isChild ? (
-                                          <ChildIcon />
-                                        ) : (
-                                          <PersonIcon />
-                                        )}
-                                        <Typography>
-                                          {prayer.firstName} {prayer.lastName}
-                                        </Typography>
-                                        {isChild && (
-                                          <Chip
-                                            label="ילד"
-                                            size="small"
-                                            color="secondary"
-                                            variant="outlined"
-                                          />
-                                        )}
-                                      </Box>
-                                    </MenuItem>
-                                  )
-                                )}
-                              </Select>
-                            </FormControl>
-                          </Box>
-                          <Box>
-                            <IconButton
-                              onClick={() => {
-                                const newAssignments =
-                                  values.assignments.filter(
-                                    (_, i) => i !== index
-                                  );
-                                setFieldValue("assignments", newAssignments);
-                              }}
-                              color="error"
-                            >
-                              <DeleteIcon />
-                            </IconButton>
-                          </Box>
-                        </Box>
-                      </Card>
-                    ))}
-
-                    <Button
-                      variant="outlined"
-                      startIcon={<AddIcon />}
-                      onClick={() => {
-                        const newAssignments = [
-                          ...values.assignments,
-                          { aliyaTypeId: "", assignedPrayerId: "" },
-                        ];
-                        setFieldValue("assignments", newAssignments);
-                      }}
-                      sx={{ mt: 1 }}
-                    >
-                      הוסף עלייה
-                    </Button>
-                  </Box>
+                                      )}
+                                    </Box>
+                                  )}
+                                </CardContent>
+                              </Card>
+                            );
+                          })}
+                      </Stack>
+                    </Box>
+                  )}
                 </Stack>
                 <DialogActions>
                   <Button
@@ -1321,14 +1541,116 @@ const AdminAliyaAssignmentContent = () => {
                     }
                   >
                     {isSubmitting || updatePrayerCardMutation.isPending
-                      ? "מקצה..."
-                      : "הקצה עליות"}
+                      ? "שומר..."
+                      : "שמור שינויים"}
                   </Button>
                 </DialogActions>
               </Form>
             )}
           </Formik>
         </DialogContent>
+      </Dialog>
+
+      {/* Prayer Selection Dialog */}
+      <Dialog
+        open={showPrayerSelectionDialog}
+        onClose={() => {
+          setShowPrayerSelectionDialog(false);
+          setSelectedAliyaTypeForAssignment(null);
+        }}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>בחר מתפלל</DialogTitle>
+        <DialogContent>
+          <Box sx={{ mt: 2 }}>
+            <Autocomplete
+              fullWidth
+              options={allPrayers}
+              getOptionLabel={({ prayer }) =>
+                `${prayer.firstName} ${prayer.lastName}`
+              }
+              value={
+                selectedAliyaTypeForAssignment &&
+                (assignmentFormikRef.current || editGroupFormikRef.current)
+                  ? (() => {
+                      const activeFormik =
+                        assignmentFormikRef.current ||
+                        editGroupFormikRef.current;
+                      const prayerId =
+                        activeFormik?.values.assignments[
+                          selectedAliyaTypeForAssignment
+                        ];
+                      return prayerId
+                        ? allPrayers.find(p => p.prayer.id === prayerId) || null
+                        : null;
+                    })()
+                  : null
+              }
+              onChange={(_, newValue) => {
+                if (selectedAliyaTypeForAssignment && newValue) {
+                  const activeFormik =
+                    assignmentFormikRef.current || editGroupFormikRef.current;
+                  if (activeFormik) {
+                    const newAssignments = {
+                      ...activeFormik.values.assignments,
+                    };
+                    newAssignments[selectedAliyaTypeForAssignment] =
+                      newValue.prayer.id;
+                    activeFormik.setFieldValue("assignments", newAssignments);
+                    setShowPrayerSelectionDialog(false);
+                    setSelectedAliyaTypeForAssignment(null);
+                  }
+                }
+              }}
+              renderInput={params => (
+                <TextField
+                  {...params}
+                  label="חפש מתפלל"
+                  placeholder="הקלד שם..."
+                  autoFocus
+                />
+              )}
+              renderOption={(props, { prayer, isChild }) => (
+                <li {...props} key={prayer.id}>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 1,
+                    }}
+                  >
+                    {isChild ? <ChildIcon /> : <PersonIcon />}
+                    <Typography>
+                      {prayer.firstName} {prayer.lastName}
+                    </Typography>
+                    {isChild && (
+                      <Chip
+                        label="ילד"
+                        size="small"
+                        color="secondary"
+                        variant="outlined"
+                      />
+                    )}
+                  </Box>
+                </li>
+              )}
+              isOptionEqualToValue={(option, value) =>
+                option.prayer.id === value.prayer.id
+              }
+            />
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => {
+              setShowPrayerSelectionDialog(false);
+              setSelectedAliyaTypeForAssignment(null);
+            }}
+          >
+            ביטול
+          </Button>
+        </DialogActions>
       </Dialog>
 
       {/* Reassign Aliya Dialog */}
@@ -1372,59 +1694,78 @@ const AdminAliyaAssignmentContent = () => {
                       </Typography>
                     </Box>
 
-                    <FormControl
+                    <Autocomplete
                       fullWidth
-                      error={
-                        touched.assignedPrayerId &&
-                        Boolean(errors.assignedPrayerId)
+                      options={allPrayers.filter(
+                        ({ prayer }) => prayer.id !== editingAliya.prayer.id
+                      )}
+                      getOptionLabel={({ prayer }) =>
+                        `${prayer.firstName} ${prayer.lastName}`
                       }
-                    >
-                      <InputLabel>מתפלל חדש</InputLabel>
-                      <Select
-                        name="assignedPrayerId"
-                        value={values.assignedPrayerId}
-                        onChange={handleChange}
-                        onBlur={handleBlur}
-                        label="מתפלל חדש"
-                      >
-                        {allPrayers
-                          .filter(
-                            ({ prayer }) => prayer.id !== editingAliya.prayer.id
-                          )
-                          .map(({ prayer, isChild, parentName }) => (
-                            <MenuItem key={prayer.id} value={prayer.id}>
-                              <Box
-                                sx={{
-                                  display: "flex",
-                                  alignItems: "center",
-                                  gap: 1,
-                                }}
+                      value={
+                        allPrayers.find(
+                          p => p.prayer.id === values.assignedPrayerId
+                        ) || null
+                      }
+                      onChange={(_, newValue) => {
+                        handleChange({
+                          target: {
+                            name: "assignedPrayerId",
+                            value: newValue?.prayer.id || "",
+                          },
+                        });
+                      }}
+                      onBlur={handleBlur}
+                      renderInput={params => (
+                        <TextField
+                          {...params}
+                          label="חפש מתפלל חדש"
+                          placeholder="הקלד שם..."
+                          error={
+                            touched.assignedPrayerId &&
+                            Boolean(errors.assignedPrayerId)
+                          }
+                        />
+                      )}
+                      renderOption={(
+                        props,
+                        { prayer, isChild, parentName }
+                      ) => (
+                        <li {...props} key={prayer.id}>
+                          <Box
+                            sx={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 1,
+                            }}
+                          >
+                            {isChild ? <ChildIcon /> : <PersonIcon />}
+                            <Typography>
+                              {prayer.firstName} {prayer.lastName}
+                            </Typography>
+                            {isChild && (
+                              <Chip
+                                label="ילד"
+                                size="small"
+                                color="secondary"
+                                variant="outlined"
+                              />
+                            )}
+                            {isChild && parentName && (
+                              <Typography
+                                variant="body2"
+                                color="text.secondary"
                               >
-                                {isChild ? <ChildIcon /> : <PersonIcon />}
-                                <Typography>
-                                  {prayer.firstName} {prayer.lastName}
-                                </Typography>
-                                {isChild && (
-                                  <Chip
-                                    label="ילד"
-                                    size="small"
-                                    color="secondary"
-                                    variant="outlined"
-                                  />
-                                )}
-                                {isChild && parentName && (
-                                  <Typography
-                                    variant="body2"
-                                    color="text.secondary"
-                                  >
-                                    (בן/בת של {parentName})
-                                  </Typography>
-                                )}
-                              </Box>
-                            </MenuItem>
-                          ))}
-                      </Select>
-                    </FormControl>
+                                (בן/בת של {parentName})
+                              </Typography>
+                            )}
+                          </Box>
+                        </li>
+                      )}
+                      isOptionEqualToValue={(option, value) =>
+                        option.prayer.id === value.prayer.id
+                      }
+                    />
                   </Stack>
                   <DialogActions>
                     <Button
@@ -1466,6 +1807,7 @@ const AdminAliyaAssignmentContent = () => {
               initialValues={initialEditGroupFormValues}
               validationSchema={editGroupValidationSchema}
               onSubmit={handleEditGroupSubmit}
+              innerRef={editGroupFormikRef}
             >
               {({
                 values,
@@ -1504,126 +1846,177 @@ const AdminAliyaAssignmentContent = () => {
                       </Box>
                     </Box>
 
-                    <Typography variant="h6" gutterBottom>
-                      עליות חדשות להוספה
-                    </Typography>
-
-                    {values.assignments.map((assignment, index) => (
-                      <Box
-                        key={index}
-                        sx={{
-                          p: 2,
-                          border: "1px solid",
-                          borderColor: "divider",
-                          borderRadius: 1,
-                        }}
+                    <Box>
+                      <Typography variant="h6" gutterBottom>
+                        סוגי עליות
+                      </Typography>
+                      <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        gutterBottom
                       >
-                        <Box
-                          sx={{
-                            display: "grid",
-                            gridTemplateColumns: {
-                              xs: "1fr",
-                              sm: "1fr 1fr auto",
-                            },
-                            gap: 2,
-                            alignItems: "end",
-                          }}
-                        >
-                          <FormControl
-                            fullWidth
-                            error={
-                              touched.assignments?.[index]?.aliyaTypeId &&
-                              Boolean(
-                                (errors.assignments as any)?.[index]
-                                  ?.aliyaTypeId
-                              )
-                            }
-                          >
-                            <InputLabel>סוג עלייה</InputLabel>
-                            <Select
-                              name={`assignments.${index}.aliyaTypeId`}
-                              value={assignment.aliyaTypeId}
-                              onChange={handleChange}
-                              onBlur={handleBlur}
-                              label="סוג עלייה"
-                            >
-                              {aliyaTypes
-                                ?.filter(type => {
-                                  if (!editingGroup) return true;
-                                  const assignedTypes =
-                                    getAssignedAliyaTypesForGroup(
-                                      editingGroup.id
-                                    );
-                                  return !assignedTypes.includes(type.id);
-                                })
-                                .sort(
-                                  (a, b) =>
-                                    (a.displayOrder || 0) -
-                                    (b.displayOrder || 0)
-                                )
-                                .map(type => (
-                                  <MenuItem key={type.id} value={type.id}>
-                                    <Box
-                                      sx={{
-                                        display: "flex",
-                                        alignItems: "center",
-                                        gap: 1,
-                                      }}
-                                    >
-                                      <Typography>
-                                        {type.displayName}
-                                      </Typography>
-                                      <Chip
-                                        label={`משקל: ${type.weight}`}
-                                        size="small"
-                                        color={
-                                          type.isHighPriority
-                                            ? "error"
-                                            : type.isMediumPriority
-                                              ? "warning"
-                                              : "default"
-                                        }
-                                        variant="outlined"
-                                      />
-                                    </Box>
-                                  </MenuItem>
-                                ))}
-                            </Select>
-                          </FormControl>
+                        לחץ על הכפתור ליד כל עלייה כדי להקצות מתפלל
+                      </Typography>
+                      <Stack spacing={1} sx={{ mt: 2 }}>
+                        {aliyaTypes
+                          ?.sort(
+                            (a, b) =>
+                              (a.displayOrder || 0) - (b.displayOrder || 0)
+                          )
+                          .filter(type => {
+                            // Show enabled types
+                            if (type.enabled) return true;
 
-                          <FormControl
-                            fullWidth
-                            error={
-                              touched.assignments?.[index]?.assignedPrayerId &&
-                              Boolean(
-                                (errors.assignments as any)?.[index]
-                                  ?.assignedPrayerId
-                              )
+                            // For disabled types, only show if they have an existing assignment in this group
+                            const hasExistingAssignment = allAliyot.some(
+                              aliyaData =>
+                                aliyaData.aliya.aliyaGroupId ===
+                                  editingGroup.id &&
+                                aliyaData.aliya.aliyaType === type.id
+                            );
+                            return hasExistingAssignment;
+                          })
+                          .map(type => {
+                            // Check if this aliya type is marked for deletion
+                            const isMarkedForDeletion =
+                              values.deletions.includes(type.id);
+
+                            // First check if there's a new assignment in the form
+                            let assignedPrayerId = values.assignments[type.id];
+
+                            // If not and not marked for deletion, check if there's an existing assignment in the database
+                            if (!assignedPrayerId && !isMarkedForDeletion) {
+                              const existingAliya = allAliyot.find(
+                                aliyaData =>
+                                  aliyaData.aliya.aliyaGroupId ===
+                                    editingGroup.id &&
+                                  aliyaData.aliya.aliyaType === type.id
+                              );
+                              if (existingAliya) {
+                                assignedPrayerId = existingAliya.prayer.id;
+                              }
                             }
-                          >
-                            <InputLabel>מתפלל</InputLabel>
-                            <Select
-                              name={`assignments.${index}.assignedPrayerId`}
-                              value={assignment.assignedPrayerId}
-                              onChange={handleChange}
-                              onBlur={handleBlur}
-                              label="מתפלל"
-                            >
-                              {allPrayers.map(
-                                ({ prayer, isChild, parentName }) => (
-                                  <MenuItem key={prayer.id} value={prayer.id}>
+
+                            const assignedPrayer = assignedPrayerId
+                              ? allPrayers.find(
+                                  p => p.prayer.id === assignedPrayerId
+                                )
+                              : null;
+
+                            return (
+                              <Card key={type.id} variant="outlined">
+                                <CardContent sx={{ py: 1, px: 2 }}>
+                                  {/* First row: Aliya type name and buttons */}
+                                  <Box
+                                    sx={{
+                                      display: "flex",
+                                      justifyContent: "space-between",
+                                      alignItems: "center",
+                                    }}
+                                  >
+                                    <Typography variant="h6">
+                                      {type.displayName}
+                                    </Typography>
+                                    <Box sx={{ display: "flex", gap: 1 }}>
+                                      <Tooltip
+                                        title={
+                                          !type.enabled && !assignedPrayer
+                                            ? "סוג עלייה זה לא פעיל"
+                                            : assignedPrayer
+                                              ? "שנה מתפלל"
+                                              : "הקצה מתפלל"
+                                        }
+                                      >
+                                        <span>
+                                          <IconButton
+                                            size="small"
+                                            color="primary"
+                                            disabled={
+                                              !type.enabled && !assignedPrayer
+                                            }
+                                            onClick={() => {
+                                              setSelectedAliyaTypeForAssignment(
+                                                type.id
+                                              );
+                                              setShowPrayerSelectionDialog(
+                                                true
+                                              );
+                                            }}
+                                          >
+                                            {assignedPrayer ? (
+                                              <EditIcon />
+                                            ) : (
+                                              <AddIcon />
+                                            )}
+                                          </IconButton>
+                                        </span>
+                                      </Tooltip>
+                                      {assignedPrayer && (
+                                        <Tooltip title="הסר הקצאה">
+                                          <IconButton
+                                            size="small"
+                                            color="error"
+                                            onClick={() => {
+                                              // Check if this is a new assignment in the form or existing in DB
+                                              if (values.assignments[type.id]) {
+                                                // It's in the form, just remove it from form state
+                                                const newAssignments = {
+                                                  ...values.assignments,
+                                                };
+                                                delete newAssignments[type.id];
+                                                setFieldValue(
+                                                  "assignments",
+                                                  newAssignments
+                                                );
+                                              } else {
+                                                // It's in the database, mark for deletion
+                                                const newDeletions = [
+                                                  ...values.deletions,
+                                                  type.id,
+                                                ];
+                                                setFieldValue(
+                                                  "deletions",
+                                                  newDeletions
+                                                );
+                                              }
+                                            }}
+                                          >
+                                            <DeleteIcon />
+                                          </IconButton>
+                                        </Tooltip>
+                                      )}
+                                    </Box>
+                                  </Box>
+
+                                  {/* Second row: Assigned prayer (only if assigned) */}
+                                  {assignedPrayer && (
                                     <Box
                                       sx={{
                                         display: "flex",
                                         alignItems: "center",
                                         gap: 1,
+                                        mt: 1,
                                       }}
                                     >
-                                      {isChild ? <ChildIcon /> : <PersonIcon />}
-                                      <Typography>
-                                        {prayer.firstName} {prayer.lastName}
+                                      {assignedPrayer.isChild ? (
+                                        <ChildIcon
+                                          fontSize="small"
+                                          color="action"
+                                        />
+                                      ) : (
+                                        <PersonIcon
+                                          fontSize="small"
+                                          color="action"
+                                        />
+                                      )}
+                                      <Typography
+                                        variant="body2"
+                                        color="text.secondary"
+                                      >
+                                        {assignedPrayer.prayer.firstName}{" "}
+                                        {assignedPrayer.prayer.lastName}
                                       </Typography>
-                                      {isChild && (
+                                      {assignedPrayer.isChild && (
                                         <Chip
                                           label="ילד"
                                           size="small"
@@ -1631,51 +2024,14 @@ const AdminAliyaAssignmentContent = () => {
                                           variant="outlined"
                                         />
                                       )}
-                                      {isChild && parentName && (
-                                        <Typography
-                                          variant="body2"
-                                          color="text.secondary"
-                                        >
-                                          (בן/בת של {parentName})
-                                        </Typography>
-                                      )}
                                     </Box>
-                                  </MenuItem>
-                                )
-                              )}
-                            </Select>
-                          </FormControl>
-
-                          <Box>
-                            <IconButton
-                              onClick={() => {
-                                const newAssignments =
-                                  values.assignments.filter(
-                                    (_, i) => i !== index
-                                  );
-                                setFieldValue("assignments", newAssignments);
-                              }}
-                              color="error"
-                            >
-                              <DeleteIcon />
-                            </IconButton>
-                          </Box>
-                        </Box>
-                      </Box>
-                    ))}
-
-                    <Button
-                      startIcon={<AddIcon />}
-                      onClick={() => {
-                        setFieldValue("assignments", [
-                          ...values.assignments,
-                          { aliyaTypeId: "", assignedPrayerId: "" },
-                        ]);
-                      }}
-                      variant="outlined"
-                    >
-                      הוסף עלייה נוספת
-                    </Button>
+                                  )}
+                                </CardContent>
+                              </Card>
+                            );
+                          })}
+                      </Stack>
+                    </Box>
                   </Stack>
 
                   <DialogActions>
@@ -1693,8 +2049,8 @@ const AdminAliyaAssignmentContent = () => {
                       }
                     >
                       {isSubmitting || updatePrayerCardMutation.isPending
-                        ? "מוסיף עליות..."
-                        : "הוסף עליות"}
+                        ? "שומר..."
+                        : "שמור שינויים"}
                     </Button>
                   </DialogActions>
                 </Form>

@@ -325,8 +325,8 @@ const AdminAliyaTypesContent = () => {
                     <Chip
                       label={aliyaType.enabled ? "פעיל" : "לא פעיל"}
                       size="small"
-                      color={aliyaType.enabled ? "success" : "default"}
-                      variant={aliyaType.enabled ? "filled" : "outlined"}
+                      color={aliyaType.enabled ? "success" : "error"}
+                      variant={aliyaType.enabled ? "filled" : "filled"}
                     />
                   </Box>
 
