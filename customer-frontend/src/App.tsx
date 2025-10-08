@@ -16,6 +16,8 @@ import AdminAliyaTypesPage from "./pages/AdminAliyaTypesPage";
 import AdminAliyaAssignmentPage from "./pages/AdminAliyaAssignmentPage";
 import AdminPrayerCardsPage from "./pages/AdminPrayerCardsPage";
 import AdminFrontendErrorsPage from "./pages/AdminFrontendErrorsPage";
+import AdminPrayerTimesPage from "./pages/AdminPrayerTimesPage";
+import PrayerTimesPage from "./pages/PrayerTimesPage";
 import ComingSoonPage from "./pages/ComingSoonPage";
 import { FrontendErrorServiceProvider } from "./components/FrontendErrorServiceProvider";
 import {
@@ -79,6 +81,10 @@ export const App: React.FC = () => {
                     path="/synagogue/:synagogueId/admin/frontend-errors"
                     element={<AdminFrontendErrorsPage />}
                   />
+                  <Route
+                    path="/synagogue/:synagogueId/admin/prayer-times"
+                    element={<AdminPrayerTimesPage />}
+                  />
                   {/* Coming Soon Pages */}
                   <Route
                     path="/synagogue/:synagogueId/tora-lessons"
@@ -96,17 +102,7 @@ export const App: React.FC = () => {
                   />
                   <Route
                     path="/synagogue/:synagogueId/prayer-times"
-                    element={
-                      <ComingSoonPage
-                        title="זמני תפילות"
-                        description="הדף לניהול זמני התפילות נמצא בפיתוח ויושק בקרוב"
-                        icon={
-                          <TimeIcon
-                            sx={{ fontSize: 80, color: "primary.main", mb: 3 }}
-                          />
-                        }
-                      />
-                    }
+                    element={<PrayerTimesPage />}
                   />
                   <Route
                     path="/synagogue/:synagogueId/financial-reports"

@@ -1,14 +1,39 @@
 import { useMemo } from "react";
-import { prayerCardMapper } from "../model/Prayer";
+import { prayerCardMapper, PrayerCard, PrayerCardDto } from "../model/Prayer";
 import { GenericService } from "../services/genericService";
 import { useAppSelector } from "../store/hooks";
 import { selectSelectedSynagogueId } from "../store/synagogueSlice";
-import { prayerEventTypeMapper } from "../model/PrayerEventType";
-import { aliyaTypeMapper } from "../model/AliyaType";
-import { aliyaGroupMapper } from "../model/AliyaGroup";
-import { adminMapper } from "../model/Admin";
+import {
+  prayerEventTypeMapper,
+  PrayerEventType,
+  PrayerEventTypeDto,
+} from "../model/PrayerEventType";
+import { aliyaTypeMapper, AliyaType, AliyaTypeDto } from "../model/AliyaType";
+import {
+  aliyaGroupMapper,
+  AliyaGroup,
+  AliyaGroupDto,
+} from "../model/AliyaGroup";
+import { adminMapper, Admin, AdminDto } from "../model/Admin";
+import {
+  prayerTimesMapper,
+  PrayerTimes,
+  PrayerTimesDto,
+} from "../model/PrayerTimes";
 
-export function useSynagogueServices() {
+interface SynagogueServices {
+  prayerCardService: GenericService<PrayerCard, PrayerCardDto> | null;
+  prayerEventTypeService: GenericService<
+    PrayerEventType,
+    PrayerEventTypeDto
+  > | null;
+  aliyaTypeService: GenericService<AliyaType, AliyaTypeDto> | null;
+  aliyaGroupService: GenericService<AliyaGroup, AliyaGroupDto> | null;
+  gabaimService: GenericService<Admin, AdminDto> | null;
+  prayerTimesService: GenericService<PrayerTimes, PrayerTimesDto> | null;
+}
+
+export function useSynagogueServices(): SynagogueServices {
   const synagogueId = useAppSelector(selectSelectedSynagogueId);
   return useMemo(() => {
     if (!synagogueId) {
@@ -18,6 +43,7 @@ export function useSynagogueServices() {
         aliyaTypeService: null,
         aliyaGroupService: null,
         gabaimService: null,
+        prayerTimesService: null,
       };
     }
     return {
@@ -42,6 +68,11 @@ export function useSynagogueServices() {
         synagogueId
       ),
       gabaimService: new GenericService("gabaim", adminMapper, synagogueId),
+      prayerTimesService: new GenericService(
+        "prayerTimes",
+        prayerTimesMapper,
+        synagogueId
+      ),
     };
   }, [synagogueId]);
 }

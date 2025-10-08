@@ -179,6 +179,11 @@ export const AppSideBar: React.FC<AppSideBarProps> = ({
                 onClick={() => handleClick("admin/aliya-types")}
                 icon={<AliyaTypesIcon />}
               />
+              <SidebarItem
+                text="ניהול זמני תפילות"
+                onClick={() => handleClick("admin/prayer-times")}
+                icon={<PrayerTimesIcon />}
+              />
             </>
           )}
           {isAdmin && (

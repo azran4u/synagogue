@@ -6,9 +6,12 @@
 /synagogues/zFH6FhDnsJDjuQtF2ANq/prayerEventTypes/042f2582-509c-42d0-af24-a8fcdf51d09a
 
 TODO:
-replace prayer with praying
-gabai prayer search
-kids over 13
+tora lessons
+pray times
+donations
+financial reports
+gabai board
+transfer aliyot from one prayer to another
 
 DONE:
 
