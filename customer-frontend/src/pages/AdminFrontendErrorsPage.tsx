@@ -274,7 +274,7 @@ const AdminFrontendErrorsPage: React.FC = () => {
               <CardContent>
                 <Stack direction="row" spacing={2} alignItems="flex-start">
                   {getErrorTypeIcon(error.errorType)}
-                  <Box sx={{ flexGrow: 1 }}>
+                  <Box sx={{ flexGrow: 1, minWidth: 0 }}>
                     <Stack direction="row" spacing={1} alignItems="center">
                       <Typography variant="h6" sx={{ flexGrow: 1 }}>
                         {error.errorMessage}
@@ -313,7 +313,7 @@ const AdminFrontendErrorsPage: React.FC = () => {
                       <Typography
                         variant="body2"
                         color="text.secondary"
-                        sx={{ mb: 1 }}
+                        sx={{ mb: 1, wordBreak: "break-all" }}
                       >
                         <strong>URL:</strong> {error.url}
                       </Typography>
@@ -331,11 +331,11 @@ const AdminFrontendErrorsPage: React.FC = () => {
                             borderRadius: 1,
                             fontFamily: "monospace",
                             fontSize: { xs: "0.65rem", sm: "0.75rem" },
-                            // whiteSpace: "nowrap",
-                            whiteSpace: "pre-wrap",
+                            whiteSpace: "pre",
                             overflowX: "auto",
                             overflowY: "auto",
                             border: "1px solid #e0e0e0",
+                            maxWidth: "100%",
                           }}
                         >
                           {error.errorStack}
