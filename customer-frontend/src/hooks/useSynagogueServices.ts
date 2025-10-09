@@ -30,6 +30,7 @@ import {
   FinancialReport,
   FinancialReportDto,
 } from "../model/FinancialReports";
+import { donationMapper, Donation, DonationDto } from "../model/Donation";
 
 interface SynagogueServices {
   prayerCardService: GenericService<PrayerCard, PrayerCardDto> | null;
@@ -46,6 +47,7 @@ interface SynagogueServices {
     FinancialReport,
     FinancialReportDto
   > | null;
+  donationsService: GenericService<Donation, DonationDto> | null;
 }
 
 export function useSynagogueServices(): SynagogueServices {
@@ -61,6 +63,7 @@ export function useSynagogueServices(): SynagogueServices {
         prayerTimesService: null,
         toraLessonsService: null,
         financialReportsService: null,
+        donationsService: null,
       };
     }
     return {
@@ -98,6 +101,11 @@ export function useSynagogueServices(): SynagogueServices {
       financialReportsService: new GenericService(
         "financialReports",
         financialReportsMapper,
+        synagogueId
+      ),
+      donationsService: new GenericService(
+        "donations",
+        donationMapper,
         synagogueId
       ),
     };

@@ -19,17 +19,12 @@ import AdminFrontendErrorsPage from "./pages/AdminFrontendErrorsPage";
 import AdminPrayerTimesPage from "./pages/AdminPrayerTimesPage";
 import AdminToraLessonsPage from "./pages/AdminToraLessonsPage";
 import AdminFinancialReportsPage from "./pages/AdminFinancialReportsPage";
+import AdminDonationsPage from "./pages/AdminDonationsPage";
 import PrayerTimesPage from "./pages/PrayerTimesPage";
 import ToraLessonsPage from "./pages/ToraLessonsPage";
 import FinancialReportsPage from "./pages/FinancialReportsPage";
-import ComingSoonPage from "./pages/ComingSoonPage";
+import DonationsPage from "./pages/DonationsPage";
 import { FrontendErrorServiceProvider } from "./components/FrontendErrorServiceProvider";
-import {
-  Book as BookIcon,
-  AccessTime as TimeIcon,
-  Assessment as ReportIcon,
-  AttachMoney as MoneyIcon,
-} from "@mui/icons-material";
 
 export const App: React.FC = () => {
   return (
@@ -98,6 +93,10 @@ export const App: React.FC = () => {
                     element={<AdminFinancialReportsPage />}
                   />
                   <Route
+                    path="/synagogue/:synagogueId/admin/donations"
+                    element={<AdminDonationsPage />}
+                  />
+                  <Route
                     path="/synagogue/:synagogueId/tora-lessons"
                     element={<ToraLessonsPage />}
                   />
@@ -109,20 +108,9 @@ export const App: React.FC = () => {
                     path="/synagogue/:synagogueId/financial-reports"
                     element={<FinancialReportsPage />}
                   />
-                  {/* Coming Soon Pages */}
                   <Route
                     path="/synagogue/:synagogueId/donations"
-                    element={
-                      <ComingSoonPage
-                        title="תרומות"
-                        description="הדף לניהול תרומות נמצא בפיתוח ויושק בקרוב"
-                        icon={
-                          <MoneyIcon
-                            sx={{ fontSize: 80, color: "primary.main", mb: 3 }}
-                          />
-                        }
-                      />
-                    }
+                    element={<DonationsPage />}
                   />
                 </Routes>
               </Box>
