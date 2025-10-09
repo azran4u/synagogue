@@ -23,8 +23,39 @@ import {
 import { useAllPrayerCards } from "../hooks/usePrayerCard";
 import { useCreatePrayerCard } from "../hooks/usePrayerCard";
 import { useDeletePrayerCard } from "../hooks/usePrayerCard";
-import { PrayerCard } from "../model/Prayer";
+import { PrayerCard, Prayer } from "../model/Prayer";
+import { HebrewDate } from "../model/HebrewDate";
 import { PrayerCardEditDialog } from "../components/PrayerCardEditDialog";
+
+// Helper function to calculate age from Hebrew birthdate
+const calculateAgeFromHebrewDate = (hebrewBirthDate: HebrewDate): number => {
+  const today = new Date();
+  const birthDate = hebrewBirthDate.toGregorianDate();
+
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const monthDiff = today.getMonth() - birthDate.getMonth();
+
+  if (
+    monthDiff < 0 ||
+    (monthDiff === 0 && today.getDate() < birthDate.getDate())
+  ) {
+    age--;
+  }
+
+  return age;
+};
+
+// Helper function to check if prayer is eligible for aliya (13+ or no birthdate)
+const isEligibleForAliya = (prayer: Prayer): boolean => {
+  // If no birthdate, include them
+  if (!prayer.hebrewBirthDate) {
+    return true;
+  }
+
+  // Check if 13 years or older
+  const age = calculateAgeFromHebrewDate(prayer.hebrewBirthDate);
+  return age >= 13;
+};
 
 const AdminPrayerCardsPage: React.FC = () => {
   const { data: prayerCards, isLoading } = useAllPrayerCards();
@@ -40,6 +71,29 @@ const AdminPrayerCardsPage: React.FC = () => {
   const [editingPrayerCard, setEditingPrayerCard] = useState<PrayerCard | null>(
     null
   );
+
+  // Calculate number of prayers above age 13
+  const prayersAbove13Count = useMemo(() => {
+    if (!prayerCards) return 0;
+
+    let count = 0;
+
+    prayerCards.forEach(card => {
+      // Add the main prayer (adult) if eligible
+      if (isEligibleForAliya(card.prayer)) {
+        count++;
+      }
+
+      // Add children if eligible (13+ or no birthdate)
+      card.children.forEach(child => {
+        if (isEligibleForAliya(child)) {
+          count++;
+        }
+      });
+    });
+
+    return count;
+  }, [prayerCards]);
 
   // Filter prayer cards based on search term
   const filteredPrayerCards = useMemo(() => {
@@ -107,6 +161,40 @@ const AdminPrayerCardsPage: React.FC = () => {
       <Typography variant="h4" gutterBottom sx={{ mb: 3 }}>
         ניהול כרטיסי מתפללים
       </Typography>
+
+      {/* Statistics Row */}
+      <Box sx={{ mb: 3 }}>
+        <Card>
+          <CardContent>
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent: "space-around",
+                alignItems: "center",
+                flexWrap: "wrap",
+                gap: 2,
+              }}
+            >
+              <Box sx={{ textAlign: "center" }}>
+                <Typography variant="h4" color="primary">
+                  {prayerCards?.length || 0}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  כרטיסי מתפלל
+                </Typography>
+              </Box>
+              <Box sx={{ textAlign: "center" }}>
+                <Typography variant="h4" color="primary">
+                  {prayersAbove13Count}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  מתפללים מעל גיל 13
+                </Typography>
+              </Box>
+            </Box>
+          </CardContent>
+        </Card>
+      </Box>
 
       {/* Search */}
       <Box sx={{ mb: 3 }}>
