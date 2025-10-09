@@ -304,8 +304,14 @@ const AdminFinancialReportsContent: React.FC = () => {
                       color="text.secondary"
                       sx={{ display: "block", mt: 1 }}
                     >
-                      נוצר על ידי: {report.createdBy} | תאריך עברי:{" "}
-                      {report.hebrewDate.toString()}
+                      נוצר על ידי: {report.createdBy}
+                    </Typography>
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                      sx={{ display: "block" }}
+                    >
+                      תאריך עברי: {report.hebrewDate.toString()}
                     </Typography>
 
                     {report.linkToDocument && (
