@@ -17,6 +17,7 @@ import {
   List as ListIcon,
   Settings as AdminIcon,
   Event as EventTypesIcon,
+  EventAvailable as EventIcon,
   Group as AliyaTypesIcon,
   Assignment as AliyaAssignmentIcon,
   People as AdminPrayerCardsIcon,
@@ -198,6 +199,11 @@ export const AppSideBar: React.FC<AppSideBarProps> = ({
                 text="ניהול תרומות"
                 onClick={() => handleClick("admin/donations")}
                 icon={<DonationsIcon />}
+              />
+              <SidebarItem
+                text="אירועים קרובים"
+                onClick={() => handleClick("admin/upcoming-events")}
+                icon={<EventIcon />}
               />
             </>
           )}

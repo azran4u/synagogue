@@ -20,6 +20,7 @@ import AdminPrayerTimesPage from "./pages/AdminPrayerTimesPage";
 import AdminToraLessonsPage from "./pages/AdminToraLessonsPage";
 import AdminFinancialReportsPage from "./pages/AdminFinancialReportsPage";
 import AdminDonationsPage from "./pages/AdminDonationsPage";
+import AdminUpcomingEventsPage from "./pages/AdminUpcomingEventsPage";
 import PrayerTimesPage from "./pages/PrayerTimesPage";
 import ToraLessonsPage from "./pages/ToraLessonsPage";
 import FinancialReportsPage from "./pages/FinancialReportsPage";
@@ -95,6 +96,10 @@ export const App: React.FC = () => {
                   <Route
                     path="/synagogue/:synagogueId/admin/donations"
                     element={<AdminDonationsPage />}
+                  />
+                  <Route
+                    path="/synagogue/:synagogueId/admin/upcoming-events"
+                    element={<AdminUpcomingEventsPage />}
                   />
                   <Route
                     path="/synagogue/:synagogueId/tora-lessons"
