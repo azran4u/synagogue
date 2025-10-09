@@ -46,7 +46,7 @@ const DonationsPage: React.FC = () => {
     : [];
 
   const handleDonate = (link: string) => {
-    window.open(link, "_blank", "noopener,noreferrer");
+    window.open(link, "_blank");
   };
 
   return (
