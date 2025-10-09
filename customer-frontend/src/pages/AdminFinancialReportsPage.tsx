@@ -220,7 +220,7 @@ const AdminFinancialReportsContent: React.FC = () => {
   }
 
   const sortedReports = reports
-    ? [...reports].sort((a, b) => a.displayOrder - b.displayOrder)
+    ? [...reports].sort((a, b) => b.displayOrder - a.displayOrder)
     : [];
 
   return (

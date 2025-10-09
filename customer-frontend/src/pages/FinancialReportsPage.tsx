@@ -46,7 +46,7 @@ const FinancialReportsPage: React.FC = () => {
   const sortedReports = reports
     ? [...reports].sort(
         (a: FinancialReport, b: FinancialReport) =>
-          a.displayOrder - b.displayOrder
+          b.displayOrder - a.displayOrder
       )
     : [];
 
