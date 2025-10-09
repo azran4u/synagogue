@@ -5,7 +5,7 @@ export interface ErrorDto {
   errorObject?: any;
   errorMessage: string;
   errorStack?: string;
-  timestamp: any; // Firebase serverTimestamp
+  timestamp: number; // Unix timestamp in milliseconds
   url?: string;
   userAgent?: string;
   errorType: "javascript" | "react" | "promise" | "console";
@@ -61,7 +61,7 @@ export class FrontendError {
       errorObject: this.errorObject,
       errorMessage: this.errorMessage,
       errorStack: this.errorStack,
-      timestamp: this.timestamp.toLocaleString(),
+      timestamp: this.timestamp.getTime(),
       url: this.url,
       userAgent: this.userAgent,
       errorType: this.errorType,
@@ -79,7 +79,7 @@ export class FrontendError {
       dto.userEmail,
       dto.errorObject,
       dto.errorStack,
-      dto.timestamp?.toDate?.() || new Date(dto.timestamp),
+      new Date(dto.timestamp),
       dto.url,
       dto.userAgent,
       dto.componentStack

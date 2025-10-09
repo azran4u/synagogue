@@ -17,6 +17,14 @@ import {
   DialogActions,
   IconButton,
   Tooltip,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Divider,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
 } from "@mui/material";
 import {
   Search as SearchIcon,
@@ -28,6 +36,7 @@ import {
   DeleteForever as DeleteAllIcon,
   DeleteSweep as DeleteFilteredIcon,
   Clear as ClearIcon,
+  ExpandMore as ExpandMoreIcon,
 } from "@mui/icons-material";
 import { useAllFrontendErrors } from "../hooks/useFrontendErrors";
 import { useUser } from "../hooks/useUser";
@@ -40,6 +49,10 @@ const AdminFrontendErrorsPage: React.FC = () => {
   const queryClient = useQueryClient();
   const { isAdmin } = useUser();
   const [searchTerm, setSearchTerm] = useState("");
+  const [groupBy, setGroupBy] = useState<
+    "none" | "userEmail" | "errorMessage" | "url"
+  >("none");
+  const [expandedGroup, setExpandedGroup] = useState<string | false>(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteDialog, setDeleteDialog] = useState<{
     open: boolean;
@@ -61,6 +74,37 @@ const AdminFrontendErrorsPage: React.FC = () => {
         (err.url && err.url.toLowerCase().includes(searchLower))
     );
   }, [errors, searchTerm]);
+
+  // Group errors based on selected grouping option
+  const groupedErrors = useMemo(() => {
+    if (groupBy === "none") {
+      return { "": filteredErrors };
+    }
+
+    const groups: Record<string, typeof filteredErrors> = {};
+
+    filteredErrors.forEach(err => {
+      let key = "";
+      switch (groupBy) {
+        case "userEmail":
+          key = err.userEmail || "ללא משתמש";
+          break;
+        case "errorMessage":
+          key = err.errorMessage;
+          break;
+        case "url":
+          key = err.url || "ללא URL";
+          break;
+      }
+
+      if (!groups[key]) {
+        groups[key] = [];
+      }
+      groups[key].push(err);
+    });
+
+    return groups;
+  }, [filteredErrors, groupBy]);
 
   // Check if user is admin
   if (!isAdmin) {
@@ -111,7 +155,7 @@ const AdminFrontendErrorsPage: React.FC = () => {
       day: "2-digit",
       hour: "2-digit",
       minute: "2-digit",
-    }).format(new Date(timestamp));
+    }).format(timestamp);
   };
 
   // Delete handlers
@@ -169,6 +213,22 @@ const AdminFrontendErrorsPage: React.FC = () => {
       <Typography variant="h4" gutterBottom>
         שגיאות Frontend
       </Typography>
+
+      {/* Group By Selector */}
+      <FormControl fullWidth sx={{ mb: 2 }}>
+        <InputLabel id="group-by-label">קבץ לפי</InputLabel>
+        <Select
+          labelId="group-by-label"
+          value={groupBy}
+          label="קבץ לפי"
+          onChange={e => setGroupBy(e.target.value as typeof groupBy)}
+        >
+          <MenuItem value="none">ללא קיבוץ</MenuItem>
+          <MenuItem value="userEmail">אימייל משתמש</MenuItem>
+          <MenuItem value="errorMessage">הודעת שגיאה</MenuItem>
+          <MenuItem value="url">URL</MenuItem>
+        </Select>
+      </FormControl>
 
       {/* Search */}
       <TextField
@@ -269,84 +329,260 @@ const AdminFrontendErrorsPage: React.FC = () => {
       {/* Errors List */}
       {!isLoading && filteredErrors.length > 0 && (
         <Stack spacing={2} dir="ltr">
-          {filteredErrors.map((error, index) => (
-            <Card key={error.id || index} variant="outlined">
-              <CardContent>
-                <Stack direction="row" spacing={2} alignItems="flex-start">
-                  {getErrorTypeIcon(error.errorType)}
-                  <Box sx={{ flexGrow: 1, minWidth: 0 }}>
-                    <Stack direction="row" spacing={1} alignItems="center">
-                      <Typography variant="h6" sx={{ flexGrow: 1 }}>
-                        {error.errorMessage}
-                      </Typography>
-                      <Tooltip title="מחק שגיאה">
-                        <IconButton
-                          size="small"
-                          color="error"
-                          onClick={() => handleDeleteSingle(error.id!)}
-                          disabled={isDeleting}
+          {Object.entries(groupedErrors).map(([groupKey, groupErrors]) => {
+            // If no grouping, just render errors directly
+            if (groupBy === "none") {
+              return groupErrors.map((error, index) => (
+                <Card key={error.id || index} variant="outlined">
+                  <CardContent>
+                    <Stack direction="row" spacing={2} alignItems="flex-start">
+                      {getErrorTypeIcon(error.errorType)}
+                      <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+                        <Stack
+                          direction="row"
+                          spacing={1}
+                          alignItems="flex-start"
                         >
-                          <DeleteIcon />
-                        </IconButton>
-                      </Tooltip>
-                    </Stack>
+                          <Typography
+                            variant="h6"
+                            sx={{
+                              flexGrow: 1,
+                              wordBreak: "break-word",
+                              minWidth: 0,
+                            }}
+                          >
+                            {error.errorMessage}
+                          </Typography>
+                          <Tooltip title="מחק שגיאה">
+                            <IconButton
+                              size="small"
+                              color="error"
+                              onClick={() => handleDeleteSingle(error.id!)}
+                              disabled={isDeleting}
+                              sx={{ flexShrink: 0 }}
+                            >
+                              <DeleteIcon />
+                            </IconButton>
+                          </Tooltip>
+                        </Stack>
 
-                    <Typography variant="caption" color="text.secondary">
-                      {formatTimestamp(error.timestamp)}
-                    </Typography>
-                    <Stack direction="row" spacing={3} sx={{ mb: 2, gap: 1 }}>
-                      <Chip
-                        label={error.errorType}
-                        color={getErrorTypeColor(error.errorType) as any}
-                        size="small"
-                      />
-                      {error.userEmail && (
-                        <Chip
-                          label={error.userEmail}
-                          variant="outlined"
-                          size="small"
-                        />
-                      )}
-                    </Stack>
-
-                    {error.url && (
-                      <Typography
-                        variant="body2"
-                        color="text.secondary"
-                        sx={{ mb: 1, wordBreak: "break-all" }}
-                      >
-                        <strong>URL:</strong> {error.url}
-                      </Typography>
-                    )}
-
-                    {error.errorStack && (
-                      <Box sx={{ mt: 2 }}>
-                        <Typography variant="subtitle2" gutterBottom>
-                          Stack Trace:
+                        <Typography variant="caption" color="text.secondary">
+                          {formatTimestamp(error.timestamp)}
                         </Typography>
-                        <Box
-                          sx={{
-                            backgroundColor: "#f5f5f5",
-                            p: 1,
-                            borderRadius: 1,
-                            fontFamily: "monospace",
-                            fontSize: { xs: "0.65rem", sm: "0.75rem" },
-                            whiteSpace: "pre",
-                            overflowX: "auto",
-                            overflowY: "auto",
-                            border: "1px solid #e0e0e0",
-                            maxWidth: "100%",
-                          }}
+                        <Stack
+                          direction="row"
+                          spacing={3}
+                          sx={{ mb: 2, gap: 1 }}
                         >
-                          {error.errorStack}
-                        </Box>
+                          <Chip
+                            label={error.errorType}
+                            color={getErrorTypeColor(error.errorType) as any}
+                            size="small"
+                          />
+                          {error.userEmail && (
+                            <Chip
+                              label={error.userEmail}
+                              variant="outlined"
+                              size="small"
+                            />
+                          )}
+                        </Stack>
+
+                        {error.url && (
+                          <Typography
+                            variant="body2"
+                            color="text.secondary"
+                            sx={{ mb: 1, wordBreak: "break-all" }}
+                          >
+                            <strong>URL:</strong> {error.url}
+                          </Typography>
+                        )}
+
+                        {error.errorStack && (
+                          <Box sx={{ mt: 2 }}>
+                            <Typography variant="subtitle2" gutterBottom>
+                              Stack Trace:
+                            </Typography>
+                            <Box
+                              sx={{
+                                backgroundColor: "#f5f5f5",
+                                p: 1,
+                                borderRadius: 1,
+                                fontFamily: "monospace",
+                                fontSize: { xs: "0.65rem", sm: "0.75rem" },
+                                whiteSpace: "pre",
+                                overflowX: "auto",
+                                overflowY: "auto",
+                                border: "1px solid #e0e0e0",
+                                maxWidth: "100%",
+                              }}
+                            >
+                              {error.errorStack}
+                            </Box>
+                          </Box>
+                        )}
                       </Box>
-                    )}
+                    </Stack>
+                  </CardContent>
+                </Card>
+              ));
+            }
+
+            // Grouped view - use accordion
+            return (
+              <Accordion
+                key={groupKey}
+                expanded={expandedGroup === groupKey}
+                onChange={() =>
+                  setExpandedGroup(
+                    expandedGroup === groupKey ? false : groupKey
+                  )
+                }
+              >
+                <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      alignItems: "flex-start",
+                      gap: 2,
+                      width: "100%",
+                      minWidth: 0,
+                    }}
+                  >
+                    <Typography
+                      variant="h6"
+                      sx={{
+                        flex: 1,
+                        minWidth: 0,
+                        wordBreak: "break-all",
+                      }}
+                    >
+                      {groupKey}
+                    </Typography>
+                    <Chip
+                      label={`${groupErrors.length} שגיאות`}
+                      size="small"
+                      color="primary"
+                      variant="outlined"
+                      sx={{ flexShrink: 0, mt: 0.5 }}
+                    />
                   </Box>
-                </Stack>
-              </CardContent>
-            </Card>
-          ))}
+                </AccordionSummary>
+                <AccordionDetails>
+                  <Stack spacing={2}>
+                    {groupErrors.map((error, index) => (
+                      <Card key={error.id || index} variant="outlined">
+                        <CardContent>
+                          <Stack
+                            direction="row"
+                            spacing={2}
+                            alignItems="flex-start"
+                          >
+                            {getErrorTypeIcon(error.errorType)}
+                            <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+                              <Stack
+                                direction="row"
+                                spacing={1}
+                                alignItems="flex-start"
+                              >
+                                <Typography
+                                  variant="h6"
+                                  sx={{
+                                    flexGrow: 1,
+                                    wordBreak: "break-word",
+                                    minWidth: 0,
+                                  }}
+                                >
+                                  {error.errorMessage}
+                                </Typography>
+                                <Tooltip title="מחק שגיאה">
+                                  <IconButton
+                                    size="small"
+                                    color="error"
+                                    onClick={() =>
+                                      handleDeleteSingle(error.id!)
+                                    }
+                                    disabled={isDeleting}
+                                    sx={{ flexShrink: 0 }}
+                                  >
+                                    <DeleteIcon />
+                                  </IconButton>
+                                </Tooltip>
+                              </Stack>
+
+                              <Typography
+                                variant="caption"
+                                color="text.secondary"
+                              >
+                                {formatTimestamp(error.timestamp)}
+                              </Typography>
+                              <Stack
+                                direction="row"
+                                spacing={3}
+                                sx={{ mb: 2, gap: 1 }}
+                              >
+                                <Chip
+                                  label={error.errorType}
+                                  color={
+                                    getErrorTypeColor(error.errorType) as any
+                                  }
+                                  size="small"
+                                />
+                                {error.userEmail && (
+                                  <Chip
+                                    label={error.userEmail}
+                                    variant="outlined"
+                                    size="small"
+                                  />
+                                )}
+                              </Stack>
+
+                              {error.url && (
+                                <Typography
+                                  variant="body2"
+                                  color="text.secondary"
+                                  sx={{ mb: 1, wordBreak: "break-all" }}
+                                >
+                                  <strong>URL:</strong> {error.url}
+                                </Typography>
+                              )}
+
+                              {error.errorStack && (
+                                <Box sx={{ mt: 2 }}>
+                                  <Typography variant="subtitle2" gutterBottom>
+                                    Stack Trace:
+                                  </Typography>
+                                  <Box
+                                    sx={{
+                                      backgroundColor: "#f5f5f5",
+                                      p: 1,
+                                      borderRadius: 1,
+                                      fontFamily: "monospace",
+                                      fontSize: {
+                                        xs: "0.65rem",
+                                        sm: "0.75rem",
+                                      },
+                                      whiteSpace: "pre",
+                                      overflowX: "auto",
+                                      overflowY: "auto",
+                                      border: "1px solid #e0e0e0",
+                                      maxWidth: "100%",
+                                    }}
+                                  >
+                                    {error.errorStack}
+                                  </Box>
+                                </Box>
+                              )}
+                            </Box>
+                          </Stack>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </Stack>
+                </AccordionDetails>
+              </Accordion>
+            );
+          })}
         </Stack>
       )}
 
