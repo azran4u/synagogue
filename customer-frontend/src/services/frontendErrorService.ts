@@ -51,6 +51,14 @@ export class FrontendErrorService {
     errorType: "javascript" | "react" | "promise" | "console" = "javascript",
     componentStack?: string
   ): Promise<void> {
+    // Don't log errors in development mode (localhost)
+    if (
+      window.location.hostname === "localhost" ||
+      window.location.hostname === "127.0.0.1"
+    ) {
+      return;
+    }
+
     // Prevent infinite loops by checking if we're already logging an error
     if (this.isLoggingError) {
       return;
