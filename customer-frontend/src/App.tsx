@@ -17,7 +17,9 @@ import AdminAliyaAssignmentPage from "./pages/AdminAliyaAssignmentPage";
 import AdminPrayerCardsPage from "./pages/AdminPrayerCardsPage";
 import AdminFrontendErrorsPage from "./pages/AdminFrontendErrorsPage";
 import AdminPrayerTimesPage from "./pages/AdminPrayerTimesPage";
+import AdminToraLessonsPage from "./pages/AdminToraLessonsPage";
 import PrayerTimesPage from "./pages/PrayerTimesPage";
+import ToraLessonsPage from "./pages/ToraLessonsPage";
 import ComingSoonPage from "./pages/ComingSoonPage";
 import { FrontendErrorServiceProvider } from "./components/FrontendErrorServiceProvider";
 import {
@@ -85,21 +87,15 @@ export const App: React.FC = () => {
                     path="/synagogue/:synagogueId/admin/prayer-times"
                     element={<AdminPrayerTimesPage />}
                   />
-                  {/* Coming Soon Pages */}
+                  <Route
+                    path="/synagogue/:synagogueId/admin/tora-lessons"
+                    element={<AdminToraLessonsPage />}
+                  />
                   <Route
                     path="/synagogue/:synagogueId/tora-lessons"
-                    element={
-                      <ComingSoonPage
-                        title="שיעורי תורה"
-                        description="הדף לניהול שיעורי התורה נמצא בפיתוח ויושק בקרוב"
-                        icon={
-                          <BookIcon
-                            sx={{ fontSize: 80, color: "primary.main", mb: 3 }}
-                          />
-                        }
-                      />
-                    }
+                    element={<ToraLessonsPage />}
                   />
+                  {/* Coming Soon Pages */}
                   <Route
                     path="/synagogue/:synagogueId/prayer-times"
                     element={<PrayerTimesPage />}

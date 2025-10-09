@@ -184,6 +184,11 @@ export const AppSideBar: React.FC<AppSideBarProps> = ({
                 onClick={() => handleClick("admin/prayer-times")}
                 icon={<PrayerTimesIcon />}
               />
+              <SidebarItem
+                text="ניהול שיעורי תורה"
+                onClick={() => handleClick("admin/tora-lessons")}
+                icon={<ToraLessonsIcon />}
+              />
             </>
           )}
           {isAdmin && (
