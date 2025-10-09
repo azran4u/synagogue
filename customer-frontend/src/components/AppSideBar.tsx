@@ -20,6 +20,7 @@ import {
   EventAvailable as EventIcon,
   Group as AliyaTypesIcon,
   Assignment as AliyaAssignmentIcon,
+  History as HistoryIcon,
   People as AdminPrayerCardsIcon,
   BugReport as FrontendErrorsIcon,
   HolidayVillage as SynagogueIcon,
@@ -164,6 +165,11 @@ export const AppSideBar: React.FC<AppSideBarProps> = ({
                 text="ניהול עליות"
                 onClick={() => handleClick("admin/aliya-assignment")}
                 icon={<AliyaAssignmentIcon />}
+              />
+              <SidebarItem
+                text="היסטוריית עליות"
+                onClick={() => handleClick("admin/aliya-history")}
+                icon={<HistoryIcon />}
               />
               <SidebarItem
                 text="ניהול כרטיסי מתפללים"
