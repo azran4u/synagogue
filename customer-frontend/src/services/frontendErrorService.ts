@@ -62,6 +62,32 @@ export class FrontendErrorService {
       const errorMessage = typeof error === "string" ? error : error.message;
       const errorStack = typeof error === "string" ? undefined : error.stack;
 
+      // Filter out empty errors or errors that are empty objects
+      if (
+        !errorMessage ||
+        errorMessage.trim() === "" ||
+        errorMessage === "{}"
+      ) {
+        return;
+      }
+
+      // Filter out errors with stack traces starting with "RangeError: Invalid Date"
+      if (errorStack && errorStack.startsWith("RangeError: Invalid Date")) {
+        return;
+      }
+
+      // Filter out specific errors that we don't want to log
+      const ignoredErrors = [
+        "Uncaught TypeError: onClick is not a function",
+        "Connection to Indexed Database server lost. Refresh the page to try again",
+        "[hmr] Failed to reload", // Matches any HMR reload failure
+        "onClick is not a function",
+      ];
+
+      if (ignoredErrors.some(ignored => errorMessage.includes(ignored))) {
+        return;
+      }
+
       const errorEntity = FrontendError.create(errorMessage, errorType, {
         synagogueId: this.synagogueId || undefined,
         userId: this.userId || undefined,
