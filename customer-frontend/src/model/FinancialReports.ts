@@ -6,12 +6,14 @@ import { Mapper } from "../services/genericService";
 export interface FinancialReportDto {
   id: string;
   title: string;
-  displayOrder: number;
   linkToDocument: string;
+  fileExtension?: string;
+  displayOrder: number;
   enabled: boolean;
   createdAt: number;
   createdBy: string;
   content: string;
+  hebrewDate: HebrewDateDto;
 }
 
 // Financial Report class
@@ -20,10 +22,12 @@ export class FinancialReport {
   public title: string;
   public displayOrder: number;
   public linkToDocument: string;
+  public fileExtension?: string;
   public enabled: boolean;
   public createdAt: Date;
   public createdBy: string;
   public content: string;
+  public hebrewDate: HebrewDate;
 
   constructor(
     id: string,
@@ -32,8 +36,10 @@ export class FinancialReport {
     linkToDocument: string,
     createdBy: string,
     content: string,
+    hebrewDate: HebrewDate,
     enabled: boolean = true,
-    createdAt: Date = new Date()
+    createdAt: Date = new Date(),
+    fileExtension?: string
   ) {
     this.id = id;
     this.title = title;
@@ -41,8 +47,10 @@ export class FinancialReport {
     this.linkToDocument = linkToDocument;
     this.createdBy = createdBy;
     this.content = content;
+    this.hebrewDate = hebrewDate;
     this.enabled = enabled;
     this.createdAt = createdAt;
+    this.fileExtension = fileExtension;
   }
 
   // Convert to DTO for Firestore storage
@@ -52,10 +60,12 @@ export class FinancialReport {
       title: this.title,
       displayOrder: this.displayOrder,
       linkToDocument: this.linkToDocument,
+      fileExtension: this.fileExtension,
       enabled: this.enabled,
       createdAt: this.createdAt.getTime(),
       createdBy: this.createdBy,
       content: this.content,
+      hebrewDate: this.hebrewDate.toDto(),
     };
   }
 
@@ -68,8 +78,10 @@ export class FinancialReport {
       dto.linkToDocument,
       dto.createdBy,
       dto.content,
+      HebrewDate.fromDto(dto.hebrewDate),
       dto.enabled,
-      new Date(dto.createdAt)
+      new Date(dto.createdAt),
+      dto.fileExtension
     );
   }
 
@@ -79,7 +91,8 @@ export class FinancialReport {
     linkToDocument: string,
     createdBy: string,
     content: string,
-    displayOrder: number = 1
+    displayOrder: number = 1,
+    hebrewDate?: HebrewDate
   ): FinancialReport {
     return new FinancialReport(
       uuidv4(),
@@ -88,6 +101,7 @@ export class FinancialReport {
       linkToDocument,
       createdBy,
       content,
+      hebrewDate ?? HebrewDate.now(),
       true // enabled by default
     );
   }
@@ -103,8 +117,10 @@ export class FinancialReport {
       updates.linkToDocument ?? this.linkToDocument,
       this.createdBy,
       updates.content ?? this.content,
+      updates.hebrewDate ?? HebrewDate.now(),
       updates.enabled ?? this.enabled,
-      this.createdAt
+      this.createdAt,
+      updates.fileExtension ?? this.fileExtension
     );
   }
 
@@ -117,8 +133,10 @@ export class FinancialReport {
       this.linkToDocument,
       this.createdBy,
       this.content,
+      this.hebrewDate.clone(),
       this.enabled,
-      this.createdAt
+      this.createdAt,
+      this.fileExtension
     );
   }
 
@@ -160,6 +178,12 @@ export class FinancialReport {
       return this.content || "";
     }
     return this.content.substring(0, 200) + "...";
+  }
+
+  // Get the storage path for this report's file
+  getStoragePath(synagogueId: string): string | null {
+    if (!this.fileExtension) return null;
+    return `${synagogueId}/financialReports/${this.id}.${this.fileExtension}`;
   }
 }
 

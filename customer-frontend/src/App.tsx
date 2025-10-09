@@ -18,8 +18,10 @@ import AdminPrayerCardsPage from "./pages/AdminPrayerCardsPage";
 import AdminFrontendErrorsPage from "./pages/AdminFrontendErrorsPage";
 import AdminPrayerTimesPage from "./pages/AdminPrayerTimesPage";
 import AdminToraLessonsPage from "./pages/AdminToraLessonsPage";
+import AdminFinancialReportsPage from "./pages/AdminFinancialReportsPage";
 import PrayerTimesPage from "./pages/PrayerTimesPage";
 import ToraLessonsPage from "./pages/ToraLessonsPage";
+import FinancialReportsPage from "./pages/FinancialReportsPage";
 import ComingSoonPage from "./pages/ComingSoonPage";
 import { FrontendErrorServiceProvider } from "./components/FrontendErrorServiceProvider";
 import {
@@ -92,28 +94,22 @@ export const App: React.FC = () => {
                     element={<AdminToraLessonsPage />}
                   />
                   <Route
+                    path="/synagogue/:synagogueId/admin/financial-reports"
+                    element={<AdminFinancialReportsPage />}
+                  />
+                  <Route
                     path="/synagogue/:synagogueId/tora-lessons"
                     element={<ToraLessonsPage />}
                   />
-                  {/* Coming Soon Pages */}
                   <Route
                     path="/synagogue/:synagogueId/prayer-times"
                     element={<PrayerTimesPage />}
                   />
                   <Route
                     path="/synagogue/:synagogueId/financial-reports"
-                    element={
-                      <ComingSoonPage
-                        title="דוחות כספיים"
-                        description="הדף לדוחות הכספיים נמצא בפיתוח ויושק בקרוב"
-                        icon={
-                          <ReportIcon
-                            sx={{ fontSize: 80, color: "primary.main", mb: 3 }}
-                          />
-                        }
-                      />
-                    }
+                    element={<FinancialReportsPage />}
                   />
+                  {/* Coming Soon Pages */}
                   <Route
                     path="/synagogue/:synagogueId/donations"
                     element={

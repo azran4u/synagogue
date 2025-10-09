@@ -25,6 +25,11 @@ import {
   ToraLesson,
   ToraLessonDto,
 } from "../model/ToraLessons";
+import {
+  financialReportsMapper,
+  FinancialReport,
+  FinancialReportDto,
+} from "../model/FinancialReports";
 
 interface SynagogueServices {
   prayerCardService: GenericService<PrayerCard, PrayerCardDto> | null;
@@ -37,6 +42,10 @@ interface SynagogueServices {
   gabaimService: GenericService<Admin, AdminDto> | null;
   prayerTimesService: GenericService<PrayerTimes, PrayerTimesDto> | null;
   toraLessonsService: GenericService<ToraLesson, ToraLessonDto> | null;
+  financialReportsService: GenericService<
+    FinancialReport,
+    FinancialReportDto
+  > | null;
 }
 
 export function useSynagogueServices(): SynagogueServices {
@@ -51,6 +60,7 @@ export function useSynagogueServices(): SynagogueServices {
         gabaimService: null,
         prayerTimesService: null,
         toraLessonsService: null,
+        financialReportsService: null,
       };
     }
     return {
@@ -83,6 +93,11 @@ export function useSynagogueServices(): SynagogueServices {
       toraLessonsService: new GenericService(
         "toraLessons",
         toraLessonsMapper,
+        synagogueId
+      ),
+      financialReportsService: new GenericService(
+        "financialReports",
+        financialReportsMapper,
         synagogueId
       ),
     };

@@ -189,6 +189,11 @@ export const AppSideBar: React.FC<AppSideBarProps> = ({
                 onClick={() => handleClick("admin/tora-lessons")}
                 icon={<ToraLessonsIcon />}
               />
+              <SidebarItem
+                text="ניהול דוחות כספיים"
+                onClick={() => handleClick("admin/financial-reports")}
+                icon={<FinancialReportsIcon />}
+              />
             </>
           )}
           {isAdmin && (
