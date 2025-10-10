@@ -11,23 +11,38 @@ fi
 
 # Source nvm script
 export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" # This loads nvm
+# Load NVM (Node Version Manager) if available
+NVM_SHELL_SCRIPT="$NVM_DIR/nvm.sh"
+if [ -s "$NVM_SHELL_SCRIPT" ]; then
+    # Source nvm silently to avoid auto-use warnings
+    source "$NVM_SHELL_SCRIPT" 2>/dev/null
+    # Check if nvm command exists after sourcing
+    if ! command -v nvm &> /dev/null; then
+        echo "Error: nvm command not found. Please install nvm first."
+        exit 1
+    fi
+else
+    echo "Error: nvm not found at $NVM_SHELL_SCRIPT. Please install nvm first."
+    exit 1
+fi
+
+# Set Node version immediately to avoid auto-use issues
+echo "Setting Node version to 20"
+nvm use 20
 
 # Save the current working directory
 CWD=$(pwd)
 
-CURRENT_NODE_VERSION=$(nvm current)
+# CURRENT_NODE_VERSION=$(nvm current)
 
 function build-react-app() {
   echo "Building React app"
-  nvm use 20
   npm install
   npm run build
 }
 
 function firebase-cli-node() {
   echo "Deploying to Firebase"
-  nvm use 20
 }
 
 # if the service name is "frontend", deploy the frontend service
@@ -51,4 +66,3 @@ if [ "$SERVICE_NAME" == "admin" ]; then
 fi
 
 cd $CWD
-nvm use 20
