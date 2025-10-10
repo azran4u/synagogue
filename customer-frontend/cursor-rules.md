@@ -6,11 +6,7 @@
 /synagogues/zFH6FhDnsJDjuQtF2ANq/prayerEventTypes/042f2582-509c-42d0-af24-a8fcdf51d09a
 
 TODO:
-tora lessons
-pray times
-donations
-financial reports
-gabai board
+add gabai to synagogue
 transfer aliyot from one prayer to another
 
 DONE:

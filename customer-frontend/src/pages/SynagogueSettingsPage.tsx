@@ -14,75 +14,72 @@ import {
   DialogContent,
   DialogActions,
   CircularProgress,
+  List,
+  ListItem,
+  ListItemText,
+  IconButton,
 } from "@mui/material";
 import {
   ArrowBack as ArrowBackIcon,
   Save as SaveIcon,
   Delete as DeleteIcon,
-  Check as CheckIcon,
+  Add as AddIcon,
+  PersonAdd as PersonAddIcon,
 } from "@mui/icons-material";
+import { Formik, Form } from "formik";
+import * as Yup from "yup";
 import { useSelectedSynagogue } from "../hooks/useSynagogueId";
 import { useUpdateSynagogue, useDeleteSynagogue } from "../hooks/useSynagogues";
+import { useGabaim, useAddGabai, useRemoveGabai } from "../hooks/useGabaim";
 import { useAuth } from "../hooks/useAuth";
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { useSynagogueNavigate } from "../hooks/useSynagogueNavigate";
+
+// Validation schemas
+const synagogueNameSchema = Yup.object({
+  name: Yup.string().required("שם בית הכנסת לא יכול להיות ריק"),
+});
+
+const gabaiEmailSchema = Yup.object({
+  email: Yup.string()
+    .email("כתובת אימייל לא תקינה")
+    .required("נא להזין כתובת אימייל"),
+});
 
 const SynagogueSettingsPage: React.FC = () => {
   const { synagogueId } = useParams<{ synagogueId: string }>();
-  const navigate = useNavigate();
+  const navigate = useSynagogueNavigate();
   const { data: synagogue, isLoading } = useSelectedSynagogue();
-  const { user } = useAuth();
   const updateSynagogueMutation = useUpdateSynagogue();
   const deleteSynagogueMutation = useDeleteSynagogue();
 
-  const [synagogueName, setSynagogueName] = useState(synagogue?.name || "");
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+  // Gabaim management
+  const { data: gabaim, isLoading: isLoadingGabaim } = useGabaim();
+  const addGabaiMutation = useAddGabai();
+  const removeGabaiMutation = useRemoveGabai();
 
-  // Update synagogue name when synagogue data loads (but not during save operation)
-  useEffect(() => {
-    if (synagogue?.name && !isSaving) {
-      setSynagogueName(synagogue.name);
-    }
-  }, [synagogue, isSaving]);
+  // Dialog states
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showAddGabaiDialog, setShowAddGabaiDialog] = useState(false);
+  const [showRemoveGabaiDialog, setShowRemoveGabaiDialog] = useState(false);
+  const [gabaiToRemove, setGabaiToRemove] = useState<string | null>(null);
 
   const handleBackClick = () => {
-    navigate(`/synagogue/${synagogueId}`);
+    navigate(``);
   };
 
-  const handleSaveSettings = async () => {
-    if (!synagogue || !synagogueId || !user) return;
-
-    if (synagogueName.trim() === "") {
-      alert("שם בית הכנסת לא יכול להיות ריק");
-      return;
-    }
-
-    if (synagogueName.trim() === synagogue.name) {
-      return; // No changes to save
-    }
+  const handleUpdateSynagogueName = async (values: { name: string }) => {
+    if (!synagogue || !synagogueId) return;
 
     try {
-      setIsSaving(true);
-      setShowSuccessMessage(false);
-      const updatedSynagogue = synagogue.update({ name: synagogueName.trim() });
-
+      const updatedSynagogue = synagogue.update({ name: values.name.trim() });
       await updateSynagogueMutation.mutateAsync({
         id: synagogueId,
         synagogue: updatedSynagogue,
       });
-
-      // Show success message
-      setShowSuccessMessage(true);
-      // Hide success message after 3 seconds
-      setTimeout(() => {
-        setShowSuccessMessage(false);
-      }, 3000);
     } catch (error) {
       console.error("Error saving synagogue:", error);
-      alert("שגיאה בשמירת השינויים");
-    } finally {
-      setIsSaving(false);
+      throw error; // Let Formik handle the error
     }
   };
 
@@ -96,6 +93,44 @@ const SynagogueSettingsPage: React.FC = () => {
     } catch (error) {
       console.error("Error deleting synagogue:", error);
       alert("שגיאה במחיקת בית הכנסת");
+    }
+  };
+
+  const handleAddGabai = async (
+    values: { email: string },
+    { resetForm }: { resetForm: () => void }
+  ) => {
+    // Check if gabai already exists
+    if (gabaim?.some(gabai => gabai.id === values.email.trim())) {
+      alert("גבאי זה כבר קיים");
+      return;
+    }
+
+    try {
+      await addGabaiMutation.mutateAsync(values.email.trim());
+      setShowAddGabaiDialog(false);
+      resetForm();
+    } catch (error) {
+      console.error("Error adding gabai:", error);
+      throw error; // Let Formik handle the error
+    }
+  };
+
+  const handleOpenRemoveGabaiDialog = (email: string) => {
+    setGabaiToRemove(email);
+    setShowRemoveGabaiDialog(true);
+  };
+
+  const handleRemoveGabai = async () => {
+    if (!gabaiToRemove) return;
+
+    try {
+      await removeGabaiMutation.mutateAsync(gabaiToRemove);
+      setShowRemoveGabaiDialog(false);
+      setGabaiToRemove(null);
+    } catch (error) {
+      console.error("Error removing gabai:", error);
+      alert("שגיאה בהסרת גבאי");
     }
   };
 
@@ -131,20 +166,62 @@ const SynagogueSettingsPage: React.FC = () => {
         </Box>
       </Box>
 
+      {/* Synagogue Name Form */}
       <Card sx={{ mb: 3 }}>
         <CardContent>
           <Typography variant="h6" gutterBottom>
             מידע כללי
           </Typography>
-          <TextField
-            fullWidth
-            label="שם בית הכנסת"
-            value={synagogueName}
-            onChange={e => setSynagogueName(e.target.value)}
-            sx={{ mb: 2 }}
-          />
+          <Formik
+            initialValues={{ name: synagogue?.name || "" }}
+            validationSchema={synagogueNameSchema}
+            onSubmit={handleUpdateSynagogueName}
+            enableReinitialize
+          >
+            {({
+              values,
+              errors,
+              touched,
+              handleChange,
+              handleBlur,
+              isSubmitting,
+              dirty,
+            }) => (
+              <Form>
+                <TextField
+                  fullWidth
+                  label="שם בית הכנסת"
+                  name="name"
+                  value={values.name}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  error={touched.name && Boolean(errors.name)}
+                  helperText={touched.name && errors.name}
+                  sx={{ mb: 2 }}
+                />
+                <Box
+                  sx={{ display: "flex", justifyContent: "flex-end", mb: 2 }}
+                >
+                  <Button
+                    type="submit"
+                    variant="contained"
+                    startIcon={
+                      isSubmitting ? (
+                        <CircularProgress size={16} />
+                      ) : (
+                        <SaveIcon />
+                      )
+                    }
+                    disabled={isSubmitting || !dirty}
+                  >
+                    {isSubmitting ? "שומר..." : "שמור שינויים"}
+                  </Button>
+                </Box>
+              </Form>
+            )}
+          </Formik>
           {synagogue && (
-            <Box sx={{ mb: 2 }}>
+            <Box sx={{ mt: 2 }}>
               <Typography variant="body2" color="text.secondary">
                 מזהה: {synagogue.id}
               </Typography>
@@ -156,12 +233,67 @@ const SynagogueSettingsPage: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Success Message */}
-      {showSuccessMessage && (
-        <Alert severity="success" sx={{ mb: 3 }}>
-          השינויים נשמרו בהצלחה!
-        </Alert>
-      )}
+      {/* Gabaim Management */}
+      <Card sx={{ mb: 3 }}>
+        <CardContent>
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              mb: 2,
+            }}
+          >
+            <Typography variant="h6">ניהול גבאים</Typography>
+            <Button
+              variant="contained"
+              startIcon={<PersonAddIcon />}
+              onClick={() => setShowAddGabaiDialog(true)}
+              size="small"
+            >
+              הוסף גבאי
+            </Button>
+          </Box>
+
+          {isLoadingGabaim ? (
+            <Box sx={{ textAlign: "center", py: 2 }}>
+              <CircularProgress size={24} />
+            </Box>
+          ) : gabaim && gabaim.length > 0 ? (
+            <List>
+              {gabaim.map(gabai => (
+                <ListItem
+                  key={gabai.id}
+                  secondaryAction={
+                    <IconButton
+                      edge="end"
+                      onClick={() => handleOpenRemoveGabaiDialog(gabai.id)}
+                      color="error"
+                      disabled={removeGabaiMutation.isPending}
+                    >
+                      <DeleteIcon />
+                    </IconButton>
+                  }
+                  sx={{
+                    border: "1px solid",
+                    borderColor: "divider",
+                    borderRadius: 1,
+                    mb: 1,
+                  }}
+                >
+                  <ListItemText
+                    primary={gabai.id}
+                    secondary="גבאי"
+                    primaryTypographyProps={{ fontWeight: "medium" }}
+                  />
+                </ListItem>
+              ))}
+            </List>
+          ) : (
+            <Alert severity="info">אין גבאים רשומים</Alert>
+          )}
+        </CardContent>
+      </Card>
 
       <Card sx={{ mb: 3 }}>
         <CardContent>
@@ -183,33 +315,6 @@ const SynagogueSettingsPage: React.FC = () => {
           </Button>
         </CardContent>
       </Card>
-
-      <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 2 }}>
-        <Button variant="outlined" onClick={handleBackClick}>
-          ביטול
-        </Button>
-        <Button
-          variant="contained"
-          startIcon={
-            showSuccessMessage ? (
-              <CheckIcon />
-            ) : isSaving ? (
-              <CircularProgress size={16} />
-            ) : (
-              <SaveIcon />
-            )
-          }
-          onClick={handleSaveSettings}
-          disabled={isSaving || synagogueName.trim() === synagogue?.name}
-          color={showSuccessMessage ? "success" : "primary"}
-        >
-          {showSuccessMessage
-            ? "נשמר בהצלחה!"
-            : isSaving
-              ? "שומר..."
-              : "שמור הגדרות"}
-        </Button>
-      </Box>
 
       {/* Delete Confirmation Dialog */}
       <Dialog
@@ -257,6 +362,115 @@ const SynagogueSettingsPage: React.FC = () => {
             }
           >
             {deleteSynagogueMutation.isPending ? "מוחק..." : "מחק לצמיתות"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Add Gabai Dialog */}
+      <Dialog
+        open={showAddGabaiDialog}
+        onClose={() => setShowAddGabaiDialog(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <Formik
+          initialValues={{ email: "" }}
+          validationSchema={gabaiEmailSchema}
+          onSubmit={handleAddGabai}
+        >
+          {({
+            values,
+            errors,
+            touched,
+            handleChange,
+            handleBlur,
+            isSubmitting,
+          }) => (
+            <Form>
+              <DialogTitle>הוסף גבאי</DialogTitle>
+              <DialogContent>
+                <Box sx={{ mt: 2 }}>
+                  <TextField
+                    fullWidth
+                    label="כתובת אימייל"
+                    type="email"
+                    name="email"
+                    value={values.email}
+                    onChange={handleChange}
+                    onBlur={handleBlur}
+                    error={touched.email && Boolean(errors.email)}
+                    helperText={touched.email && errors.email}
+                    placeholder="example@email.com"
+                    autoFocus
+                  />
+                </Box>
+              </DialogContent>
+              <DialogActions>
+                <Button
+                  onClick={() => setShowAddGabaiDialog(false)}
+                  disabled={isSubmitting}
+                >
+                  ביטול
+                </Button>
+                <Button
+                  type="submit"
+                  variant="contained"
+                  disabled={isSubmitting}
+                  startIcon={
+                    isSubmitting ? <CircularProgress size={16} /> : <AddIcon />
+                  }
+                >
+                  {isSubmitting ? "מוסיף..." : "הוסף"}
+                </Button>
+              </DialogActions>
+            </Form>
+          )}
+        </Formik>
+      </Dialog>
+
+      {/* Remove Gabai Dialog */}
+      <Dialog
+        open={showRemoveGabaiDialog}
+        onClose={() => {
+          setShowRemoveGabaiDialog(false);
+          setGabaiToRemove(null);
+        }}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>הסר גבאי</DialogTitle>
+        <DialogContent>
+          <Alert severity="warning" sx={{ mb: 2 }}>
+            האם אתה בטוח שברצונך להסיר את הגבאי "{gabaiToRemove}"?
+          </Alert>
+          <Typography>
+            גבאי זה לא יוכל יותר לגשת לפונקציות ניהול של בית הכנסת.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => {
+              setShowRemoveGabaiDialog(false);
+              setGabaiToRemove(null);
+            }}
+            disabled={removeGabaiMutation.isPending}
+          >
+            ביטול
+          </Button>
+          <Button
+            onClick={handleRemoveGabai}
+            color="error"
+            variant="contained"
+            disabled={removeGabaiMutation.isPending}
+            startIcon={
+              removeGabaiMutation.isPending ? (
+                <CircularProgress size={16} />
+              ) : (
+                <DeleteIcon />
+              )
+            }
+          >
+            {removeGabaiMutation.isPending ? "מסיר..." : "הסר"}
           </Button>
         </DialogActions>
       </Dialog>

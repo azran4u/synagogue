@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { useAuth } from "./useAuth";
 import { useIsAdmin } from "./useIsAdmin";
-import { useIsGabai } from "./useIsGabai";
+import { useIsGabai } from "./useGabaim";
 import { usePrayerCard } from "./usePrayerCard";
 
 export function useUser() {

@@ -221,7 +221,7 @@ export const AppSideBar: React.FC<AppSideBarProps> = ({
                 icon={<FrontendErrorsIcon />}
               />
               <SidebarItem
-                text="הגדרות מנהל"
+                text="הגדרות בית כנסת"
                 onClick={() => handleClick("admin/settings")}
                 icon={<AdminIcon />}
               />
