@@ -211,6 +211,11 @@ export const AppSideBar: React.FC<AppSideBarProps> = ({
                 onClick={() => handleClick("admin/upcoming-events")}
                 icon={<EventIcon />}
               />
+              <SidebarItem
+                text="הגדרות בית כנסת"
+                onClick={() => handleClick("admin/settings")}
+                icon={<AdminIcon />}
+              />
             </>
           )}
           {isAdmin && (
@@ -219,11 +224,6 @@ export const AppSideBar: React.FC<AppSideBarProps> = ({
                 text="שגיאות Frontend"
                 onClick={() => handleClick("admin/frontend-errors")}
                 icon={<FrontendErrorsIcon />}
-              />
-              <SidebarItem
-                text="הגדרות בית כנסת"
-                onClick={() => handleClick("admin/settings")}
-                icon={<AdminIcon />}
               />
             </>
           )}
