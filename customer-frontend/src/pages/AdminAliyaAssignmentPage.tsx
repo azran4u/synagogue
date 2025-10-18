@@ -258,10 +258,20 @@ const AdminAliyaAssignmentContent = () => {
     });
 
     return aliyot.sort((a, b) => {
-      // Sort by aliya type
-      return a.aliya.aliyaType.localeCompare(b.aliya.aliyaType);
+      // Sort by aliya type display order
+      const aliyaTypeA = aliyaTypes?.find(
+        type => type.id === a.aliya.aliyaType
+      );
+      const aliyaTypeB = aliyaTypes?.find(
+        type => type.id === b.aliya.aliyaType
+      );
+
+      const orderA = aliyaTypeA?.displayOrder ?? 0;
+      const orderB = aliyaTypeB?.displayOrder ?? 0;
+
+      return orderA - orderB;
     });
-  }, [prayerCards]);
+  }, [prayerCards, aliyaTypes]);
 
   // Get groups with aliyot counts
   const groupsWithCounts = React.useMemo(() => {
