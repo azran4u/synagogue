@@ -104,17 +104,29 @@ const AdminPrayerCardsPage: React.FC = () => {
     const searchLower = searchTerm.toLowerCase();
     return prayerCards.filter((prayerCard: PrayerCard) => {
       // Check main prayer
-      const mainPrayerMatch =
-        prayerCard.prayer.firstName.toLowerCase().includes(searchLower) ||
-        prayerCard.prayer.lastName.toLowerCase().includes(searchLower);
-
-      // Check children
-      const childrenMatch = prayerCard.children.some(
-        (child: any) =>
-          child.firstName.toLowerCase().includes(searchLower) ||
-          child.lastName.toLowerCase().includes(searchLower)
+      const nameMatchTerm = (
+        firstName: string,
+        lastName: string,
+        term: string
+      ) => {
+        const termLower = term.toLowerCase().trim();
+        const firstNameLower = firstName.toLowerCase();
+        const lastNameLower = lastName.toLowerCase();
+        return (
+          firstNameLower.includes(termLower) ||
+          lastNameLower.includes(termLower) ||
+          (firstNameLower + " " + lastNameLower).includes(termLower) ||
+          (lastNameLower + " " + firstNameLower).includes(termLower)
+        );
+      };
+      const mainPrayerMatch = nameMatchTerm(
+        prayerCard.prayer.firstName,
+        prayerCard.prayer.lastName,
+        searchLower
       );
-
+      const childrenMatch = prayerCard.children.some((child: any) =>
+        nameMatchTerm(child.firstName, child.lastName, searchLower)
+      );
       return mainPrayerMatch || childrenMatch;
     });
   }, [prayerCards, searchTerm]);
