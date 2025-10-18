@@ -6,6 +6,7 @@ import {
   ListItemIcon,
   useTheme,
   Box,
+  useMediaQuery,
 } from "@mui/material";
 import {
   AttachMoney as DonationsIcon,
@@ -26,7 +27,6 @@ import {
   HolidayVillage as SynagogueIcon,
 } from "@mui/icons-material";
 import { Logo } from "./Logo";
-import { useMobile } from "../hooks/useMobile";
 import { WithLogin } from "./WithLogin";
 import { useSynagogueNavigate } from "../hooks/useSynagogueNavigate";
 import { useUser } from "../hooks/useUser";
@@ -73,7 +73,7 @@ export const AppSideBar: React.FC<AppSideBarProps> = ({
   onLogout,
 }) => {
   const theme = useTheme();
-  const isMobile = useMobile();
+  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const { isGabaiOrHigher, isAdmin } = useUser();
 
   const drawerWidth = useMemo(() => (isMobile ? "60%" : "20%"), [isMobile]);

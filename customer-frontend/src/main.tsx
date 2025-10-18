@@ -8,7 +8,7 @@ import { Provider } from "react-redux";
 import { store } from "./store/store";
 import { enableMapSet } from "immer";
 import { CacheProvider } from "@emotion/react";
-import { cacheRtl, theme } from "./theme";
+import { cacheRtl } from "./theme";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 
 enableMapSet();
@@ -34,14 +34,12 @@ const queryClient = new QueryClient({
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <ErrorBoundary>
     <CacheProvider value={cacheRtl}>
-      <ThemeProvider theme={theme}>
-        <CssBaseline />
-        <Provider store={store}>
-          <QueryClientProvider client={queryClient}>
-            <App />
-          </QueryClientProvider>
-        </Provider>
-      </ThemeProvider>
+      <CssBaseline />
+      <Provider store={store}>
+        <QueryClientProvider client={queryClient}>
+          <App />
+        </QueryClientProvider>
+      </Provider>
     </CacheProvider>
   </ErrorBoundary>
 );

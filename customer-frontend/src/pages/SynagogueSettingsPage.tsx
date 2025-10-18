@@ -18,6 +18,7 @@ import {
   ListItem,
   ListItemText,
   IconButton,
+  Stack,
 } from "@mui/material";
 import {
   ArrowBack as ArrowBackIcon,
@@ -30,6 +31,7 @@ import { Formik, Form } from "formik";
 import * as Yup from "yup";
 import { useSelectedSynagogue } from "../hooks/useSynagogueId";
 import { useUpdateSynagogue, useDeleteSynagogue } from "../hooks/useSynagogues";
+import { Synagogue } from "../model/Synagogue";
 import { useGabaim, useAddGabai, useRemoveGabai } from "../hooks/useGabaim";
 import { useAuth } from "../hooks/useAuth";
 import { useState } from "react";
@@ -44,6 +46,21 @@ const gabaiEmailSchema = Yup.object({
   email: Yup.string()
     .email("כתובת אימייל לא תקינה")
     .required("נא להזין כתובת אימייל"),
+});
+
+const colorSchema = Yup.object({
+  primaryColor: Yup.string().matches(
+    /^#[0-9A-Fa-f]{6}$/,
+    "נא להזין צבע תקין בפורמט hex"
+  ),
+  secondaryColor: Yup.string().matches(
+    /^#[0-9A-Fa-f]{6}$/,
+    "נא להזין צבע תקין בפורמט hex"
+  ),
+  errorColor: Yup.string().matches(
+    /^#[0-9A-Fa-f]{6}$/,
+    "נא להזין צבע תקין בפורמט hex"
+  ),
 });
 
 const SynagogueSettingsPage: React.FC = () => {
@@ -132,6 +149,33 @@ const SynagogueSettingsPage: React.FC = () => {
       console.error("Error removing gabai:", error);
       alert("שגיאה בהסרת גבאי");
     }
+  };
+
+  const handleUpdateColors = async (values: {
+    primaryColor: string;
+    secondaryColor: string;
+    errorColor: string;
+  }) => {
+    if (!synagogue || !synagogueId) return;
+
+    try {
+      const updatedSynagogue = synagogue.update({
+        primaryColor: values.primaryColor,
+        secondaryColor: values.secondaryColor,
+        errorColor: values.errorColor,
+      });
+      await updateSynagogueMutation.mutateAsync({
+        id: synagogueId,
+        synagogue: updatedSynagogue,
+      });
+    } catch (error) {
+      console.error("Error saving colors:", error);
+      throw error; // Let Formik handle the error
+    }
+  };
+
+  const handleResetColors = () => {
+    return Synagogue.getDefaultColors();
   };
 
   if (isLoading) {
@@ -292,6 +336,174 @@ const SynagogueSettingsPage: React.FC = () => {
           ) : (
             <Alert severity="info">אין גבאים רשומים</Alert>
           )}
+        </CardContent>
+      </Card>
+
+      {/* Color Customization */}
+      <Card sx={{ mb: 3 }}>
+        <CardContent>
+          <Typography variant="h6" gutterBottom>
+            התאמת צבעים
+          </Typography>
+
+          <Formik
+            initialValues={{
+              primaryColor:
+                synagogue?.primaryColorValue || Synagogue.DEFAULT_PRIMARY_COLOR,
+              secondaryColor:
+                synagogue?.secondaryColorValue ||
+                Synagogue.DEFAULT_SECONDARY_COLOR,
+              errorColor:
+                synagogue?.errorColorValue || Synagogue.DEFAULT_ERROR_COLOR,
+            }}
+            validationSchema={colorSchema}
+            onSubmit={handleUpdateColors}
+            enableReinitialize
+          >
+            {({ values, setFieldValue, isSubmitting, dirty }) => (
+              <Form>
+                <Stack spacing={3}>
+                  {/* Color Picker Fields */}
+                  <Box>
+                    <TextField
+                      name="primaryColor"
+                      label="צבע ראשי"
+                      type="color"
+                      value={values.primaryColor}
+                      onChange={e =>
+                        setFieldValue("primaryColor", e.target.value)
+                      }
+                      fullWidth
+                      InputProps={{
+                        style: { height: 56 },
+                      }}
+                      helperText="הצבע הראשי שמוצג בכפתורים ובאלמנטים עיקריים"
+                    />
+                  </Box>
+
+                  <Box>
+                    <TextField
+                      name="secondaryColor"
+                      label="צבע משני"
+                      type="color"
+                      value={values.secondaryColor}
+                      onChange={e =>
+                        setFieldValue("secondaryColor", e.target.value)
+                      }
+                      fullWidth
+                      InputProps={{
+                        style: { height: 56 },
+                      }}
+                      helperText="הצבע המשני שמוצג בכפתורים משניים ובאלמנטים תומכים"
+                    />
+                  </Box>
+
+                  <Box>
+                    <TextField
+                      name="errorColor"
+                      label="צבע שגיאה"
+                      type="color"
+                      value={values.errorColor}
+                      onChange={e =>
+                        setFieldValue("errorColor", e.target.value)
+                      }
+                      fullWidth
+                      InputProps={{
+                        style: { height: 56 },
+                      }}
+                      helperText="הצבע שמוצג בהודעות שגיאה ובאלמנטים בעלי חשיבות גבוהה"
+                    />
+                  </Box>
+
+                  {/* Preview */}
+                  <Card sx={{ bgcolor: "grey.100", p: 2 }}>
+                    <Typography variant="subtitle2" gutterBottom>
+                      תצוגה מקדימה:
+                    </Typography>
+                    <Stack direction="row" spacing={2} flexWrap="wrap">
+                      <Button
+                        variant="contained"
+                        sx={{
+                          backgroundColor: values.primaryColor,
+                          "&:hover": {
+                            backgroundColor: values.primaryColor,
+                            opacity: 0.8,
+                          },
+                        }}
+                      >
+                        ראשי
+                      </Button>
+                      <Button
+                        variant="contained"
+                        sx={{
+                          backgroundColor: values.secondaryColor,
+                          "&:hover": {
+                            backgroundColor: values.secondaryColor,
+                            opacity: 0.8,
+                          },
+                        }}
+                      >
+                        משני
+                      </Button>
+                      <Button
+                        variant="contained"
+                        sx={{
+                          backgroundColor: values.errorColor,
+                          "&:hover": {
+                            backgroundColor: values.errorColor,
+                            opacity: 0.8,
+                          },
+                        }}
+                      >
+                        שגיאה
+                      </Button>
+                    </Stack>
+                  </Card>
+
+                  {/* Action Buttons */}
+                  <Box
+                    sx={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      gap: 2,
+                    }}
+                  >
+                    <Button
+                      variant="outlined"
+                      onClick={() => {
+                        const defaultColors = handleResetColors();
+                        setFieldValue(
+                          "primaryColor",
+                          defaultColors.primaryColor
+                        );
+                        setFieldValue(
+                          "secondaryColor",
+                          defaultColors.secondaryColor
+                        );
+                        setFieldValue("errorColor", defaultColors.errorColor);
+                      }}
+                    >
+                      איפוס לברירת מחדל
+                    </Button>
+                    <Button
+                      type="submit"
+                      variant="contained"
+                      startIcon={
+                        isSubmitting ? (
+                          <CircularProgress size={16} />
+                        ) : (
+                          <SaveIcon />
+                        )
+                      }
+                      disabled={isSubmitting || !dirty}
+                    >
+                      {isSubmitting ? "שומר..." : "שמור צבעים"}
+                    </Button>
+                  </Box>
+                </Stack>
+              </Form>
+            )}
+          </Formik>
         </CardContent>
       </Card>
 
