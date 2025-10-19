@@ -5,7 +5,7 @@ import { Mapper } from "../services/genericService";
 export interface DonationDto {
   id: string;
   title: string;
-  link: string;
+  link?: string;
   notes?: string;
   enabled: boolean;
   displayOrder: number;
@@ -16,7 +16,7 @@ export interface DonationDto {
 export class Donation {
   public id: string;
   public title: string;
-  public link: string;
+  public link?: string;
   public notes?: string;
   public enabled: boolean;
   public displayOrder: number;
@@ -26,7 +26,7 @@ export class Donation {
   constructor(
     id: string,
     title: string,
-    link: string,
+    link: string | undefined,
     createdBy: string,
     enabled: boolean = true,
     displayOrder: number = 1,
@@ -74,7 +74,7 @@ export class Donation {
   // Create a new Donation without ID (for creation)
   static create(
     title: string,
-    link: string,
+    link: string | undefined,
     createdBy: string,
     displayOrder: number = 1,
     notes?: string
@@ -117,7 +117,7 @@ export class Donation {
   }
 
   // Update the donation link
-  updateLink(newLink: string): Donation {
+  updateLink(newLink: string | undefined): Donation {
     return this.update({ link: newLink });
   }
 
@@ -141,10 +141,18 @@ export class Donation {
     return !!(this.notes && this.notes.trim().length > 0);
   }
 
+  // Check if donation has a link
+  get hasLink(): boolean {
+    return !!(this.link && this.link.trim().length > 0);
+  }
+
   // Check if donation link is valid (basic URL check)
   get hasValidLink(): boolean {
+    if (!this.hasLink) {
+      return false;
+    }
     try {
-      new URL(this.link);
+      new URL(this.link!);
       return true;
     } catch {
       return false;
@@ -173,8 +181,11 @@ export class Donation {
 
   // Get link domain (for display purposes)
   get linkDomain(): string {
+    if (!this.hasLink) {
+      return "No Link";
+    }
     try {
-      const url = new URL(this.link);
+      const url = new URL(this.link!);
       return url.hostname;
     } catch {
       return "Invalid URL";
@@ -183,28 +194,29 @@ export class Donation {
 
   // Check if link is PayBox
   get isPayBoxLink(): boolean {
+    if (!this.hasLink) return false;
     return this.linkDomain.toLowerCase().includes("paybox");
   }
 
   // Check if link is external payment service
   get isExternalPayment(): boolean {
+    if (!this.hasLink) return false;
     const domain = this.linkDomain.toLowerCase();
     return (
       domain.includes("paybox") ||
       domain.includes("paypal") ||
-      domain.includes("stripe") ||
-      domain.includes("square")
+      domain.includes("bitpay")
     );
   }
 
   // Get payment service name
   get paymentServiceName(): string {
+    if (!this.hasLink) return "העברה בנקאית";
     const domain = this.linkDomain.toLowerCase();
-    if (domain.includes("paybox")) return "PayBox";
-    if (domain.includes("paypal")) return "PayPal";
-    if (domain.includes("stripe")) return "Stripe";
-    if (domain.includes("square")) return "Square";
-    return "Unknown";
+    if (domain.includes("paybox")) return "פייבוקס";
+    if (domain.includes("paypal")) return "פייפאל";
+    if (domain.includes("bitpay")) return "ביט";
+    return "";
   }
 
   // Clone the donation

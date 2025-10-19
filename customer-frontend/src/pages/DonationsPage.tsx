@@ -45,8 +45,10 @@ const DonationsPage: React.FC = () => {
       )
     : [];
 
-  const handleDonate = (link: string) => {
-    window.open(link, "_blank");
+  const handleDonate = (link: string | undefined) => {
+    if (link) {
+      window.open(link, "_blank");
+    }
   };
 
   return (
@@ -124,18 +126,20 @@ const DonationsPage: React.FC = () => {
                   </Box>
                 )}
 
-                {/* Donate Button */}
+                {/* Donate Button or Info */}
                 <Box sx={{ display: "flex", justifyContent: "center" }}>
-                  <Button
-                    variant="contained"
-                    size="large"
-                    startIcon={<MoneyIcon />}
-                    endIcon={<OpenIcon />}
-                    onClick={() => handleDonate(donation.link)}
-                    sx={{ minWidth: 200 }}
-                  >
-                    תרום עכשיו
-                  </Button>
+                  {donation.hasLink && (
+                    <Button
+                      variant="contained"
+                      size="large"
+                      startIcon={<MoneyIcon />}
+                      endIcon={<OpenIcon />}
+                      onClick={() => handleDonate(donation.link)}
+                      sx={{ minWidth: 200 }}
+                    >
+                      תרום עכשיו
+                    </Button>
+                  )}
                 </Box>
               </CardContent>
             </Card>

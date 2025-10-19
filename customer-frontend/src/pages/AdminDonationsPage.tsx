@@ -35,9 +35,9 @@ import { Donation } from "../model/Donation";
 import DonationForm from "../components/DonationForm";
 import { WithLogin } from "../components/WithLogin";
 
-interface DonationFormValues {
+interface DonationFormSubmitValues {
   title: string;
-  link: string;
+  link: string | undefined;
   notes: string;
   displayOrder: number;
   enabled: boolean;
@@ -76,7 +76,7 @@ const AdminDonationsContent: React.FC = () => {
     setEditingDonation(null);
   };
 
-  const handleSubmit = async (values: DonationFormValues) => {
+  const handleSubmit = async (values: DonationFormSubmitValues) => {
     try {
       if (editingDonation) {
         // Update existing donation
@@ -219,23 +219,33 @@ const AdminDonationsContent: React.FC = () => {
                       )}
                     </Box>
 
-                    <Link
-                      href={donation.link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 0.5,
-                        mb: 1,
-                        wordBreak: "break-all",
-                      }}
-                    >
-                      <Typography variant="body2" color="primary">
-                        {donation.link}
+                    {donation.hasLink ? (
+                      <Link
+                        href={donation.link!}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        sx={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 0.5,
+                          mb: 1,
+                          wordBreak: "break-all",
+                        }}
+                      >
+                        <Typography variant="body2" color="primary">
+                          {donation.link}
+                        </Typography>
+                        <OpenIcon fontSize="small" />
+                      </Link>
+                    ) : (
+                      <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        sx={{ mb: 1 }}
+                      >
+                        ללא קישור
                       </Typography>
-                      <OpenIcon fontSize="small" />
-                    </Link>
+                    )}
 
                     {donation.notes && (
                       <Typography

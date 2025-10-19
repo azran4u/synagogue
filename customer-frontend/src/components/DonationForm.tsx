@@ -19,9 +19,17 @@ interface DonationFormValues {
   enabled: boolean;
 }
 
+interface DonationFormSubmitValues {
+  title: string;
+  link: string | undefined;
+  notes: string;
+  displayOrder: number;
+  enabled: boolean;
+}
+
 interface DonationFormProps {
   donation?: Donation | null;
-  onSubmit: (values: DonationFormValues) => Promise<void>;
+  onSubmit: (values: DonationFormSubmitValues) => Promise<void>;
   onCancel: () => void;
   isSubmitting: boolean;
 }
@@ -29,8 +37,19 @@ interface DonationFormProps {
 const donationValidationSchema = Yup.object().shape({
   title: Yup.string().required("כותרת היא שדה חובה"),
   link: Yup.string()
-    .url("יש להזין כתובת URL תקינה")
-    .required("קישור הוא שדה חובה"),
+    .nullable()
+    .notRequired()
+    .test("url-or-empty", "יש להזין כתובת URL תקינה", function (value) {
+      if (!value || value.trim() === "") {
+        return true; // Allow empty values
+      }
+      try {
+        new URL(value);
+        return true;
+      } catch {
+        return false;
+      }
+    }),
   notes: Yup.string(),
   displayOrder: Yup.number()
     .min(0, "סדר תצוגה חייב להיות מספר חיובי")
@@ -44,7 +63,7 @@ const getInitialFormValues = (
   if (donation) {
     return {
       title: donation.title,
-      link: donation.link,
+      link: donation.link || "",
       notes: donation.notes || "",
       displayOrder: donation.displayOrder,
       enabled: donation.enabled,
@@ -70,7 +89,17 @@ const DonationForm: React.FC<DonationFormProps> = ({
     <Formik
       initialValues={getInitialFormValues(donation)}
       validationSchema={donationValidationSchema}
-      onSubmit={onSubmit}
+      onSubmit={async values => {
+        // Convert empty string to undefined for the link field
+        const transformedValues = {
+          ...values,
+          link:
+            values.link && values.link.trim() !== ""
+              ? values.link.trim()
+              : undefined,
+        };
+        await onSubmit(transformedValues);
+      }}
       enableReinitialize
     >
       {({
@@ -99,7 +128,7 @@ const DonationForm: React.FC<DonationFormProps> = ({
             {/* Link */}
             <TextField
               fullWidth
-              label="קישור לתרומה"
+              label="קישור לתרומה (אופציונלי)"
               name="link"
               value={values.link}
               onChange={handleChange}
@@ -108,10 +137,9 @@ const DonationForm: React.FC<DonationFormProps> = ({
               helperText={
                 touched.link && errors.link
                   ? errors.link
-                  : "לדוגמה: https://payboxapp.page.link/..."
+                  : "אופציונלי - ניתן להשאיר ריק עבור העברות בנקאיות. לדוגמה: https://payboxapp.page.link/..."
               }
-              placeholder="https://..."
-              required
+              placeholder="https://... (אופציונלי)"
             />
 
             {/* Display Order */}
