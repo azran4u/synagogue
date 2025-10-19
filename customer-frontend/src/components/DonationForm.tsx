@@ -86,12 +86,12 @@ const DonationForm: React.FC<DonationFormProps> = ({
   isSubmitting,
 }) => {
   return (
-    <Formik
+    <Formik<DonationFormValues>
       initialValues={getInitialFormValues(donation)}
       validationSchema={donationValidationSchema}
       onSubmit={async values => {
         // Convert empty string to undefined for the link field
-        const transformedValues = {
+        const transformedValues: DonationFormSubmitValues = {
           ...values,
           link:
             values.link && values.link.trim() !== ""

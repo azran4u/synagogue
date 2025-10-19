@@ -77,6 +77,7 @@ export class Donation {
     link: string | undefined,
     createdBy: string,
     displayOrder: number = 1,
+    enabled: boolean = true,
     notes?: string
   ): Donation {
     return new Donation(
@@ -84,7 +85,7 @@ export class Donation {
       title,
       link,
       createdBy,
-      true, // enabled by default
+      enabled,
       displayOrder,
       notes
     );
@@ -97,7 +98,7 @@ export class Donation {
     return new Donation(
       this.id,
       updates.title ?? this.title,
-      updates.link ?? this.link,
+      "link" in updates ? updates.link : this.link,
       this.createdBy,
       updates.enabled ?? this.enabled,
       updates.displayOrder ?? this.displayOrder,

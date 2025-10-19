@@ -89,13 +89,11 @@ const AdminDonationsContent: React.FC = () => {
           values.link,
           email || "unknown",
           values.displayOrder,
+          values.enabled,
           values.notes
         );
         // Set enabled status
-        const donationToSave = values.enabled
-          ? newDonation
-          : newDonation.disable();
-        await createDonation.mutateAsync(donationToSave);
+        await createDonation.mutateAsync(newDonation);
       }
       handleCloseDialog();
     } catch (error) {
