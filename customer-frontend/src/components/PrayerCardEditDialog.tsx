@@ -114,11 +114,7 @@ export const PrayerCardEditDialog: React.FC<PrayerCardEditDialogProps> = ({
       navigate("");
       return;
     }
-    if (isNil(initialEventType)) {
-      console.error("Initial event type is not set");
-      navigate("");
-      return;
-    }
+
     try {
       // Create events
       const events = values.events.map(
