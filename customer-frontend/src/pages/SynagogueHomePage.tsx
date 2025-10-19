@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import {
   Box,
   Container,
@@ -22,6 +22,7 @@ import {
   CreditCard as CreditCardIcon,
   Login as LoginIcon,
   Visibility as ViewIcon,
+  Book as BookIcon,
 } from "@mui/icons-material";
 import { useAuth } from "../hooks/useAuth";
 import { usePrayerCard } from "../hooks/usePrayerCard";
@@ -33,7 +34,7 @@ const SynagogueHomePage: React.FC = () => {
   const { isLoggedIn, login, isLoading: authLoading } = useAuth();
   const { data: prayerCard, isLoading: prayerCardLoading } = usePrayerCard();
   const { data: synagogue } = useSelectedSynagogue();
-  const { displayName } = useUser();
+  const { displayName, isGabaiOrHigher } = useUser();
 
   const navigate = useSynagogueNavigate();
 
@@ -49,44 +50,62 @@ const SynagogueHomePage: React.FC = () => {
     login();
   };
 
-  const comingSoonFeatures = [
+  // Public features available to all users
+  const publicFeatures = [
     {
-      icon: <AliyotIcon />,
-      title: "ניהול משפחות",
-      description: "הוספת משפחה, ילדים וחברים",
-      status: "בפיתוח",
-    },
-    {
-      icon: <EventIcon />,
-      title: "אירועים ועליות",
-      description: "מעקב אחר אירועים ועליות לתורה",
-      status: "בפיתוח",
+      icon: <PersonIcon />,
+      title: "כרטיס מתפלל אישי",
+      description: "ניהול פרטים אישיים ומשפחתיים, מעקב אחר עליות ואירועים",
+      path: "prayer-card",
     },
     {
       icon: <ScheduleIcon />,
       title: "זמני תפילה",
-      description: "זמני תפילה ופעילויות",
-      status: "בפיתוח",
+      description: "לוחות זמנים מפורטים לתפילות ופעילויות בית הכנסת",
+      path: "prayer-times",
     },
     {
-      icon: <AnnouncementIcon />,
-      title: "הכרזות",
-      description: "הכרזות חשובות מהקהילה",
-      status: "בפיתוח",
+      icon: <BookIcon />,
+      title: "שיעורי תורה",
+      description: "מידע על שיעורי תורה, מקורות ושעות קבועות",
+      path: "tora-lessons",
     },
     {
       icon: <AccountBalanceIcon />,
       title: "דוחות כספיים",
-      description: "שקיפות כספית מלאה",
-      status: "בפיתוח",
+      description: "שקיפות מלאה של דוחות כספיים וניהול התקציב",
+      path: "financial-reports",
     },
     {
       icon: <CreditCardIcon />,
       title: "תרומות",
-      description: "תרומות לקהילה",
-      status: "בפיתוח",
+      description: "דרכי תרומה מגוונות כולל העברות בנקאיות ותשלומים אונליין",
+      path: "donations",
     },
   ];
+
+  // Admin/Gabai only features
+  const adminFeatures = [
+    {
+      icon: <EventIcon />,
+      title: "מעקב אירועים",
+      description: "הוספת וניהול אירועים משפחתיים וימי הולדת עבריים",
+      path: "prayer-event-types",
+    },
+    {
+      icon: <AliyotIcon />,
+      title: "ניהול עליות",
+      description: "הקצאת עליות לתורה לפי גיל ומסורת בית הכנסת",
+      path: "admin/aliya-assignment",
+    },
+  ];
+
+  // Combine features: public features first, then admin features if user has permissions
+  const systemFeatures = useMemo(() => {
+    return isGabaiOrHigher
+      ? [...publicFeatures, ...adminFeatures]
+      : publicFeatures;
+  }, [isGabaiOrHigher]);
 
   const renderActionSection = () => {
     if (authLoading || prayerCardLoading) {
@@ -234,8 +253,21 @@ const SynagogueHomePage: React.FC = () => {
             gap: 3,
           }}
         >
-          {comingSoonFeatures.map((feature, index) => (
-            <Card key={index} sx={{ height: "100%", opacity: 0.7 }}>
+          {systemFeatures.map((feature, index) => (
+            <Card
+              key={index}
+              sx={{
+                height: "100%",
+                cursor: "pointer",
+                transition:
+                  "transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out",
+                "&:hover": {
+                  transform: "translateY(-4px)",
+                  boxShadow: 4,
+                },
+              }}
+              onClick={() => navigate(feature.path)}
+            >
               <CardContent sx={{ textAlign: "center", p: 3 }}>
                 <Box sx={{ color: "primary.main", mb: 2 }}>{feature.icon}</Box>
                 <Typography variant="h6" gutterBottom>
@@ -244,75 +276,26 @@ const SynagogueHomePage: React.FC = () => {
                 <Typography
                   variant="body2"
                   color="text.secondary"
-                  sx={{ mb: 2 }}
+                  sx={{ mb: 2, minHeight: 48 }}
                 >
                   {feature.description}
                 </Typography>
-                <Chip
-                  label={feature.status}
-                  color="secondary"
-                  size="small"
+                <Button
                   variant="outlined"
-                />
+                  size="small"
+                  color="primary"
+                  onClick={e => {
+                    e.stopPropagation();
+                    navigate(feature.path);
+                  }}
+                >
+                  לפרטים נוספים
+                </Button>
               </CardContent>
             </Card>
           ))}
         </Box>
       </Box>
-
-      {/* Current Features */}
-      <Card sx={{ mt: 6, bgcolor: "success.50" }}>
-        <CardContent sx={{ textAlign: "center", py: 4 }}>
-          <Typography variant="h5" gutterBottom color="success.dark">
-            זמין כעת
-          </Typography>
-          <Divider sx={{ my: 2 }} />
-          <Stack
-            direction="row"
-            spacing={{ xs: 1, sm: 2 }}
-            justifyContent="center"
-            flexWrap="wrap"
-            sx={{
-              gap: { xs: 1, sm: 2 },
-              "& .MuiChip-root": {
-                mb: { xs: 1, sm: 0 },
-                minWidth: { xs: "auto", sm: "auto" },
-              },
-            }}
-          >
-            <Chip
-              icon={<PersonIcon />}
-              label="כרטיס מתפלל אישי"
-              color="success"
-              variant="filled"
-              sx={{
-                fontSize: { xs: "0.75rem", sm: "0.875rem" },
-                height: { xs: 28, sm: 32 },
-              }}
-            />
-            <Chip
-              icon={<EventIcon />}
-              label="מעקב אירועים"
-              color="success"
-              variant="filled"
-              sx={{
-                fontSize: { xs: "0.75rem", sm: "0.875rem" },
-                height: { xs: 28, sm: 32 },
-              }}
-            />
-            <Chip
-              icon={<AliyotIcon />}
-              label="ניהול עליות"
-              color="success"
-              variant="filled"
-              sx={{
-                fontSize: { xs: "0.75rem", sm: "0.875rem" },
-                height: { xs: 28, sm: 32 },
-              }}
-            />
-          </Stack>
-        </CardContent>
-      </Card>
 
       {/* Footer */}
     </Container>
