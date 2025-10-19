@@ -1,6 +1,7 @@
 import { HebrewDate, HebrewDateDto } from "./HebrewDate";
 import { AliyaEvent, AliyaEventDto } from "./AliyaEvent";
 import { PrayerEvent, PrayerEventDto } from "./PrayerEvent";
+import { PrayerDonation, PrayerDonationDto } from "./PrayerDonation";
 import { Mapper } from "../services/genericService";
 import { v4 as uuidv4 } from "uuid";
 // DTO interface for Firestore serialization
@@ -17,6 +18,7 @@ export interface PrayerDto {
   updatedAt: number;
   aliyot: AliyaEventDto[];
   events: PrayerEventDto[];
+  donations: PrayerDonationDto[];
 }
 
 export interface PrayerCardDto {
@@ -72,6 +74,7 @@ export class Prayer {
   public notes?: string;
   public aliyot: AliyaEvent[];
   public events: PrayerEvent[];
+  public donations: PrayerDonation[];
   public createdAt: Date;
   public updatedAt: Date;
 
@@ -85,6 +88,7 @@ export class Prayer {
     notes?: string,
     aliyaHistory: AliyaEvent[] = [],
     events: PrayerEvent[] = [],
+    donations: PrayerDonation[] = [],
     createdAt: Date = new Date(),
     updatedAt: Date = new Date()
   ) {
@@ -97,6 +101,7 @@ export class Prayer {
     this.notes = notes;
     this.aliyot = aliyaHistory;
     this.events = events;
+    this.donations = donations;
     this.createdAt = createdAt;
     this.updatedAt = updatedAt;
   }
@@ -113,6 +118,7 @@ export class Prayer {
       notes: this.notes,
       aliyot: this.aliyot.map(event => event.toDto()),
       events: this.events.map(event => event.toDto()),
+      donations: this.donations.map(donation => donation.toDto()),
       createdAt: this.createdAt.getTime(),
       updatedAt: this.updatedAt.getTime(),
     };
@@ -130,6 +136,9 @@ export class Prayer {
       dto.notes,
       dto.aliyot.map(eventDto => AliyaEvent.fromDto(eventDto)),
       dto.events.map(eventDto => PrayerEvent.fromDto(eventDto)),
+      dto.donations
+        ? dto.donations.map(donationDto => PrayerDonation.fromDto(donationDto))
+        : [],
       new Date(dto.createdAt),
       new Date(dto.updatedAt)
     );
@@ -144,7 +153,8 @@ export class Prayer {
     email?: string,
     notes?: string,
     aliyot?: AliyaEvent[],
-    events?: PrayerEvent[]
+    events?: PrayerEvent[],
+    donations?: PrayerDonation[]
   ): Prayer {
     return new Prayer(
       uuidv4(),
@@ -156,6 +166,7 @@ export class Prayer {
       notes,
       aliyot ?? [],
       events ?? [],
+      donations ?? [],
       new Date(),
       new Date()
     );
@@ -173,6 +184,7 @@ export class Prayer {
       updates.notes ?? this.notes,
       updates.aliyot ?? this.aliyot,
       updates.events ?? this.events,
+      updates.donations ?? this.donations,
       this.createdAt,
       new Date() // updatedAt
     );
@@ -215,6 +227,44 @@ export class Prayer {
   // Check if prayer has Hebrew birth date
   get hasHebrewBirthDate(): boolean {
     return !!this.hebrewBirthDate;
+  }
+
+  // Donation-related methods
+  addDonation(donation: PrayerDonation): Prayer {
+    const updatedDonations = [...this.donations, donation];
+    return this.update({ donations: updatedDonations });
+  }
+
+  updateDonation(
+    donationId: string,
+    updates: Partial<Omit<PrayerDonation, "id" | "createdAt" | "createdBy">>
+  ): Prayer {
+    const updatedDonations = this.donations.map(donation =>
+      donation.id === donationId ? donation.update(updates) : donation
+    );
+    return this.update({ donations: updatedDonations });
+  }
+
+  removeDonation(donationId: string): Prayer {
+    const updatedDonations = this.donations.filter(
+      donation => donation.id !== donationId
+    );
+    return this.update({ donations: updatedDonations });
+  }
+
+  get unpaidDonations(): PrayerDonation[] {
+    return this.donations.filter(donation => !donation.paid);
+  }
+
+  get paidDonations(): PrayerDonation[] {
+    return this.donations.filter(donation => donation.paid);
+  }
+
+  get totalUnpaidAmount(): number {
+    return this.unpaidDonations.reduce(
+      (sum, donation) => sum + donation.amount,
+      0
+    );
   }
 }
 

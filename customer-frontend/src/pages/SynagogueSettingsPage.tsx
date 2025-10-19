@@ -19,6 +19,9 @@ import {
   ListItemText,
   IconButton,
   Stack,
+  FormControlLabel,
+  Switch,
+  FormHelperText,
 } from "@mui/material";
 import {
   ArrowBack as ArrowBackIcon,
@@ -61,6 +64,10 @@ const colorSchema = Yup.object({
     /^#[0-9A-Fa-f]{6}$/,
     "נא להזין צבע תקין בפורמט hex"
   ),
+});
+
+const donationTrackingSchema = Yup.object({
+  donationTrackingEnabled: Yup.boolean().required(),
 });
 
 const SynagogueSettingsPage: React.FC = () => {
@@ -176,6 +183,25 @@ const SynagogueSettingsPage: React.FC = () => {
 
   const handleResetColors = () => {
     return Synagogue.getDefaultColors();
+  };
+
+  const handleUpdateDonationTracking = async (values: {
+    donationTrackingEnabled: boolean;
+  }) => {
+    if (!synagogue || !synagogueId) return;
+
+    try {
+      const updatedSynagogue = synagogue.update({
+        donationTrackingEnabled: values.donationTrackingEnabled,
+      });
+      await updateSynagogueMutation.mutateAsync({
+        id: synagogueId,
+        synagogue: updatedSynagogue,
+      });
+    } catch (error) {
+      console.error("Error saving donation tracking setting:", error);
+      throw error; // Let Formik handle the error
+    }
   };
 
   if (isLoading) {
@@ -501,6 +527,69 @@ const SynagogueSettingsPage: React.FC = () => {
                     </Button>
                   </Box>
                 </Stack>
+              </Form>
+            )}
+          </Formik>
+        </CardContent>
+      </Card>
+
+      {/* Donation Tracking Feature Toggle */}
+      <Card sx={{ mb: 3 }}>
+        <CardContent>
+          <Typography variant="h6" gutterBottom>
+            תכונות מתקדמות
+          </Typography>
+
+          <Formik
+            initialValues={{
+              donationTrackingEnabled:
+                synagogue?.isDonationTrackingEnabled || false,
+            }}
+            validationSchema={donationTrackingSchema}
+            onSubmit={handleUpdateDonationTracking}
+            enableReinitialize
+          >
+            {({ values, setFieldValue, isSubmitting, dirty }) => (
+              <Form>
+                <Box sx={{ mb: 2 }}>
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={values.donationTrackingEnabled}
+                        onChange={e =>
+                          setFieldValue(
+                            "donationTrackingEnabled",
+                            e.target.checked
+                          )
+                        }
+                        name="donationTrackingEnabled"
+                        color="primary"
+                      />
+                    }
+                    label="אפשר מעקב אחר תרומות וחובות מתפללים"
+                  />
+                  <FormHelperText>
+                    מאפשר לגבאים לנהל תרומות וחובות של מתפללים. המתפללים יוכלו
+                    לראות את החובות שלהם.
+                  </FormHelperText>
+                </Box>
+
+                <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
+                  <Button
+                    type="submit"
+                    variant="contained"
+                    startIcon={
+                      isSubmitting ? (
+                        <CircularProgress size={16} />
+                      ) : (
+                        <SaveIcon />
+                      )
+                    }
+                    disabled={isSubmitting || !dirty}
+                  >
+                    {isSubmitting ? "שומר..." : "שמור הגדרות תרומות"}
+                  </Button>
+                </Box>
               </Form>
             )}
           </Formik>

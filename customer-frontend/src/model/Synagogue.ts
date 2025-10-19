@@ -8,6 +8,7 @@ export interface SynagogueDto {
   primaryColor?: string;
   secondaryColor?: string;
   errorColor?: string;
+  donationTrackingEnabled?: boolean;
 }
 
 export class Synagogue {
@@ -18,6 +19,7 @@ export class Synagogue {
   public primaryColor?: string;
   public secondaryColor?: string;
   public errorColor?: string;
+  public donationTrackingEnabled?: boolean;
 
   // Static default color constants
   static readonly DEFAULT_PRIMARY_COLOR = "#9da832";
@@ -40,7 +42,8 @@ export class Synagogue {
     createdAt: Date = new Date(),
     primaryColor?: string,
     secondaryColor?: string,
-    errorColor?: string
+    errorColor?: string,
+    donationTrackingEnabled?: boolean
   ) {
     this.id = id;
     this.name = name;
@@ -49,6 +52,7 @@ export class Synagogue {
     this.primaryColor = primaryColor;
     this.secondaryColor = secondaryColor;
     this.errorColor = errorColor;
+    this.donationTrackingEnabled = donationTrackingEnabled;
   }
 
   // Convert to DTO for Firestore storage
@@ -60,6 +64,7 @@ export class Synagogue {
       primaryColor: this.primaryColor,
       secondaryColor: this.secondaryColor,
       errorColor: this.errorColor,
+      donationTrackingEnabled: this.donationTrackingEnabled,
     };
   }
 
@@ -72,7 +77,8 @@ export class Synagogue {
       new Date(dto.createdAt),
       dto.primaryColor,
       dto.secondaryColor,
-      dto.errorColor
+      dto.errorColor,
+      dto.donationTrackingEnabled
     );
   }
 
@@ -92,7 +98,8 @@ export class Synagogue {
       this.createdAt,
       updates.primaryColor ?? this.primaryColor,
       updates.secondaryColor ?? this.secondaryColor,
-      updates.errorColor ?? this.errorColor
+      updates.errorColor ?? this.errorColor,
+      updates.donationTrackingEnabled ?? this.donationTrackingEnabled
     );
   }
 
@@ -105,7 +112,8 @@ export class Synagogue {
       this.createdAt,
       this.primaryColor,
       this.secondaryColor,
-      this.errorColor
+      this.errorColor,
+      this.donationTrackingEnabled
     );
   }
 
@@ -134,6 +142,10 @@ export class Synagogue {
 
   get errorColorValue(): string {
     return this.errorColor || Synagogue.DEFAULT_ERROR_COLOR;
+  }
+
+  get isDonationTrackingEnabled(): boolean {
+    return this.donationTrackingEnabled ?? false;
   }
 }
 

@@ -25,11 +25,13 @@ import {
   People as AdminPrayerCardsIcon,
   BugReport as FrontendErrorsIcon,
   HolidayVillage as SynagogueIcon,
+  AccountBalanceWallet as DonationsManagementIcon,
 } from "@mui/icons-material";
 import { Logo } from "./Logo";
 import { WithLogin } from "./WithLogin";
 import { useSynagogueNavigate } from "../hooks/useSynagogueNavigate";
 import { useUser } from "../hooks/useUser";
+import { useSelectedSynagogue } from "../hooks/useSynagogueId";
 
 interface SidebarItemProps {
   text: string;
@@ -75,6 +77,7 @@ export const AppSideBar: React.FC<AppSideBarProps> = ({
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const { isGabaiOrHigher, isAdmin } = useUser();
+  const { data: synagogue } = useSelectedSynagogue();
 
   const drawerWidth = useMemo(() => (isMobile ? "60%" : "20%"), [isMobile]);
   const navigate = useSynagogueNavigate();
@@ -206,6 +209,13 @@ export const AppSideBar: React.FC<AppSideBarProps> = ({
                 onClick={() => handleClick("admin/donations")}
                 icon={<DonationsIcon />}
               />
+              {synagogue?.isDonationTrackingEnabled && (
+                <SidebarItem
+                  text="ניהול תרומות וחובות מתפללים"
+                  onClick={() => handleClick("admin/prayer-donations")}
+                  icon={<DonationsManagementIcon />}
+                />
+              )}
               <SidebarItem
                 text="אירועים קרובים"
                 onClick={() => handleClick("admin/upcoming-events")}

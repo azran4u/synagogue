@@ -16,6 +16,7 @@ import {
   Event as EventIcon,
   ChildCare as ChildCareIcon,
   Group as GroupIcon,
+  AccountBalanceWallet as DonationsIcon,
 } from "@mui/icons-material";
 import { useAuth } from "../hooks/useAuth";
 import { usePrayerCard, useCreatePrayerCard } from "../hooks/usePrayerCard";
@@ -26,6 +27,8 @@ import { useAliyaTypes } from "../hooks/useAliyaTypes";
 import { useAliyaGroups } from "../hooks/useAliyaGroups";
 import { useSynagogueNavigate } from "../hooks/useSynagogueNavigate";
 import { PrayerCardEditDialog } from "../components/PrayerCardEditDialog";
+import { useSelectedSynagogue } from "../hooks/useSynagogueId";
+import { formatCurrency } from "../utils/donationStats";
 
 const PrayerCardContent: React.FC = () => {
   const { data: prayerCard, isLoading } = usePrayerCard();
@@ -34,6 +37,7 @@ const PrayerCardContent: React.FC = () => {
   const { data: aliyaTypes } = useAliyaTypes();
   const { data: aliyaGroups } = useAliyaGroups();
   const navigate = useSynagogueNavigate();
+  const { data: synagogue } = useSelectedSynagogue();
   // State for editing
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
@@ -344,6 +348,196 @@ const PrayerCardContent: React.FC = () => {
                               </Typography>
                             </Box>
                           )}
+
+                          {/* Child's Donations - Only show if feature is enabled */}
+                          {synagogue?.isDonationTrackingEnabled &&
+                            child.donations.length > 0 && (
+                              <Box sx={{ mt: 2 }}>
+                                <Typography
+                                  variant="subtitle2"
+                                  color="primary"
+                                  gutterBottom
+                                  sx={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: 1,
+                                  }}
+                                >
+                                  <DonationsIcon sx={{ fontSize: 16 }} />
+                                  תרומות וחובות של {child.firstName} (
+                                  {child.donations.length})
+                                </Typography>
+                                <Stack spacing={1}>
+                                  {/* Paid Donations */}
+                                  {child.paidDonations.length > 0 && (
+                                    <Stack spacing={0.5}>
+                                      <Typography
+                                        variant="caption"
+                                        color="success.main"
+                                      >
+                                        שולמו ({child.paidDonations.length})
+                                      </Typography>
+                                      {child.paidDonations.map(donation => (
+                                        <Box
+                                          key={donation.id}
+                                          sx={{
+                                            p: 1.5,
+                                            border: "1px solid",
+                                            borderColor: "success.light",
+                                            borderRadius: 1,
+                                            backgroundColor: "success.light",
+                                            opacity: 0.8,
+                                          }}
+                                        >
+                                          <Box
+                                            sx={{
+                                              display: "flex",
+                                              alignItems: "center",
+                                              gap: 1,
+                                              mb: donation.notes ? 0.5 : 0,
+                                            }}
+                                          >
+                                            <Typography
+                                              variant="body2"
+                                              color="success.dark"
+                                              sx={{ fontWeight: 500 }}
+                                            >
+                                              {donation.formattedAmount}
+                                            </Typography>
+                                            <Chip
+                                              label={donation.hebrewDate.toString()}
+                                              size="small"
+                                              color="success"
+                                              variant="outlined"
+                                              sx={{
+                                                height: 20,
+                                                fontSize: "0.7rem",
+                                              }}
+                                            />
+                                          </Box>
+                                          {donation.notes && (
+                                            <Typography
+                                              variant="caption"
+                                              color="text.secondary"
+                                            >
+                                              {donation.notes}
+                                            </Typography>
+                                          )}
+                                        </Box>
+                                      ))}
+                                    </Stack>
+                                  )}
+
+                                  {/* Unpaid Donations */}
+                                  {child.unpaidDonations.length > 0 && (
+                                    <Stack spacing={0.5}>
+                                      <Typography
+                                        variant="caption"
+                                        color="error.main"
+                                      >
+                                        לא שולמו ({child.unpaidDonations.length}
+                                        )
+                                      </Typography>
+                                      {child.unpaidDonations.map(donation => (
+                                        <Box
+                                          key={donation.id}
+                                          sx={{
+                                            p: 1.5,
+                                            border: "1px solid",
+                                            borderColor: donation.isOverdue
+                                              ? "error.dark"
+                                              : "error.light",
+                                            borderRadius: 1,
+                                            backgroundColor: donation.isOverdue
+                                              ? "error.light"
+                                              : "background.paper",
+                                          }}
+                                        >
+                                          <Box
+                                            sx={{
+                                              display: "flex",
+                                              alignItems: "center",
+                                              gap: 1,
+                                              mb: donation.notes ? 0.5 : 0,
+                                            }}
+                                          >
+                                            <Typography
+                                              variant="body2"
+                                              color={
+                                                donation.isOverdue
+                                                  ? "error.dark"
+                                                  : "error.main"
+                                              }
+                                              sx={{ fontWeight: 500 }}
+                                            >
+                                              {donation.formattedAmount}
+                                            </Typography>
+                                            <Chip
+                                              label={donation.hebrewDate.toString()}
+                                              size="small"
+                                              color={
+                                                donation.isOverdue
+                                                  ? "error"
+                                                  : "warning"
+                                              }
+                                              variant="outlined"
+                                              sx={{
+                                                height: 20,
+                                                fontSize: "0.7rem",
+                                              }}
+                                            />
+                                            {donation.isOverdue && (
+                                              <Chip
+                                                label="איחור"
+                                                size="small"
+                                                color="error"
+                                                sx={{
+                                                  height: 20,
+                                                  fontSize: "0.7rem",
+                                                  fontWeight: "bold",
+                                                }}
+                                              />
+                                            )}
+                                          </Box>
+                                          {donation.notes && (
+                                            <Typography
+                                              variant="caption"
+                                              color="text.secondary"
+                                            >
+                                              {donation.notes}
+                                            </Typography>
+                                          )}
+                                        </Box>
+                                      ))}
+                                    </Stack>
+                                  )}
+
+                                  {/* Total for child */}
+                                  {child.totalUnpaidAmount > 0 && (
+                                    <Box
+                                      sx={{
+                                        mt: 1,
+                                        p: 1,
+                                        backgroundColor: "error.light",
+                                        borderRadius: 1,
+                                        textAlign: "center",
+                                      }}
+                                    >
+                                      <Typography
+                                        variant="caption"
+                                        color="error.dark"
+                                        sx={{ fontWeight: 500 }}
+                                      >
+                                        חוב כולל:{" "}
+                                        {formatCurrency(
+                                          child.totalUnpaidAmount
+                                        )}
+                                      </Typography>
+                                    </Box>
+                                  )}
+                                </Stack>
+                              </Box>
+                            )}
                         </Stack>
                       </CardContent>
                     </Card>
@@ -621,6 +815,212 @@ const PrayerCardContent: React.FC = () => {
               })()}
             </CardContent>
           </Card>
+
+          {/* Donations/Debts Section - Only show if feature is enabled */}
+          {synagogue?.isDonationTrackingEnabled && (
+            <Card>
+              <CardContent>
+                <Typography
+                  variant="h6"
+                  gutterBottom
+                  sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                >
+                  <DonationsIcon />
+                  תרומות וחובות ({prayerCard.prayer.donations.length})
+                </Typography>
+
+                {prayerCard.prayer.donations.length > 0 ? (
+                  <Stack spacing={2}>
+                    {/* Paid Donations */}
+                    {prayerCard.prayer.paidDonations.length > 0 && (
+                      <Box>
+                        <Typography
+                          variant="subtitle2"
+                          color="success.main"
+                          gutterBottom
+                        >
+                          תרומות ששולמו (
+                          {prayerCard.prayer.paidDonations.length})
+                        </Typography>
+                        <Stack spacing={1}>
+                          {prayerCard.prayer.paidDonations.map(donation => (
+                            <Box
+                              key={donation.id}
+                              sx={{
+                                p: 2,
+                                border: "1px solid",
+                                borderColor: "success.light",
+                                borderRadius: 1,
+                                backgroundColor: "success.light",
+                                opacity: 0.8,
+                              }}
+                            >
+                              <Box
+                                sx={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: 2,
+                                  mb: donation.notes ? 1 : 0,
+                                }}
+                              >
+                                <Typography variant="h6" color="success.dark">
+                                  {donation.formattedAmount}
+                                </Typography>
+                                <Chip
+                                  label={donation.hebrewDate.toString()}
+                                  size="small"
+                                  color="success"
+                                  variant="outlined"
+                                />
+                                <Chip
+                                  label="שולם"
+                                  size="small"
+                                  color="success"
+                                />
+                              </Box>
+                              {donation.notes && (
+                                <Typography
+                                  variant="body2"
+                                  color="text.secondary"
+                                  sx={{ mt: 1 }}
+                                >
+                                  {donation.notes}
+                                </Typography>
+                              )}
+                            </Box>
+                          ))}
+                        </Stack>
+                      </Box>
+                    )}
+
+                    {/* Unpaid Donations */}
+                    {prayerCard.prayer.unpaidDonations.length > 0 && (
+                      <Box>
+                        <Typography
+                          variant="subtitle2"
+                          color="error.main"
+                          gutterBottom
+                        >
+                          חובות פתוחים (
+                          {prayerCard.prayer.unpaidDonations.length})
+                        </Typography>
+                        <Stack spacing={1}>
+                          {prayerCard.prayer.unpaidDonations.map(donation => (
+                            <Box
+                              key={donation.id}
+                              sx={{
+                                p: 2,
+                                border: "1px solid",
+                                borderColor: donation.isOverdue
+                                  ? "error.dark"
+                                  : "error.light",
+                                borderRadius: 1,
+                                backgroundColor: donation.isOverdue
+                                  ? "error.light"
+                                  : "background.paper",
+                              }}
+                            >
+                              <Box
+                                sx={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: 2,
+                                  mb: donation.notes ? 1 : 0,
+                                }}
+                              >
+                                <Typography
+                                  variant="h6"
+                                  color={
+                                    donation.isOverdue
+                                      ? "error.dark"
+                                      : "error.main"
+                                  }
+                                >
+                                  {donation.formattedAmount}
+                                </Typography>
+                                <Chip
+                                  label={donation.hebrewDate.toString()}
+                                  size="small"
+                                  color={
+                                    donation.isOverdue ? "error" : "warning"
+                                  }
+                                  variant="outlined"
+                                />
+                                <Chip
+                                  label="לא שולם"
+                                  size="small"
+                                  color="error"
+                                />
+                                {donation.isOverdue && (
+                                  <Chip
+                                    label="איחור"
+                                    size="small"
+                                    color="error"
+                                    sx={{ fontWeight: "bold" }}
+                                  />
+                                )}
+                              </Box>
+                              {donation.notes && (
+                                <Typography
+                                  variant="body2"
+                                  color="text.secondary"
+                                  sx={{ mt: 1 }}
+                                >
+                                  {donation.notes}
+                                </Typography>
+                              )}
+                            </Box>
+                          ))}
+                        </Stack>
+
+                        {/* Total Unpaid Amount */}
+                        <Box
+                          sx={{
+                            mt: 2,
+                            p: 2,
+                            backgroundColor: "error.light",
+                            borderRadius: 1,
+                            textAlign: "center",
+                          }}
+                        >
+                          <Typography variant="h6" color="error.dark">
+                            סכום חוב כולל:{" "}
+                            {formatCurrency(
+                              prayerCard.prayer.totalUnpaidAmount
+                            )}
+                          </Typography>
+                        </Box>
+                      </Box>
+                    )}
+
+                    {/* Show message if no donations */}
+                    {prayerCard.prayer.paidDonations.length === 0 &&
+                      prayerCard.prayer.unpaidDonations.length === 0 && (
+                        <Typography
+                          variant="body2"
+                          color="text.secondary"
+                          sx={{
+                            fontStyle: "italic",
+                            textAlign: "center",
+                            py: 2,
+                          }}
+                        >
+                          אין תרומות או חובות רשומים
+                        </Typography>
+                      )}
+                  </Stack>
+                ) : (
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ fontStyle: "italic" }}
+                  >
+                    אין תרומות או חובות רשומים
+                  </Typography>
+                )}
+              </CardContent>
+            </Card>
+          )}
         </Box>
 
         {/* Edit Prayer Card Dialog */}
