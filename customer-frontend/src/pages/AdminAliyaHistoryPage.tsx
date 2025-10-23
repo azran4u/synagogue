@@ -231,13 +231,15 @@ const AdminAliyaHistoryContent: React.FC = () => {
       <Box
         sx={{
           display: "flex",
+          flexDirection: { xs: "column", sm: "row" },
           justifyContent: "space-between",
-          alignItems: "center",
+          alignItems: { xs: "stretch", sm: "center" },
+          gap: 2,
           mb: 3,
         }}
       >
-        <Typography variant="h4">היסטוריית עליות לתורה</Typography>
-        <Box sx={{ display: "flex", gap: 2 }}>
+        <Typography variant="h4">היסטוריית עליות</Typography>
+        <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
           <Button
             variant="contained"
             startIcon={<PdfIcon />}
