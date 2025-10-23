@@ -119,18 +119,7 @@ const AdminPrayerDonationsContent: React.FC = () => {
     prayerCards.forEach(prayerCard => {
       // Add main prayer if age 13+
       if (prayerCard.prayer.hebrewBirthDate) {
-        const today = new Date();
-        const birthDate = prayerCard.prayer.hebrewBirthDate.toGregorianDate();
-        let age = today.getFullYear() - birthDate.getFullYear();
-        const monthDiff = today.getMonth() - birthDate.getMonth();
-        if (
-          monthDiff < 0 ||
-          (monthDiff === 0 && today.getDate() < birthDate.getDate())
-        ) {
-          age--;
-        }
-
-        if (age >= 13) {
+        if (prayerCard.prayer.hebrewBirthDate.isOlderThan(13)) {
           options.push({
             id: prayerCard.prayer.id,
             label: `${prayerCard.prayer.fullName} (מתפלל ראשי)`,
@@ -151,18 +140,7 @@ const AdminPrayerDonationsContent: React.FC = () => {
       // Add children if age 13+
       prayerCard.children.forEach(child => {
         if (child.hebrewBirthDate) {
-          const today = new Date();
-          const birthDate = child.hebrewBirthDate.toGregorianDate();
-          let age = today.getFullYear() - birthDate.getFullYear();
-          const monthDiff = today.getMonth() - birthDate.getMonth();
-          if (
-            monthDiff < 0 ||
-            (monthDiff === 0 && today.getDate() < birthDate.getDate())
-          ) {
-            age--;
-          }
-
-          if (age >= 13) {
+          if (child.hebrewBirthDate.isOlderThan(13)) {
             options.push({
               id: child.id,
               label: `${child.fullName} (ילד של ${prayerCard.prayer.fullName})`,

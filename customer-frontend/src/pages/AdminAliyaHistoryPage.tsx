@@ -16,48 +16,25 @@ import {
   Person as PersonIcon,
   Event as EventIcon,
   AccessTime as TimeIcon,
+  PictureAsPdf as PdfIcon,
 } from "@mui/icons-material";
 import { useAllPrayerCards } from "../hooks/usePrayerCard";
 import { useAliyaGroups } from "../hooks/useAliyaGroups";
 import { useAliyaTypes } from "../hooks/useAliyaTypes";
+import { usePrayerEventTypes } from "../hooks/usePrayerEventTypes";
 import { useUser } from "../hooks/useUser";
 import { Prayer, PrayerCard } from "../model/Prayer";
 import { HebrewDate } from "../model/HebrewDate";
 import { WithLogin } from "../components/WithLogin";
 import { format } from "date-fns";
-
-// Helper function to calculate age from Hebrew birthdate
-const calculateAgeFromHebrewDate = (hebrewBirthDate: HebrewDate): number => {
-  const today = new Date();
-  const birthDate = hebrewBirthDate.toGregorianDate();
-
-  let age = today.getFullYear() - birthDate.getFullYear();
-  const monthDiff = today.getMonth() - birthDate.getMonth();
-
-  if (
-    monthDiff < 0 ||
-    (monthDiff === 0 && today.getDate() < birthDate.getDate())
-  ) {
-    age--;
-  }
-
-  return age;
-};
-
-// Helper function to check if prayer is eligible (13+ or no birthdate)
-const isEligibleForAliya = (prayer: Prayer): boolean => {
-  if (!prayer.hebrewBirthDate) {
-    return true;
-  }
-  const age = calculateAgeFromHebrewDate(prayer.hebrewBirthDate);
-  return age >= 13;
-};
+import { isEligibleForAliya } from "../utils/prayerUtils";
+import { generateAliyaHistoryPdf } from "../utils/aliyaHistoryPdfExport";
 
 interface PrayerWithAliyaHistory {
   prayer: Prayer;
   prayerCard: PrayerCard;
   isChild: boolean;
-  lastAliyaDate: Date | null;
+  lastAliyaDate: HebrewDate | null;
   lastAliyaGroupLabel: string | null;
   lastAliyaTypeName: string | null;
   totalAliyot: number;
@@ -68,6 +45,7 @@ const AdminAliyaHistoryContent: React.FC = () => {
   const { data: prayerCards, isLoading } = useAllPrayerCards();
   const { data: aliyaGroups } = useAliyaGroups();
   const { data: aliyaTypes } = useAliyaTypes();
+  const { data: prayerEventTypes } = usePrayerEventTypes();
   const { isGabaiOrHigher } = useUser();
 
   const [sortNewestFirst, setSortNewestFirst] = useState(false);
@@ -101,7 +79,7 @@ const AdminAliyaHistoryContent: React.FC = () => {
     prayerCards.forEach(card => {
       // Process main prayer
       if (isEligibleForAliya(card.prayer)) {
-        let lastAliyaDate: Date | null = null;
+        let lastAliyaDate: HebrewDate | null = null;
         let lastAliyaGroupLabel: string | null = null;
         let lastAliyaTypeName: string | null = null;
         let totalAliyot = card.prayer.aliyot.length;
@@ -110,8 +88,8 @@ const AdminAliyaHistoryContent: React.FC = () => {
         card.prayer.aliyot.forEach(aliya => {
           const group = aliyaGroupMap.get(aliya.aliyaGroupId);
           if (group) {
-            const groupDate = group.hebrewDate.toGregorianDate();
-            if (!lastAliyaDate || groupDate > lastAliyaDate) {
+            const groupDate: HebrewDate = group.hebrewDate;
+            if (!lastAliyaDate || groupDate.isAfter(lastAliyaDate)) {
               lastAliyaDate = groupDate;
               lastAliyaGroupLabel = group.label;
               lastAliyaTypeName =
@@ -122,9 +100,10 @@ const AdminAliyaHistoryContent: React.FC = () => {
 
         let daysSinceLastAliya: number | null = null;
         if (lastAliyaDate !== null) {
-          const dateValue: Date = lastAliyaDate;
+          const dateValue: HebrewDate = lastAliyaDate;
           daysSinceLastAliya = Math.floor(
-            (today.getTime() - dateValue.getTime()) / (1000 * 60 * 60 * 24)
+            (today.getTime() - dateValue.toGregorianDate().getTime()) /
+              (1000 * 60 * 60 * 24)
           );
         }
 
@@ -143,7 +122,7 @@ const AdminAliyaHistoryContent: React.FC = () => {
       // Process children
       card.children.forEach(child => {
         if (isEligibleForAliya(child)) {
-          let lastAliyaDate: Date | null = null;
+          let lastAliyaDate: HebrewDate | null = null;
           let lastAliyaGroupLabel: string | null = null;
           let lastAliyaTypeName: string | null = null;
           let totalAliyot = child.aliyot.length;
@@ -152,8 +131,8 @@ const AdminAliyaHistoryContent: React.FC = () => {
           child.aliyot.forEach(aliya => {
             const group = aliyaGroupMap.get(aliya.aliyaGroupId);
             if (group) {
-              const groupDate = group.hebrewDate.toGregorianDate();
-              if (!lastAliyaDate || groupDate > lastAliyaDate) {
+              const groupDate: HebrewDate = group.hebrewDate;
+              if (!lastAliyaDate || groupDate.isAfter(lastAliyaDate)) {
                 lastAliyaDate = groupDate;
                 lastAliyaGroupLabel = group.label;
                 lastAliyaTypeName =
@@ -164,9 +143,10 @@ const AdminAliyaHistoryContent: React.FC = () => {
 
           let daysSinceLastAliya: number | null = null;
           if (lastAliyaDate !== null) {
-            const dateValue: Date = lastAliyaDate;
+            const dateValue: HebrewDate = lastAliyaDate;
             daysSinceLastAliya = Math.floor(
-              (today.getTime() - dateValue.getTime()) / (1000 * 60 * 60 * 24)
+              (today.getTime() - dateValue.toGregorianDate().getTime()) /
+                (1000 * 60 * 60 * 24)
             );
           }
 
@@ -193,9 +173,15 @@ const AdminAliyaHistoryContent: React.FC = () => {
 
       // Sort by date
       if (sortNewestFirst) {
-        return b.lastAliyaDate.getTime() - a.lastAliyaDate.getTime();
+        return (
+          b.lastAliyaDate?.toGregorianDate()?.getTime() -
+          a.lastAliyaDate?.toGregorianDate()?.getTime()
+        );
       } else {
-        return a.lastAliyaDate.getTime() - b.lastAliyaDate.getTime();
+        return (
+          a.lastAliyaDate?.toGregorianDate()?.getTime() -
+          b.lastAliyaDate?.toGregorianDate()?.getTime()
+        );
       }
     });
   }, [prayerCards, aliyaGroups, aliyaGroupMap, aliyaTypeMap, sortNewestFirst]);
@@ -251,13 +237,28 @@ const AdminAliyaHistoryContent: React.FC = () => {
         }}
       >
         <Typography variant="h4">היסטוריית עליות לתורה</Typography>
-        <Button
-          variant="outlined"
-          startIcon={<SortIcon />}
-          onClick={() => setSortNewestFirst(!sortNewestFirst)}
-        >
-          {sortNewestFirst ? "החדש ביותר ראשון" : "הישן ביותר ראשון"}
-        </Button>
+        <Box sx={{ display: "flex", gap: 2 }}>
+          <Button
+            variant="contained"
+            startIcon={<PdfIcon />}
+            onClick={() =>
+              generateAliyaHistoryPdf(
+                prayerCards,
+                prayersWithHistory,
+                prayerEventTypes
+              )
+            }
+          >
+            ייצא ל-PDF
+          </Button>
+          <Button
+            variant="outlined"
+            startIcon={<SortIcon />}
+            onClick={() => setSortNewestFirst(!sortNewestFirst)}
+          >
+            {sortNewestFirst ? "החדש ביותר ראשון" : "הישן ביותר ראשון"}
+          </Button>
+        </Box>
       </Box>
 
       {/* Statistics Row */}
@@ -302,7 +303,7 @@ const AdminAliyaHistoryContent: React.FC = () => {
                   {statistics.totalAliyot}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  סה"כ עליות
+                  כמות עליות
                 </Typography>
               </Box>
             </Box>
@@ -388,8 +389,7 @@ const AdminAliyaHistoryContent: React.FC = () => {
                         >
                           <EventIcon fontSize="small" color="primary" />
                           <Typography variant="body2" fontWeight="bold">
-                            עליה אחרונה:{" "}
-                            {format(item.lastAliyaDate, "dd/MM/yyyy")}
+                            עליה אחרונה: {item.lastAliyaDate.toString()}
                           </Typography>
                           {item.daysSinceLastAliya !== null && (
                             <Chip

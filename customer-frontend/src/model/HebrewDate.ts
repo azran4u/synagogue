@@ -105,6 +105,15 @@ export class HebrewDate {
     }
   }
 
+  isAfter(other: HebrewDate): boolean {
+    if (this.year > other.year) return true;
+    if (this.year < other.year) return false;
+    if (this.month > other.month) return true;
+    if (this.month < other.month) return false;
+    if (this.day > other.day) return true;
+    return false;
+  }
+
   toString(): string {
     return this._hDate.renderGematriya();
   }
@@ -128,5 +137,27 @@ export class HebrewDate {
       throw new Error("Invalid HebrewDateDto " + JSON.stringify(obj));
     }
     return new HebrewDate(obj.year, obj.month, obj.day);
+  }
+
+  // Calculate age from this Hebrew birth date
+  calculateAge(): number {
+    const today = HebrewDate.now();
+
+    let age = today.year - this.year;
+
+    // If the birthday hasn't occurred this year yet, subtract 1
+    if (
+      today.month < this.month ||
+      (today.month === this.month && today.day < this.day)
+    ) {
+      age--;
+    }
+
+    return age;
+  }
+
+  // Check if this Hebrew date represents someone older than the given age
+  isOlderThan(minAge: number): boolean {
+    return this.calculateAge() >= minAge;
   }
 }
