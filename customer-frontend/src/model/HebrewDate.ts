@@ -1,4 +1,4 @@
-import { HDate } from "@hebcal/core";
+import { HDate, Sedra } from "@hebcal/core";
 
 export interface HebrewDateDto {
   year: number;
@@ -159,5 +159,40 @@ export class HebrewDate {
   // Check if this Hebrew date represents someone older than the given age
   isOlderThan(minAge: number): boolean {
     return this.calculateAge() >= minAge;
+  }
+
+  getParasha(): string {
+    try {
+      // Get the Gregorian date for this Hebrew date
+      const gregorianDate = this.toGregorianDate();
+
+      // Find the Shabbat in the same week (Saturday)
+      const dayOfWeek = gregorianDate.getDay(); // 0 = Sunday, 6 = Saturday
+      const daysToShabbat = (6 - dayOfWeek) % 7;
+      const shabbatDate = new Date(gregorianDate);
+      shabbatDate.setDate(gregorianDate.getDate() + daysToShabbat);
+
+      // Create HDate for the Shabbat
+      const shabbatHDate = new HDate(shabbatDate);
+
+      // Determine if the location follows the Israel reading schedule
+      const inIsrael = true; // Set to false for Diaspora readings
+
+      // Initialize the Sedra class for the Hebrew year
+      const sedra = new Sedra(shabbatHDate.getFullYear(), inIsrael);
+
+      // Get the parasha for that Shabbat in Hebrew
+      const parashaString = sedra.getString(shabbatHDate, "he");
+
+      if (parashaString && parashaString.trim() !== "") {
+        return parashaString;
+      }
+
+      // Fallback if no parasha found
+      return "אין פרשה";
+    } catch (error) {
+      console.error("Error calculating parasha:", error);
+      return "שגיאה בחישוב פרשה";
+    }
   }
 }

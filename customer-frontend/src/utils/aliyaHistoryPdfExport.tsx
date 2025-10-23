@@ -19,6 +19,25 @@ Font.register({
   fonts: [{ src: "/assets/fonts/NotoSansHebrew-Regular.ttf" }],
 });
 
+// Helper function to get parasha name for a Hebrew date
+const getParashaForHebrewDate = (hebrewDate: HebrewDate): string => {
+  // This is a simplified implementation - in a real app you'd use a proper parasha calculation library
+  // For now, we'll return a placeholder that shows the Hebrew date
+  return `${hebrewDate.getParasha()}`;
+};
+
+// Helper function to calculate weeks since a Hebrew date
+const getWeeksSinceHebrewDate = (hebrewDate: HebrewDate): number => {
+  const today = HebrewDate.now();
+  const gregorianToday = today.toGregorianDate();
+  const gregorianDate = hebrewDate.toGregorianDate();
+
+  const diffTime = gregorianToday.getTime() - gregorianDate.getTime();
+  const diffWeeks = Math.floor(diffTime / (1000 * 60 * 60 * 24 * 7));
+
+  return diffWeeks;
+};
+
 interface PrayerWithAliyaHistory {
   prayer: any; // Prayer type
   prayerCard: PrayerCard;
@@ -35,27 +54,27 @@ const styles = StyleSheet.create({
   page: {
     flexDirection: "column",
     backgroundColor: "#FFFFFF",
-    padding: 30,
+    padding: 20,
     fontFamily: "NotoSansHebrew",
     direction: "rtl",
   },
   title: {
-    fontSize: 18,
-    marginBottom: 20,
+    fontSize: 14,
+    marginBottom: 10,
     textAlign: "center",
     fontWeight: "bold",
     color: "#2c3e50",
   },
   subtitle: {
-    fontSize: 12,
-    marginBottom: 30,
+    fontSize: 9,
+    marginBottom: 15,
     textAlign: "center",
     color: "#7f8c8d",
   },
   sectionHeader: {
-    fontSize: 14,
-    marginBottom: 15,
-    marginTop: 20,
+    fontSize: 8,
+    marginBottom: 4,
+    marginTop: 6,
     fontWeight: "bold",
     color: "#34495e",
   },
@@ -64,28 +83,28 @@ const styles = StyleSheet.create({
     borderStyle: "solid",
     borderWidth: 1,
     borderColor: "#cccccc",
-    marginBottom: 20,
+    marginBottom: 8,
   },
   tableRow: {
     flexDirection: "row",
-    borderBottomWidth: 1,
+    borderBottomWidth: 0.5,
     borderBottomColor: "#cccccc",
     borderBottomStyle: "solid",
   },
   tableHeader: {
     backgroundColor: "#ecf0f1",
     fontWeight: "bold",
-    fontSize: 10,
+    fontSize: 6,
     color: "#2c3e50",
-    padding: 8,
+    padding: 2,
     flex: 1,
     textAlign: "center",
     direction: "rtl",
     fontFamily: "NotoSansHebrew",
   },
   tableCell: {
-    fontSize: 9,
-    padding: 8,
+    fontSize: 5,
+    padding: 2,
     flex: 1,
     textAlign: "center",
     color: "#34495e",
@@ -94,16 +113,21 @@ const styles = StyleSheet.create({
   },
   prayerNameCell: {
     backgroundColor: "#ecf0f1",
-    fontSize: 9,
-    padding: 8,
+    fontSize: 5,
+    padding: 2,
     flex: 2,
     textAlign: "center",
     color: "#34495e",
     direction: "rtl",
     fontFamily: "NotoSansHebrew",
   },
-  pageBreak: {
-    marginTop: 20,
+  tableContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 10,
+  },
+  tableHalf: {
+    width: "48%",
   },
 });
 
@@ -135,13 +159,13 @@ const AliyaHistoryPDF: React.FC<{
         <Text style={styles.title}>דוח היסטוריית עליות ואירועים קרובים</Text>
         <Text style={styles.subtitle}>נוצר ב {currentDate}</Text>
 
-        {/* Upcoming Events Section */}
+        {/* Upcoming Events Section - Full Width */}
         <Text style={styles.sectionHeader}>אירועים קרובים</Text>
         <View style={styles.table}>
           {/* Header Row */}
           <View style={styles.tableRow}>
             <Text style={styles.prayerNameCell}>שם המתפלל</Text>
-            <Text style={styles.tableHeader}>תאריך</Text>
+            <Text style={styles.tableHeader}>פרשה</Text>
             <Text style={styles.tableHeader}>סוג אירוע</Text>
             <Text style={styles.tableHeader}>גיל</Text>
             <Text style={styles.tableHeader}>הערות</Text>
@@ -154,7 +178,9 @@ const AliyaHistoryPDF: React.FC<{
                   ? `${item.prayer.fullName} בן של ${item.prayerCard.prayer.fullName}`
                   : item.prayer.fullName}
               </Text>
-              <Text style={styles.tableCell}>{item.hebrewDate.toString()}</Text>
+              <Text style={styles.tableCell}>
+                {getParashaForHebrewDate(item.hebrewDate)}
+              </Text>
               <Text style={styles.tableCell}>
                 {item.type === "birthday"
                   ? "יום הולדת"
@@ -170,46 +196,84 @@ const AliyaHistoryPDF: React.FC<{
           ))}
         </View>
 
-        {/* Page Break */}
-        <View style={styles.pageBreak} />
-
-        {/* Aliya History Section */}
+        {/* Aliya History Section - Split into Two Side by Side Tables */}
         <Text style={styles.sectionHeader}>היסטוריית עליות</Text>
-        <View style={styles.table}>
-          {/* Header Row */}
-          <View style={styles.tableRow}>
-            <Text style={styles.prayerNameCell}>שם המתפלל</Text>
-            <Text style={styles.tableHeader}>תאריך עלייה אחרונה</Text>
-            <Text style={styles.tableHeader}>ימים מאז</Text>
-            <Text style={styles.tableHeader}>כמות עליות</Text>
-            <Text style={styles.tableHeader}>סוג עלייה</Text>
-            <Text style={styles.tableHeader}>קבוצת עלייה</Text>
-          </View>
-          {/* Data Rows */}
-          {sortedPrayers.map((prayer, index) => (
-            <View key={index} style={styles.tableRow}>
-              <Text style={styles.prayerNameCell}>
-                {prayer.isChild
-                  ? `${prayer.prayer.fullName} בן של ${prayer.prayerCard.prayer.fullName}`
-                  : prayer.prayer.fullName}
-              </Text>
-              <Text style={styles.tableCell}>
-                {prayer.lastAliyaDate?.toString()}
-              </Text>
-              <Text style={styles.tableCell}>
-                {prayer.daysSinceLastAliya
-                  ? `${prayer.daysSinceLastAliya}`
-                  : "-"}
-              </Text>
-              <Text style={styles.tableCell}>{prayer.totalAliyot}</Text>
-              <Text style={styles.tableCell}>
-                {prayer.lastAliyaTypeName || "-"}
-              </Text>
-              <Text style={styles.tableCell}>
-                {prayer.lastAliyaGroupLabel || "-"}
-              </Text>
+        <View style={styles.tableContainer}>
+          {/* Left Aliya History Table */}
+          <View style={styles.tableHalf}>
+            <View style={styles.table}>
+              {/* Header Row */}
+              <View style={styles.tableRow}>
+                <Text style={styles.prayerNameCell}>שם המתפלל</Text>
+                <Text style={styles.tableHeader}>פרשה אחרונה</Text>
+                <Text style={styles.tableHeader}>שבועות מאז</Text>
+                <Text style={styles.tableHeader}>סוג עלייה</Text>
+              </View>
+              {/* Data Rows - First Half */}
+              {sortedPrayers
+                .slice(0, Math.ceil(sortedPrayers.length / 2))
+                .map((prayer, index) => (
+                  <View key={index} style={styles.tableRow}>
+                    <Text style={styles.prayerNameCell}>
+                      {prayer.isChild
+                        ? `${prayer.prayer.fullName} בן של ${prayer.prayerCard.prayer.fullName}`
+                        : prayer.prayer.fullName}
+                    </Text>
+                    <Text style={styles.tableCell}>
+                      {prayer.lastAliyaDate
+                        ? getParashaForHebrewDate(prayer.lastAliyaDate)
+                        : "אין עליות"}
+                    </Text>
+                    <Text style={styles.tableCell}>
+                      {prayer.lastAliyaDate
+                        ? `${getWeeksSinceHebrewDate(prayer.lastAliyaDate)}`
+                        : "-"}
+                    </Text>
+                    <Text style={styles.tableCell}>
+                      {prayer.lastAliyaTypeName || "-"}
+                    </Text>
+                  </View>
+                ))}
             </View>
-          ))}
+          </View>
+
+          {/* Right Aliya History Table */}
+          <View style={styles.tableHalf}>
+            <View style={styles.table}>
+              {/* Header Row */}
+              <View style={styles.tableRow}>
+                <Text style={styles.prayerNameCell}>שם המתפלל</Text>
+                <Text style={styles.tableHeader}>פרשה אחרונה</Text>
+                <Text style={styles.tableHeader}>שבועות מאז</Text>
+                <Text style={styles.tableHeader}>סוג עלייה</Text>
+              </View>
+              {/* Data Rows - Second Half */}
+              {sortedPrayers
+                .slice(Math.ceil(sortedPrayers.length / 2))
+                .map((prayer, index) => (
+                  <View key={index} style={styles.tableRow}>
+                    <Text style={styles.prayerNameCell}>
+                      {prayer.isChild
+                        ? `${prayer.prayer.fullName} בן של ${prayer.prayerCard.prayer.fullName}`
+                        : prayer.prayer.fullName}
+                    </Text>
+                    <Text style={styles.tableCell}>
+                      {prayer.lastAliyaDate
+                        ? getParashaForHebrewDate(prayer.lastAliyaDate)
+                        : "אין עליות"}
+                    </Text>
+                    <Text style={styles.tableCell}>
+                      {prayer.lastAliyaDate
+                        ? `${getWeeksSinceHebrewDate(prayer.lastAliyaDate)}`
+                        : "-"}
+                    </Text>
+                    <Text style={styles.tableCell}>
+                      {prayer.lastAliyaTypeName || "-"}
+                    </Text>
+                  </View>
+                ))}
+            </View>
+          </View>
         </View>
       </Page>
     </Document>
