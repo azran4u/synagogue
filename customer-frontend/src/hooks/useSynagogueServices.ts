@@ -10,6 +10,11 @@ import {
 } from "../model/PrayerEventType";
 import { aliyaTypeMapper, AliyaType, AliyaTypeDto } from "../model/AliyaType";
 import {
+  aliyaTypeCategoryMapper,
+  AliyaTypeCategory,
+  AliyaTypeCategoryDto,
+} from "../model/AliyaTypeCategory";
+import {
   aliyaGroupMapper,
   AliyaGroup,
   AliyaGroupDto,
@@ -39,6 +44,10 @@ interface SynagogueServices {
     PrayerEventTypeDto
   > | null;
   aliyaTypeService: GenericService<AliyaType, AliyaTypeDto> | null;
+  aliyaTypeCategoryService: GenericService<
+    AliyaTypeCategory,
+    AliyaTypeCategoryDto
+  > | null;
   aliyaGroupService: GenericService<AliyaGroup, AliyaGroupDto> | null;
   gabaimService: GenericService<Admin, AdminDto> | null;
   prayerTimesService: GenericService<PrayerTimes, PrayerTimesDto> | null;
@@ -58,6 +67,7 @@ export function useSynagogueServices(): SynagogueServices {
         prayerCardService: null,
         prayerEventTypeService: null,
         aliyaTypeService: null,
+        aliyaTypeCategoryService: null,
         aliyaGroupService: null,
         gabaimService: null,
         prayerTimesService: null,
@@ -80,6 +90,11 @@ export function useSynagogueServices(): SynagogueServices {
       aliyaTypeService: new GenericService(
         "aliyaTypes",
         aliyaTypeMapper,
+        synagogueId
+      ),
+      aliyaTypeCategoryService: new GenericService(
+        "aliyaTypeCategories",
+        aliyaTypeCategoryMapper,
         synagogueId
       ),
       aliyaGroupService: new GenericService(

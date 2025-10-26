@@ -13,6 +13,7 @@ import SynagogueHomePage from "./pages/SynagogueHomePage";
 import PrayerCardPage from "./pages/PrayerCardPage";
 import AdminPrayerEventTypesPage from "./pages/AdminPrayerEventTypesPage";
 import AdminAliyaTypesPage from "./pages/AdminAliyaTypesPage";
+import AdminAliyaTypeCategoriesPage from "./pages/AdminAliyaTypeCategoriesPage";
 import AdminAliyaAssignmentPage from "./pages/AdminAliyaAssignmentPage";
 import AdminAliyaHistoryPage from "./pages/AdminAliyaHistoryPage";
 import AdminPrayerCardsPage from "./pages/AdminPrayerCardsPage";
@@ -84,6 +85,10 @@ export const App: React.FC = () => {
                           <Route
                             path="/:synagogueId/admin/aliya-types"
                             element={<AdminAliyaTypesPage />}
+                          />
+                          <Route
+                            path="/:synagogueId/admin/aliya-type-categories"
+                            element={<AdminAliyaTypeCategoriesPage />}
                           />
                           <Route
                             path="/:synagogueId/admin/aliya-assignment"

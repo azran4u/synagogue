@@ -26,6 +26,7 @@ import {
   BugReport as FrontendErrorsIcon,
   HolidayVillage as SynagogueIcon,
   AccountBalanceWallet as DonationsManagementIcon,
+  Category as CategoryIcon,
 } from "@mui/icons-material";
 import { Logo } from "./Logo";
 import { WithLogin } from "./WithLogin";
@@ -188,6 +189,11 @@ export const AppSideBar: React.FC<AppSideBarProps> = ({
                 text="ניהול סוגי עליות"
                 onClick={() => handleClick("admin/aliya-types")}
                 icon={<AliyaTypesIcon />}
+              />
+              <SidebarItem
+                text="ניהול קטגוריות עליות"
+                onClick={() => handleClick("admin/aliya-type-categories")}
+                icon={<CategoryIcon />}
               />
               <SidebarItem
                 text="ניהול זמני תפילות"

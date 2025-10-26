@@ -17,6 +17,8 @@ import {
   Chip,
   Switch,
   FormControlLabel,
+  Autocomplete,
+  MenuItem,
 } from "@mui/material";
 import {
   Add as AddIcon,
@@ -34,6 +36,7 @@ import {
   useDeleteAliyaType,
   useUpdateAliyaType,
 } from "../hooks/useAliyaTypes";
+import { useAliyaTypeCategories } from "../hooks/useAliyaTypeCategories";
 import { useUser } from "../hooks/useUser";
 import { useSynagogueNavigate } from "../hooks/useSynagogueNavigate";
 
@@ -75,6 +78,7 @@ const AdminAliyaTypesContent = () => {
 
   // Data fetching
   const { data: aliyaTypes, isLoading, error } = useAliyaTypes();
+  const { data: categories } = useAliyaTypeCategories();
 
   // Mutations
   const createMutation = useCreateAliyaType();
