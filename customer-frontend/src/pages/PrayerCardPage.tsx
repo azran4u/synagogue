@@ -29,6 +29,7 @@ import { useSynagogueNavigate } from "../hooks/useSynagogueNavigate";
 import { PrayerCardEditDialog } from "../components/PrayerCardEditDialog";
 import { useSelectedSynagogue } from "../hooks/useSynagogueId";
 import { formatCurrency } from "../utils/donationStats";
+import { WithLogin } from "../components/WithLogin";
 
 const PrayerCardContent: React.FC = () => {
   const { data: prayerCard, isLoading } = usePrayerCard();
@@ -1089,8 +1090,8 @@ const PrayerCardContent: React.FC = () => {
 
 export default () => {
   return (
-    // <WithLogin>
-    <PrayerCardContent />
-    // </WithLogin>
+    <WithLogin>
+      <PrayerCardContent />
+    </WithLogin>
   );
 };
