@@ -30,6 +30,19 @@ import FinancialReportsPage from "./pages/FinancialReportsPage";
 import DonationsPage from "./pages/DonationsPage";
 import { FrontendErrorServiceProvider } from "./components/FrontendErrorServiceProvider";
 import { SynagogueThemeProvider } from "./components/SynagogueThemeProvider";
+import { useEffect } from "react";
+import { useSelectedSynagogue } from "./hooks/useSynagogueId";
+
+const DocumentTitleUpdater: React.FC = () => {
+  const { data: synagogue } = useSelectedSynagogue();
+
+  useEffect(() => {
+    const defaultTitle = "אפליקציה לניהול בית כנסת";
+    document.title = synagogue?.name || defaultTitle;
+  }, [synagogue?.name]);
+
+  return null;
+};
 
 export const App: React.FC = () => {
   return (
@@ -43,6 +56,7 @@ export const App: React.FC = () => {
       >
         <Router>
           <SynagogueProvider>
+            <DocumentTitleUpdater />
             <SynagogueThemeProvider>
               <FrontendErrorServiceProvider>
                 <Sidebar />
