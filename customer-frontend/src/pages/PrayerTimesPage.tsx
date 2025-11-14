@@ -16,10 +16,9 @@ import { HebrewDate } from "../model/HebrewDate";
 
 const PrayerTimesPage: React.FC = () => {
   const { data: prayerTimesList, isLoading, error } = useEnabledPrayerTimes();
-  const getTitleWithParasha = (prayerTimes: PrayerTimes) => {
-    if (!prayerTimes.showParashaInTitle) return prayerTimes.title;
+  const getParashaLabel = () => {
     const parashaName = HebrewDate.now().getParasha();
-    return `${prayerTimes.title} - ${parashaName}`;
+    return parashaName;
   };
 
   if (isLoading) {
@@ -78,9 +77,18 @@ const PrayerTimesPage: React.FC = () => {
               <Card key={prayerTimes.id} elevation={2}>
                 <CardContent>
                   {/* Prayer Times Title */}
-                  <Typography variant="h5" sx={{ mb: 2, textAlign: "center" }}>
-                    {getTitleWithParasha(prayerTimes)}
-                  </Typography>
+                  <Box sx={{ textAlign: "center", mb: 2 }}>
+                    <Typography variant="h5">{prayerTimes.title}</Typography>
+                    {prayerTimes.showParashaInTitle && (
+                      <Typography
+                        variant="subtitle1"
+                        color="text.secondary"
+                        sx={{ mt: 0.5 }}
+                      >
+                        {getParashaLabel()}
+                      </Typography>
+                    )}
+                  </Box>
 
                   {prayerTimes.notes && (
                     <Typography
