@@ -105,6 +105,7 @@ const AdminPrayerTimesContent: React.FC = () => {
           enabled: values.enabled,
           notes: values.notes || undefined,
           sections: sectionsData,
+          showParashaInTitle: values.showParashaInTitle,
         });
         await updateMutation.mutateAsync(updated);
       } else {
@@ -113,7 +114,8 @@ const AdminPrayerTimesContent: React.FC = () => {
           values.title,
           values.displayOrder,
           values.notes || undefined,
-          sectionsData
+          sectionsData,
+          values.showParashaInTitle
         );
         await createMutation.mutateAsync(newPrayerTimes);
       }

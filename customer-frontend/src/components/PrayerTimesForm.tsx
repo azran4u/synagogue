@@ -11,6 +11,7 @@ import {
   Divider,
   FormControlLabel,
   Switch,
+  FormHelperText,
 } from "@mui/material";
 import { Add as AddIcon, Delete as DeleteIcon } from "@mui/icons-material";
 import { Formik, Form, FormikHelpers, FieldArray } from "formik";
@@ -21,6 +22,7 @@ export interface PrayerTimesFormValues {
   title: string;
   displayOrder: number;
   enabled: boolean;
+  showParashaInTitle: boolean;
   notes: string;
   sections: Array<{
     title: string;
@@ -41,6 +43,7 @@ export const prayerTimesValidationSchema = Yup.object({
   title: Yup.string().required("כותרת נדרשת"),
   displayOrder: Yup.number().required("סדר תצוגה נדרש"),
   enabled: Yup.boolean().required(),
+  showParashaInTitle: Yup.boolean().required(),
   notes: Yup.string(),
   sections: Yup.array()
     .of(
@@ -73,6 +76,7 @@ export const getInitialFormValues = (
       title: "",
       displayOrder: 0,
       enabled: true,
+      showParashaInTitle: false,
       notes: "",
       sections: [
         {
@@ -98,6 +102,7 @@ export const getInitialFormValues = (
     title: prayerTimes.title,
     displayOrder: prayerTimes.displayOrder,
     enabled: prayerTimes.enabled,
+    showParashaInTitle: prayerTimes.showParashaInTitle,
     notes: prayerTimes.notes || "",
     sections: prayerTimes.sections.map(section => ({
       title: section.title,
@@ -189,6 +194,21 @@ export const PrayerTimesForm: React.FC<PrayerTimesFormProps> = ({
                 }
                 label="לוח זמנים פעיל"
               />
+              <Box>
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={values.showParashaInTitle}
+                      onChange={handleChange}
+                      name="showParashaInTitle"
+                    />
+                  }
+                  label="הצג פרשת השבוע בכותרת"
+                />
+                <FormHelperText>
+                  כאשר אפשרות זו פעילה, שם הפרשה השבועית יוצג בסוף הכותרת.
+                </FormHelperText>
+              </Box>
             </Box>
 
             <TextField

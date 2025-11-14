@@ -12,9 +12,15 @@ import {
 import { AccessTime as TimeIcon } from "@mui/icons-material";
 import { useEnabledPrayerTimes } from "../hooks/usePrayerTimes";
 import { PrayerTimes, PrayerTimeSectionEntry } from "../model/PrayerTimes";
+import { HebrewDate } from "../model/HebrewDate";
 
 const PrayerTimesPage: React.FC = () => {
   const { data: prayerTimesList, isLoading, error } = useEnabledPrayerTimes();
+  const getTitleWithParasha = (prayerTimes: PrayerTimes) => {
+    if (!prayerTimes.showParashaInTitle) return prayerTimes.title;
+    const parashaName = HebrewDate.now().getParasha();
+    return `${prayerTimes.title} - ${parashaName}`;
+  };
 
   if (isLoading) {
     return (
@@ -73,7 +79,7 @@ const PrayerTimesPage: React.FC = () => {
                 <CardContent>
                   {/* Prayer Times Title */}
                   <Typography variant="h5" sx={{ mb: 2, textAlign: "center" }}>
-                    {prayerTimes.title}
+                    {getTitleWithParasha(prayerTimes)}
                   </Typography>
 
                   {prayerTimes.notes && (

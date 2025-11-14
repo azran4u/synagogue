@@ -25,6 +25,7 @@ export interface PrayerTimesDto {
   enabled: boolean;
   notes?: string;
   sections: PrayerTimeSectionEntry[];
+  showParashaInTitle?: boolean;
   createdAt: number;
   updatedAt: number;
 }
@@ -36,6 +37,7 @@ export class PrayerTimes {
   public enabled: boolean;
   public notes?: string;
   public sections: PrayerTimeSectionEntry[];
+  public showParashaInTitle: boolean;
   public createdAt: Date;
   public updatedAt: Date;
 
@@ -46,6 +48,7 @@ export class PrayerTimes {
     enabled: boolean = true,
     notes?: string,
     sections: PrayerTimeSectionEntry[] = [],
+    showParashaInTitle: boolean = false,
     createdAt: Date = new Date(),
     updatedAt: Date = new Date()
   ) {
@@ -55,6 +58,7 @@ export class PrayerTimes {
     this.enabled = enabled;
     this.notes = notes;
     this.sections = sections;
+    this.showParashaInTitle = showParashaInTitle;
     this.createdAt = createdAt;
     this.updatedAt = updatedAt;
   }
@@ -68,6 +72,7 @@ export class PrayerTimes {
       enabled: this.enabled,
       notes: this.notes,
       sections: this.sections,
+      showParashaInTitle: this.showParashaInTitle,
       createdAt: this.createdAt.getTime(),
       updatedAt: this.updatedAt.getTime(),
     };
@@ -82,6 +87,7 @@ export class PrayerTimes {
       dto.enabled,
       dto.notes,
       dto.sections || [],
+      dto.showParashaInTitle ?? false,
       new Date(dto.createdAt),
       new Date(dto.updatedAt)
     );
@@ -92,7 +98,8 @@ export class PrayerTimes {
     title: string,
     displayOrder?: number,
     notes?: string,
-    sections?: PrayerTimeSectionEntry[]
+    sections?: PrayerTimeSectionEntry[],
+    showParashaInTitle: boolean = false
   ): PrayerTimes {
     return new PrayerTimes(
       uuidv4(),
@@ -101,6 +108,7 @@ export class PrayerTimes {
       true,
       notes,
       sections ?? [],
+      showParashaInTitle,
       new Date(),
       new Date()
     );
@@ -115,6 +123,7 @@ export class PrayerTimes {
       updates.enabled ?? this.enabled,
       updates.notes ?? this.notes,
       updates.sections ?? this.sections,
+      updates.showParashaInTitle ?? this.showParashaInTitle,
       this.createdAt,
       new Date() // updatedAt
     );
@@ -179,6 +188,7 @@ export class PrayerTimes {
       this.enabled,
       this.notes,
       [...this.sections],
+      this.showParashaInTitle,
       new Date(this.createdAt),
       new Date(this.updatedAt)
     );
