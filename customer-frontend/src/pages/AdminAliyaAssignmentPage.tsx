@@ -42,7 +42,6 @@ import { AliyaGroup } from "../model/AliyaGroup";
 import { useAliyaTypes } from "../hooks/useAliyaTypes";
 import { useAliyaGroups } from "../hooks/useAliyaGroups";
 import {
-  useCreateAliyaGroup,
   useUpdateAliyaGroup,
   useDeleteAliyaGroup,
 } from "../hooks/useAliyaGroups";
@@ -52,6 +51,11 @@ import { useSynagogueNavigate } from "../hooks/useSynagogueNavigate";
 import { HebrewDateSelector } from "../components/HebrewDateSelector";
 import { HebrewDate } from "../model/HebrewDate";
 import { useUpdatePrayerCard } from "../hooks/usePrayerCard";
+import {
+  CreateAliyaGroupDialog,
+  AliyaGroupFormValues,
+  aliyaGroupValidationSchema,
+} from "../components/CreateAliyaGroupDialog";
 
 interface AliyaAssignmentFormValues {
   aliyaGroupId: string;
@@ -61,11 +65,6 @@ interface AliyaAssignmentFormValues {
 
 interface AliyaReassignmentFormValues {
   assignedPrayerId: string;
-}
-
-interface AliyaGroupFormValues {
-  label: string;
-  hebrewDate: HebrewDate | null;
 }
 
 interface EditGroupFormValues {
@@ -81,11 +80,6 @@ const aliyaAssignmentValidationSchema = Yup.object({
 
 const reassignmentValidationSchema = Yup.object({
   assignedPrayerId: Yup.string().required("מתפלל נדרש"),
-});
-
-const aliyaGroupValidationSchema = Yup.object({
-  label: Yup.string().required("תווית קבוצה נדרשת"),
-  hebrewDate: Yup.object().required("תאריך עברי נדרש"),
 });
 
 const editGroupValidationSchema = Yup.object({
@@ -141,7 +135,6 @@ const AdminAliyaAssignmentContent = () => {
   const { data: prayerCards, isLoading: prayerCardsLoading } =
     useAllPrayerCards();
   const updatePrayerCardMutation = useUpdatePrayerCard();
-  const createAliyaGroupMutation = useCreateAliyaGroup();
   const updateAliyaGroupMutation = useUpdateAliyaGroup();
   const deleteAliyaGroupMutation = useDeleteAliyaGroup();
 
@@ -154,11 +147,6 @@ const AdminAliyaAssignmentContent = () => {
 
   const initialReassignmentFormValues: AliyaReassignmentFormValues = {
     assignedPrayerId: "",
-  };
-
-  const initialAliyaGroupFormValues: AliyaGroupFormValues = {
-    label: "",
-    hebrewDate: null,
   };
 
   const initialEditGroupFormValues: EditGroupFormValues = {
@@ -569,21 +557,6 @@ const AdminAliyaAssignmentContent = () => {
 
   const handleToggleGroupExpansion = (groupId: string) => {
     setExpandedGroupId(expandedGroupId === groupId ? null : groupId);
-  };
-
-  const handleCreateAliyaGroup = async (
-    values: AliyaGroupFormValues,
-    { setSubmitting }: FormikHelpers<AliyaGroupFormValues>
-  ) => {
-    try {
-      const newGroup = AliyaGroup.create(values.label, values.hebrewDate!);
-      await createAliyaGroupMutation.mutateAsync(newGroup);
-      setShowCreateGroupDialog(false);
-      setSubmitting(false);
-    } catch (error) {
-      console.error("Error creating aliya group:", error);
-      setSubmitting(false);
-    }
   };
 
   const handleUpdateAliyaGroup = async (
@@ -2052,72 +2025,10 @@ const AdminAliyaAssignmentContent = () => {
       </Dialog>
 
       {/* Create Aliya Group Dialog */}
-      <Dialog
+      <CreateAliyaGroupDialog
         open={showCreateGroupDialog}
         onClose={() => setShowCreateGroupDialog(false)}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogTitle>הוסף קבוצת עליות חדשה</DialogTitle>
-        <DialogContent>
-          <Formik
-            initialValues={initialAliyaGroupFormValues}
-            validationSchema={aliyaGroupValidationSchema}
-            onSubmit={handleCreateAliyaGroup}
-          >
-            {({
-              values,
-              errors,
-              touched,
-              handleChange,
-              handleBlur,
-              setFieldValue,
-              isSubmitting,
-            }) => (
-              <Form>
-                <Stack spacing={3} sx={{ mt: 1 }}>
-                  <TextField
-                    name="label"
-                    label="תווית קבוצה"
-                    value={values.label}
-                    onChange={handleChange}
-                    onBlur={handleBlur}
-                    error={touched.label && Boolean(errors.label)}
-                    helperText={touched.label && errors.label}
-                    fullWidth
-                  />
-
-                  <HebrewDateSelector
-                    value={values.hebrewDate}
-                    onChange={date => setFieldValue("hebrewDate", date)}
-                    label="תאריך עברי"
-                  />
-                </Stack>
-
-                <DialogActions>
-                  <Button
-                    type="button"
-                    onClick={() => setShowCreateGroupDialog(false)}
-                  >
-                    ביטול
-                  </Button>
-                  <Button
-                    type="submit"
-                    variant="contained"
-                    disabled={
-                      isSubmitting || createAliyaGroupMutation.isPending
-                    }
-                  >
-                    {isSubmitting || createAliyaGroupMutation.isPending
-                      ? "יוצר..."
-                      : "צור קבוצה"}
-                  </Button>
-                </DialogActions>
-              </Form>
-            )}
-          </Formik>
-        </DialogContent>
-      </Dialog>
+      />
 
       {/* Edit Group Details Dialog */}
       <Dialog
