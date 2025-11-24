@@ -13,7 +13,10 @@ import * as Yup from "yup";
 import { AliyaGroup } from "../model/AliyaGroup";
 import { HebrewDate } from "../model/HebrewDate";
 import { HebrewDateSelector } from "./HebrewDateSelector";
-import { useCreateAliyaGroup } from "../hooks/useAliyaGroups";
+import {
+  useCreateAliyaGroup,
+  useUpdateAliyaGroup,
+} from "../hooks/useAliyaGroups";
 
 export interface AliyaGroupFormValues {
   label: string;
@@ -25,48 +28,80 @@ export const aliyaGroupValidationSchema = Yup.object({
   hebrewDate: Yup.object().required("תאריך עברי נדרש"),
 });
 
+const getInitialFormValues = (
+  aliyaGroup?: AliyaGroup | null
+): AliyaGroupFormValues => {
+  if (aliyaGroup) {
+    return {
+      label: aliyaGroup.label,
+      hebrewDate: aliyaGroup.hebrewDate,
+    };
+  }
+
+  return {
+    label: "",
+    hebrewDate: null,
+  };
+};
+
 interface CreateAliyaGroupDialogProps {
   open: boolean;
   onClose: () => void;
   onSuccess?: () => void;
+  aliyaGroup?: AliyaGroup | null;
 }
 
 export const CreateAliyaGroupDialog: React.FC<CreateAliyaGroupDialogProps> = ({
   open,
   onClose,
   onSuccess,
+  aliyaGroup,
 }) => {
   const createAliyaGroupMutation = useCreateAliyaGroup();
+  const updateAliyaGroupMutation = useUpdateAliyaGroup();
 
-  const initialFormValues: AliyaGroupFormValues = {
-    label: "",
-    hebrewDate: null,
-  };
+  const isEditMode = !!aliyaGroup;
 
   const handleSubmit = async (
     values: AliyaGroupFormValues,
     { setSubmitting }: FormikHelpers<AliyaGroupFormValues>
   ) => {
     try {
-      const newGroup = AliyaGroup.create(values.label, values.hebrewDate!);
-      await createAliyaGroupMutation.mutateAsync(newGroup);
+      if (isEditMode && aliyaGroup) {
+        // Edit mode
+        const updatedGroup = aliyaGroup.update({
+          label: values.label,
+          hebrewDate: values.hebrewDate!,
+        });
+        await updateAliyaGroupMutation.mutateAsync(updatedGroup);
+      } else {
+        // Create mode
+        const newGroup = AliyaGroup.create(values.label, values.hebrewDate!);
+        await createAliyaGroupMutation.mutateAsync(newGroup);
+      }
       onClose();
       onSuccess?.();
       setSubmitting(false);
     } catch (error) {
-      console.error("Error creating aliya group:", error);
+      console.error(
+        `Error ${isEditMode ? "updating" : "creating"} aliya group:`,
+        error
+      );
       setSubmitting(false);
     }
   };
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle>הוסף קבוצת עליות חדשה</DialogTitle>
+      <DialogTitle>
+        {isEditMode ? "ערוך פרטי קבוצה" : "הוסף קבוצת עליות חדשה"}
+      </DialogTitle>
       <DialogContent>
         <Formik
-          initialValues={initialFormValues}
+          initialValues={getInitialFormValues(aliyaGroup)}
           validationSchema={aliyaGroupValidationSchema}
           onSubmit={handleSubmit}
+          enableReinitialize
         >
           {({
             values,
@@ -104,11 +139,23 @@ export const CreateAliyaGroupDialog: React.FC<CreateAliyaGroupDialogProps> = ({
                 <Button
                   type="submit"
                   variant="contained"
-                  disabled={isSubmitting || createAliyaGroupMutation.isPending}
+                  disabled={
+                    isSubmitting ||
+                    (isEditMode
+                      ? updateAliyaGroupMutation.isPending
+                      : createAliyaGroupMutation.isPending)
+                  }
                 >
-                  {isSubmitting || createAliyaGroupMutation.isPending
-                    ? "יוצר..."
-                    : "צור קבוצה"}
+                  {isSubmitting ||
+                  (isEditMode
+                    ? updateAliyaGroupMutation.isPending
+                    : createAliyaGroupMutation.isPending)
+                    ? isEditMode
+                      ? "מעדכן..."
+                      : "יוצר..."
+                    : isEditMode
+                      ? "עדכן קבוצה"
+                      : "צור קבוצה"}
                 </Button>
               </DialogActions>
             </Form>

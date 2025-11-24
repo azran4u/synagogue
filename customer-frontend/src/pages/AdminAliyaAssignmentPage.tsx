@@ -41,10 +41,7 @@ import { PrayerCard } from "../model/Prayer";
 import { AliyaGroup } from "../model/AliyaGroup";
 import { useAliyaTypes } from "../hooks/useAliyaTypes";
 import { useAliyaGroups } from "../hooks/useAliyaGroups";
-import {
-  useUpdateAliyaGroup,
-  useDeleteAliyaGroup,
-} from "../hooks/useAliyaGroups";
+import { useDeleteAliyaGroup } from "../hooks/useAliyaGroups";
 import { useAllPrayerCards } from "../hooks/usePrayerCard";
 import { useUser } from "../hooks/useUser";
 import { useSynagogueNavigate } from "../hooks/useSynagogueNavigate";
@@ -135,7 +132,6 @@ const AdminAliyaAssignmentContent = () => {
   const { data: prayerCards, isLoading: prayerCardsLoading } =
     useAllPrayerCards();
   const updatePrayerCardMutation = useUpdatePrayerCard();
-  const updateAliyaGroupMutation = useUpdateAliyaGroup();
   const deleteAliyaGroupMutation = useDeleteAliyaGroup();
 
   // Initial form values
@@ -557,27 +553,6 @@ const AdminAliyaAssignmentContent = () => {
 
   const handleToggleGroupExpansion = (groupId: string) => {
     setExpandedGroupId(expandedGroupId === groupId ? null : groupId);
-  };
-
-  const handleUpdateAliyaGroup = async (
-    values: AliyaGroupFormValues,
-    { setSubmitting }: FormikHelpers<AliyaGroupFormValues>
-  ) => {
-    if (!editingGroup) return;
-
-    try {
-      const updatedGroup = editingGroup.update({
-        label: values.label,
-        hebrewDate: values.hebrewDate!,
-      });
-      await updateAliyaGroupMutation.mutateAsync(updatedGroup);
-      setShowEditGroupDetailsDialog(false);
-      setEditingGroup(null);
-      setSubmitting(false);
-    } catch (error) {
-      console.error("Error updating aliya group:", error);
-      setSubmitting(false);
-    }
   };
 
   const handleDeleteAliyaGroup = async (group: AliyaGroup) => {
@@ -2031,77 +2006,14 @@ const AdminAliyaAssignmentContent = () => {
       />
 
       {/* Edit Group Details Dialog */}
-      <Dialog
+      <CreateAliyaGroupDialog
         open={showEditGroupDetailsDialog}
-        onClose={() => setShowEditGroupDetailsDialog(false)}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogTitle>ערוך פרטי קבוצה</DialogTitle>
-        <DialogContent>
-          {editingGroup && (
-            <Formik<AliyaGroupFormValues>
-              initialValues={{
-                label: editingGroup.label,
-                hebrewDate: editingGroup.hebrewDate,
-              }}
-              validationSchema={aliyaGroupValidationSchema}
-              onSubmit={handleUpdateAliyaGroup}
-            >
-              {({
-                values,
-                errors,
-                touched,
-                handleChange,
-                handleBlur,
-                setFieldValue,
-                isSubmitting,
-              }) => (
-                <Form>
-                  <Stack spacing={3} sx={{ mt: 1 }}>
-                    <TextField
-                      name="label"
-                      label="תווית קבוצה"
-                      value={values.label}
-                      onChange={handleChange}
-                      onBlur={handleBlur}
-                      error={touched.label && Boolean(errors.label)}
-                      helperText={touched.label && errors.label}
-                      fullWidth
-                    />
-
-                    <HebrewDateSelector
-                      value={values.hebrewDate}
-                      onChange={date => setFieldValue("hebrewDate", date)}
-                      label="תאריך עברי"
-                    />
-                  </Stack>
-
-                  <DialogActions>
-                    <Button
-                      type="button"
-                      onClick={() => setShowEditGroupDetailsDialog(false)}
-                    >
-                      ביטול
-                    </Button>
-                    <Button
-                      type="submit"
-                      variant="contained"
-                      disabled={
-                        isSubmitting || updateAliyaGroupMutation.isPending
-                      }
-                    >
-                      {isSubmitting || updateAliyaGroupMutation.isPending
-                        ? "מעדכן..."
-                        : "עדכן קבוצה"}
-                    </Button>
-                  </DialogActions>
-                </Form>
-              )}
-            </Formik>
-          )}
-        </DialogContent>
-      </Dialog>
+        onClose={() => {
+          setShowEditGroupDetailsDialog(false);
+          setEditingGroup(null);
+        }}
+        aliyaGroup={editingGroup}
+      />
     </Box>
   );
 };
