@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import {
   Box,
   Card,
@@ -26,7 +26,6 @@ import {
   Person as PersonIcon,
   ChildCare as ChildIcon,
   CalendarToday as CalendarIcon,
-  Search as SearchIcon,
 } from "@mui/icons-material";
 import { Formik, Form, FormikHelpers } from "formik";
 import * as Yup from "yup";
@@ -41,29 +40,17 @@ import { useDeleteAliyaGroup } from "../hooks/useAliyaGroups";
 import { useAllPrayerCards } from "../hooks/usePrayerCard";
 import { useUser } from "../hooks/useUser";
 import { useSynagogueNavigate } from "../hooks/useSynagogueNavigate";
-import { HebrewDateSelector } from "../components/HebrewDateSelector";
-import { HebrewDate } from "../model/HebrewDate";
 import { useUpdatePrayerCard } from "../hooks/usePrayerCard";
-import {
-  CreateAliyaGroupDialog,
-  AliyaGroupFormValues,
-  aliyaGroupValidationSchema,
-} from "../components/CreateAliyaGroupDialog";
-
-interface AliyaReassignmentFormValues {
-  assignedPrayerId: string;
-}
+import { CreateAliyaGroupDialog } from "../components/CreateAliyaGroupDialog";
 
 interface EditGroupFormValues {
+  aliyaGroupId: string;
   assignments: Record<string, string>; // aliyaTypeId -> assignedPrayerId
   deletions: string[]; // aliyaTypeIds to delete from database
 }
 
-const reassignmentValidationSchema = Yup.object({
-  assignedPrayerId: Yup.string().required("מתפלל נדרש"),
-});
-
 const editGroupValidationSchema = Yup.object({
+  aliyaGroupId: Yup.string().required("קבוצת עליות נדרשת"),
   assignments: Yup.object(),
   deletions: Yup.array(),
 });
@@ -84,16 +71,10 @@ const AdminAliyaAssignmentContent = () => {
   const { isGabaiOrHigher } = useUser();
 
   // State for dialogs
-  const [showReassignDialog, setShowReassignDialog] = useState(false);
   const [showEditGroupDialog, setShowEditGroupDialog] = useState(false);
   const [showCreateGroupDialog, setShowCreateGroupDialog] = useState(false);
   const [showEditGroupDetailsDialog, setShowEditGroupDetailsDialog] =
     useState(false);
-  const [editingAliya, setEditingAliya] = useState<{
-    aliya: AliyaEvent;
-    prayer: Prayer;
-    prayerCard: PrayerCard;
-  } | null>(null);
   const [editingGroup, setEditingGroup] = useState<AliyaGroup | null>(null);
   const [expandedGroupId, setExpandedGroupId] = useState<string | null>(null);
   const [showPrayerSelectionDialog, setShowPrayerSelectionDialog] =
@@ -114,13 +95,22 @@ const AdminAliyaAssignmentContent = () => {
   const deleteAliyaGroupMutation = useDeleteAliyaGroup();
 
   // Initial form values
-  const initialReassignmentFormValues: AliyaReassignmentFormValues = {
-    assignedPrayerId: "",
-  };
+  const getInitialEditGroupFormValues = (
+    editingGroup: AliyaGroup | null
+  ): EditGroupFormValues => {
+    if (!editingGroup) {
+      return {
+        aliyaGroupId: "",
+        assignments: {},
+        deletions: [],
+      };
+    }
 
-  const initialEditGroupFormValues: EditGroupFormValues = {
-    assignments: {},
-    deletions: [],
+    return {
+      aliyaGroupId: editingGroup.id,
+      assignments: {},
+      deletions: [],
+    };
   };
 
   // Get all prayers (adults and children) from all prayer cards
@@ -235,104 +225,6 @@ const AdminAliyaAssignmentContent = () => {
   }, [aliyaGroups, allAliyot]);
 
   // Handlers
-  const handleReassignAliya = async (
-    values: AliyaReassignmentFormValues,
-    { setSubmitting }: FormikHelpers<AliyaReassignmentFormValues>
-  ) => {
-    if (!editingAliya) return;
-
-    try {
-      // Find the target prayer card
-      const targetPrayerCard = prayerCards?.find(
-        card =>
-          card.prayer.id === values.assignedPrayerId ||
-          card.children.some(child => child.id === values.assignedPrayerId)
-      );
-
-      if (!targetPrayerCard) {
-        throw new Error(
-          `Prayer card not found for prayer ${values.assignedPrayerId}`
-        );
-      }
-
-      // Remove aliya from current prayer
-      let updatedCurrentPrayerCard = editingAliya.prayerCard;
-      if (editingAliya.prayerCard.prayer.id === editingAliya.prayer.id) {
-        // Remove from main prayer
-        const updatedPrayer = editingAliya.prayer.update({
-          aliyot: editingAliya.prayer.aliyot.filter(
-            a => a !== editingAliya.aliya
-          ),
-        });
-        updatedCurrentPrayerCard = new PrayerCard(
-          editingAliya.prayerCard.id,
-          updatedPrayer,
-          editingAliya.prayerCard.children
-        );
-      } else {
-        // Remove from child
-        const updatedChildren = editingAliya.prayerCard.children.map(child => {
-          if (child.id === editingAliya.prayer.id) {
-            return child.update({
-              aliyot: child.aliyot.filter(a => a !== editingAliya.aliya),
-            });
-          }
-          return child;
-        });
-        updatedCurrentPrayerCard = new PrayerCard(
-          editingAliya.prayerCard.id,
-          editingAliya.prayerCard.prayer,
-          updatedChildren
-        );
-      }
-
-      // Add aliya to new prayer
-      let updatedTargetPrayerCard = targetPrayerCard;
-      if (targetPrayerCard.prayer.id === values.assignedPrayerId) {
-        // Add to main prayer
-        const updatedPrayer = targetPrayerCard.prayer.update({
-          aliyot: [...targetPrayerCard.prayer.aliyot, editingAliya.aliya],
-        });
-        updatedTargetPrayerCard = new PrayerCard(
-          targetPrayerCard.id,
-          updatedPrayer,
-          targetPrayerCard.children
-        );
-      } else {
-        // Add to child
-        const updatedChildren = targetPrayerCard.children.map(child => {
-          if (child.id === values.assignedPrayerId) {
-            return child.update({
-              aliyot: [...child.aliyot, editingAliya.aliya],
-            });
-          }
-          return child;
-        });
-        updatedTargetPrayerCard = new PrayerCard(
-          targetPrayerCard.id,
-          targetPrayerCard.prayer,
-          updatedChildren
-        );
-      }
-
-      // Update both prayer cards in database
-      await updatePrayerCardMutation.mutateAsync(updatedCurrentPrayerCard);
-      if (updatedCurrentPrayerCard.id !== updatedTargetPrayerCard.id) {
-        await updatePrayerCardMutation.mutateAsync(updatedTargetPrayerCard);
-      }
-
-      // Invalidate prayer cards cache to refresh the UI
-      await queryClient.invalidateQueries({ queryKey: ["prayerCards"] });
-
-      setShowReassignDialog(false);
-      setEditingAliya(null);
-      setSubmitting(false);
-    } catch (error) {
-      console.error("Error reassigning aliya:", error);
-      setSubmitting(false);
-    }
-  };
-
   const handleDeleteAliya = async (aliyaData: (typeof allAliyot)[0]) => {
     if (window.confirm("האם אתה בטוח שברצונך למחוק את העלייה?")) {
       try {
@@ -375,11 +267,6 @@ const AdminAliyaAssignmentContent = () => {
         console.error("Error deleting aliya:", error);
       }
     }
-  };
-
-  const handleReassignClick = (aliyaData: (typeof allAliyot)[0]) => {
-    setEditingAliya(aliyaData);
-    setShowReassignDialog(true);
   };
 
   const handleEditGroup = (group: AliyaGroup) => {
@@ -465,22 +352,29 @@ const AdminAliyaAssignmentContent = () => {
     { setSubmitting }: FormikHelpers<EditGroupFormValues>
   ) => {
     try {
-      if (!editingGroup) return;
-
       // Collect all aliya types we're working with (assignments + deletions)
       const allAliyaTypesToProcess = new Set([
         ...Object.keys(values.assignments),
         ...values.deletions,
       ]);
 
-      // First, remove ALL existing assignments for these (groupId, typeId) combinations from ALL prayers
+      // First, collect all prayer cards that need removals
+      // Group by prayer card to apply all removals at once
+      const prayerCardRemovals = new Map<
+        string,
+        {
+          prayerCard: PrayerCard;
+          aliyaTypesToRemove: Set<string>; // aliyaTypeIds to remove from this card
+        }
+      >();
+
+      // Find all prayer cards that need removals
       for (const aliyaTypeId of allAliyaTypesToProcess) {
-        // Find all prayer cards that have this aliya assignment
         const affectedPrayerCards = prayerCards?.filter(card => {
           // Check if main prayer has this aliya
           const mainHasAliya = card.prayer.aliyot.some(
             aliya =>
-              aliya.aliyaGroupId === editingGroup.id &&
+              aliya.aliyaGroupId === values.aliyaGroupId &&
               aliya.aliyaType === aliyaTypeId
           );
 
@@ -488,7 +382,7 @@ const AdminAliyaAssignmentContent = () => {
           const childHasAliya = card.children.some(child =>
             child.aliyot.some(
               aliya =>
-                aliya.aliyaGroupId === editingGroup.id &&
+                aliya.aliyaGroupId === values.aliyaGroupId &&
                 aliya.aliyaType === aliyaTypeId
             )
           );
@@ -496,45 +390,68 @@ const AdminAliyaAssignmentContent = () => {
           return mainHasAliya || childHasAliya;
         });
 
-        // Remove the aliya from all affected prayer cards
+        // Mark these cards for removal of this aliya type
         if (affectedPrayerCards) {
           for (const prayerCard of affectedPrayerCards) {
-            // Remove from main prayer
-            const updatedMainPrayer = prayerCard.prayer.update({
-              aliyot: prayerCard.prayer.aliyot.filter(
-                aliya =>
-                  !(
-                    aliya.aliyaGroupId === editingGroup.id &&
-                    aliya.aliyaType === aliyaTypeId
-                  )
-              ),
-            });
-
-            // Remove from children
-            const updatedChildren = prayerCard.children.map(child =>
-              child.update({
-                aliyot: child.aliyot.filter(
-                  aliya =>
-                    !(
-                      aliya.aliyaGroupId === editingGroup.id &&
-                      aliya.aliyaType === aliyaTypeId
-                    )
-                ),
-              })
-            );
-
-            const updatedPrayerCard = new PrayerCard(
-              prayerCard.id,
-              updatedMainPrayer,
-              updatedChildren
-            );
-
-            await updatePrayerCardMutation.mutateAsync(updatedPrayerCard);
+            if (!prayerCardRemovals.has(prayerCard.id)) {
+              prayerCardRemovals.set(prayerCard.id, {
+                prayerCard,
+                aliyaTypesToRemove: new Set(),
+              });
+            }
+            prayerCardRemovals
+              .get(prayerCard.id)!
+              .aliyaTypesToRemove.add(aliyaTypeId);
           }
         }
       }
 
-      // Then, add new assignments (skip deletions)
+      // Apply all removals to each prayer card at once
+      for (const removal of prayerCardRemovals.values()) {
+        // Remove from main prayer - filter out all aliyot matching any of the types to remove
+        const updatedMainPrayer = removal.prayerCard.prayer.update({
+          aliyot: removal.prayerCard.prayer.aliyot.filter(
+            aliya =>
+              !(
+                aliya.aliyaGroupId === values.aliyaGroupId &&
+                removal.aliyaTypesToRemove.has(aliya.aliyaType)
+              )
+          ),
+        });
+
+        // Remove from children - filter out all aliyot matching any of the types to remove
+        const updatedChildren = removal.prayerCard.children.map(child =>
+          child.update({
+            aliyot: child.aliyot.filter(
+              aliya =>
+                !(
+                  aliya.aliyaGroupId === values.aliyaGroupId &&
+                  removal.aliyaTypesToRemove.has(aliya.aliyaType)
+                )
+            ),
+          })
+        );
+
+        const updatedPrayerCard = new PrayerCard(
+          removal.prayerCard.id,
+          updatedMainPrayer,
+          updatedChildren
+        );
+
+        await updatePrayerCardMutation.mutateAsync(updatedPrayerCard);
+      }
+
+      // Then, collect all new assignments grouped by prayer card
+      // This ensures we apply all changes to each card at once
+      const prayerCardUpdates = new Map<
+        string,
+        {
+          prayerCard: PrayerCard;
+          mainPrayerAliyot: AliyaEvent[];
+          childAliyot: Map<string, AliyaEvent[]>; // childId -> aliyot to add
+        }
+      >();
+
       for (const [aliyaTypeId, assignedPrayerId] of Object.entries(
         values.assignments
       )) {
@@ -552,40 +469,95 @@ const AdminAliyaAssignmentContent = () => {
         }
 
         // Create new aliya event
-        const newAliya = AliyaEvent.create(editingGroup.id, aliyaTypeId);
+        const newAliya = AliyaEvent.create(values.aliyaGroupId, aliyaTypeId);
 
-        // Update the prayer card
-        let updatedPrayerCard = targetPrayerCard;
+        // Get or create update entry for this prayer card
+        if (!prayerCardUpdates.has(targetPrayerCard.id)) {
+          prayerCardUpdates.set(targetPrayerCard.id, {
+            prayerCard: targetPrayerCard,
+            mainPrayerAliyot: [],
+            childAliyot: new Map(),
+          });
+        }
+
+        const update = prayerCardUpdates.get(targetPrayerCard.id)!;
 
         if (targetPrayerCard.prayer.id === assignedPrayerId) {
           // Assign to main prayer
-          const updatedPrayer = targetPrayerCard.prayer.update({
-            aliyot: [...targetPrayerCard.prayer.aliyot, newAliya],
-          });
-          updatedPrayerCard = new PrayerCard(
-            targetPrayerCard.id,
-            updatedPrayer,
-            targetPrayerCard.children
-          );
+          update.mainPrayerAliyot.push(newAliya);
         } else {
           // Assign to child
-          const updatedChildren = targetPrayerCard.children.map(child => {
-            if (child.id === assignedPrayerId) {
+          if (!update.childAliyot.has(assignedPrayerId)) {
+            update.childAliyot.set(assignedPrayerId, []);
+          }
+          update.childAliyot.get(assignedPrayerId)!.push(newAliya);
+        }
+      }
+
+      // Apply all collected changes to each prayer card and update once
+      for (const update of prayerCardUpdates.values()) {
+        let updatedPrayer = update.prayerCard.prayer;
+        let updatedChildren = update.prayerCard.children;
+
+        // Add aliyot to main prayer if any
+        if (update.mainPrayerAliyot.length > 0) {
+          updatedPrayer = update.prayerCard.prayer.update({
+            aliyot: [
+              ...update.prayerCard.prayer.aliyot,
+              ...update.mainPrayerAliyot,
+            ],
+          });
+        }
+
+        // Add aliyot to children if any
+        if (update.childAliyot.size > 0) {
+          updatedChildren = update.prayerCard.children.map(child => {
+            const childAliyotToAdd = update.childAliyot.get(child.id);
+            if (childAliyotToAdd && childAliyotToAdd.length > 0) {
               return child.update({
-                aliyot: [...child.aliyot, newAliya],
+                aliyot: [...child.aliyot, ...childAliyotToAdd],
               });
             }
             return child;
           });
-          updatedPrayerCard = new PrayerCard(
-            targetPrayerCard.id,
-            targetPrayerCard.prayer,
-            updatedChildren
-          );
         }
 
-        // Update in database
-        await updatePrayerCardMutation.mutateAsync(updatedPrayerCard);
+        // Only update if there were changes
+        if (
+          updatedPrayer !== update.prayerCard.prayer ||
+          updatedChildren.some(
+            (child, index) => child !== update.prayerCard.children[index]
+          )
+        ) {
+          const updatedPrayerCard = new PrayerCard(
+            update.prayerCard.id,
+            updatedPrayer,
+            updatedChildren
+          );
+
+          function removeDuplicateAliyot(aliyot: AliyaEvent[]): AliyaEvent[] {
+            const uniqueAliyot = new Map<string, AliyaEvent>();
+            aliyot.forEach(aliya => {
+              const key = aliya.aliyaGroupId + "-" + aliya.aliyaType;
+              if (!uniqueAliyot.has(key)) {
+                uniqueAliyot.set(key, aliya);
+              }
+            });
+            return Array.from(uniqueAliyot.values()).map(aliya =>
+              aliya.clone()
+            );
+          }
+          // remove duplicate aliyot
+          updatedPrayerCard.prayer.aliyot = removeDuplicateAliyot(
+            updatedPrayerCard.prayer.aliyot
+          );
+
+          updatedPrayerCard.children.forEach(child => {
+            child.aliyot = removeDuplicateAliyot(child.aliyot);
+          });
+          // Update in database
+          await updatePrayerCardMutation.mutateAsync(updatedPrayerCard);
+        }
       }
 
       // Invalidate prayer cards cache to refresh the UI
@@ -987,20 +959,6 @@ const AdminAliyaAssignmentContent = () => {
                                           <IconButton
                                             size="small"
                                             onClick={() =>
-                                              handleReassignClick({
-                                                aliya,
-                                                prayer,
-                                                prayerCard,
-                                                isChild,
-                                              })
-                                            }
-                                            color="primary"
-                                          >
-                                            <EditIcon />
-                                          </IconButton>
-                                          <IconButton
-                                            size="small"
-                                            onClick={() =>
                                               handleDeleteAliya({
                                                 aliya,
                                                 prayer,
@@ -1139,146 +1097,6 @@ const AdminAliyaAssignmentContent = () => {
         </DialogActions>
       </Dialog>
 
-      {/* Reassign Aliya Dialog */}
-      <Dialog
-        open={showReassignDialog}
-        onClose={() => setShowReassignDialog(false)}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogTitle>העבר עלייה למתפלל אחר</DialogTitle>
-        <DialogContent>
-          {editingAliya && (
-            <Formik
-              initialValues={initialReassignmentFormValues}
-              validationSchema={reassignmentValidationSchema}
-              onSubmit={handleReassignAliya}
-            >
-              {({
-                values,
-                errors,
-                touched,
-                handleChange,
-                handleBlur,
-                isSubmitting,
-              }) => (
-                <Form>
-                  <Stack spacing={3} sx={{ mt: 1 }}>
-                    <Box sx={{ p: 2, bgcolor: "grey.100", borderRadius: 1 }}>
-                      <Typography variant="subtitle2" gutterBottom>
-                        עלייה נוכחית:
-                      </Typography>
-                      <Typography variant="body2">
-                        {editingAliya.prayer.firstName}{" "}
-                        {editingAliya.prayer.lastName}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        קבוצה:{" "}
-                        {aliyaGroups?.find(
-                          g => g.id === editingAliya.aliya.aliyaGroupId
-                        )?.label || editingAliya.aliya.aliyaGroupId}
-                      </Typography>
-                    </Box>
-
-                    <Autocomplete
-                      fullWidth
-                      options={allPrayers.filter(
-                        ({ prayer }) => prayer.id !== editingAliya.prayer.id
-                      )}
-                      getOptionLabel={({ prayer }) =>
-                        `${prayer.firstName} ${prayer.lastName}`
-                      }
-                      value={
-                        allPrayers.find(
-                          p => p.prayer.id === values.assignedPrayerId
-                        ) || null
-                      }
-                      onChange={(_, newValue) => {
-                        handleChange({
-                          target: {
-                            name: "assignedPrayerId",
-                            value: newValue?.prayer.id || "",
-                          },
-                        });
-                      }}
-                      onBlur={handleBlur}
-                      renderInput={params => (
-                        <TextField
-                          {...params}
-                          label="חפש מתפלל חדש"
-                          placeholder="הקלד שם..."
-                          error={
-                            touched.assignedPrayerId &&
-                            Boolean(errors.assignedPrayerId)
-                          }
-                        />
-                      )}
-                      renderOption={(
-                        props,
-                        { prayer, isChild, parentName }
-                      ) => (
-                        <li {...props} key={prayer.id}>
-                          <Box
-                            sx={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 1,
-                            }}
-                          >
-                            {isChild ? <ChildIcon /> : <PersonIcon />}
-                            <Typography>
-                              {prayer.firstName} {prayer.lastName}
-                            </Typography>
-                            {isChild && (
-                              <Chip
-                                label="ילד"
-                                size="small"
-                                color="secondary"
-                                variant="outlined"
-                              />
-                            )}
-                            {isChild && parentName && (
-                              <Typography
-                                variant="body2"
-                                color="text.secondary"
-                              >
-                                (בן/בת של {parentName})
-                              </Typography>
-                            )}
-                          </Box>
-                        </li>
-                      )}
-                      isOptionEqualToValue={(option, value) =>
-                        option.prayer.id === value.prayer.id
-                      }
-                    />
-                  </Stack>
-                  <DialogActions>
-                    <Button
-                      type="button"
-                      onClick={() => setShowReassignDialog(false)}
-                    >
-                      ביטול
-                    </Button>
-                    <Button
-                      type="submit"
-                      variant="contained"
-                      disabled={
-                        isSubmitting || updatePrayerCardMutation.isPending
-                      }
-                    >
-                      {isSubmitting || updatePrayerCardMutation.isPending
-                        ? "מעביר..."
-                        : "העבר עלייה"}
-                    </Button>
-                  </DialogActions>
-                </Form>
-              )}
-            </Formik>
-          )}
-        </DialogContent>
-      </Dialog>
-
       {/* Edit Group Dialog */}
       <Dialog
         open={showEditGroupDialog}
@@ -1290,10 +1108,11 @@ const AdminAliyaAssignmentContent = () => {
         <DialogContent>
           {editingGroup && (
             <Formik
-              initialValues={initialEditGroupFormValues}
+              initialValues={getInitialEditGroupFormValues(editingGroup)}
               validationSchema={editGroupValidationSchema}
               onSubmit={handleEditGroupSubmit}
               innerRef={editGroupFormikRef}
+              enableReinitialize
             >
               {({
                 values,
@@ -1357,7 +1176,7 @@ const AdminAliyaAssignmentContent = () => {
                             const hasExistingAssignment = allAliyot.some(
                               aliyaData =>
                                 aliyaData.aliya.aliyaGroupId ===
-                                  editingGroup.id &&
+                                  values.aliyaGroupId &&
                                 aliyaData.aliya.aliyaType === type.id
                             );
                             return hasExistingAssignment;
@@ -1375,7 +1194,7 @@ const AdminAliyaAssignmentContent = () => {
                               const existingAliya = allAliyot.find(
                                 aliyaData =>
                                   aliyaData.aliya.aliyaGroupId ===
-                                    editingGroup.id &&
+                                    values.aliyaGroupId &&
                                   aliyaData.aliya.aliyaType === type.id
                               );
                               if (existingAliya) {
