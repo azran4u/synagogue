@@ -8,6 +8,7 @@ export interface AliyaGroupDto {
   hebrewDate: HebrewDateDto;
   createdAt: string;
   updatedAt: string;
+  assignments?: Record<string, string>; // aliyaTypeId -> prayerId
 }
 
 export class AliyaGroup {
@@ -16,19 +17,22 @@ export class AliyaGroup {
   public hebrewDate: HebrewDate;
   public createdAt: Date;
   public updatedAt: Date;
+  public assignments: Record<string, string>; // aliyaTypeId -> prayerId
 
   constructor(
     id: string,
     label: string,
     hebrewDate: HebrewDate,
     createdAt: Date,
-    updatedAt: Date
+    updatedAt: Date,
+    assignments: Record<string, string> = {}
   ) {
     this.id = id;
     this.label = label;
     this.hebrewDate = hebrewDate;
     this.createdAt = createdAt;
     this.updatedAt = updatedAt;
+    this.assignments = assignments;
   }
 
   toDto(): AliyaGroupDto {
@@ -38,6 +42,7 @@ export class AliyaGroup {
       hebrewDate: this.hebrewDate.toDto(),
       createdAt: this.createdAt.toISOString(),
       updatedAt: this.updatedAt.toISOString(),
+      assignments: this.assignments,
     };
   }
 
@@ -47,7 +52,8 @@ export class AliyaGroup {
       dto.label,
       HebrewDate.fromDto(dto.hebrewDate),
       new Date(dto.createdAt),
-      new Date(dto.updatedAt)
+      new Date(dto.updatedAt),
+      dto.assignments || {}
     );
   }
 
@@ -55,18 +61,19 @@ export class AliyaGroup {
     const now = new Date();
     const id = uuidv4();
 
-    return new AliyaGroup(id, label, hebrewDate, now, now);
+    return new AliyaGroup(id, label, hebrewDate, now, now, {});
   }
 
   update(
-    updates: Partial<Pick<AliyaGroup, "label" | "hebrewDate">>
+    updates: Partial<Pick<AliyaGroup, "label" | "hebrewDate" | "assignments">>
   ): AliyaGroup {
     return new AliyaGroup(
       this.id,
       updates.label ?? this.label,
       updates.hebrewDate ?? this.hebrewDate,
       this.createdAt,
-      new Date()
+      new Date(),
+      updates.assignments !== undefined ? updates.assignments : this.assignments
     );
   }
 
@@ -76,8 +83,37 @@ export class AliyaGroup {
       this.label,
       this.hebrewDate,
       this.createdAt,
-      this.updatedAt
+      this.updatedAt,
+      { ...this.assignments }
     );
+  }
+
+  // Helper methods for managing assignments
+  getAssignedPrayerId(aliyaTypeId: string): string | undefined {
+    return this.assignments[aliyaTypeId];
+  }
+
+  setAssignment(aliyaTypeId: string, prayerId: string): AliyaGroup {
+    return this.update({
+      assignments: {
+        ...this.assignments,
+        [aliyaTypeId]: prayerId,
+      },
+    });
+  }
+
+  removeAssignment(aliyaTypeId: string): AliyaGroup {
+    const newAssignments = { ...this.assignments };
+    delete newAssignments[aliyaTypeId];
+    return this.update({
+      assignments: newAssignments,
+    });
+  }
+
+  clearAssignments(): AliyaGroup {
+    return this.update({
+      assignments: {},
+    });
   }
 }
 

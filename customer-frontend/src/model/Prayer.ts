@@ -1,5 +1,4 @@
 import { HebrewDate, HebrewDateDto } from "./HebrewDate";
-import { AliyaEvent, AliyaEventDto } from "./AliyaEvent";
 import { PrayerEvent, PrayerEventDto } from "./PrayerEvent";
 import { PrayerDonation, PrayerDonationDto } from "./PrayerDonation";
 import { Mapper } from "../services/genericService";
@@ -16,7 +15,6 @@ export interface PrayerDto {
   notes?: string;
   createdAt: number;
   updatedAt: number;
-  aliyot: AliyaEventDto[];
   events: PrayerEventDto[];
   donations: PrayerDonationDto[];
 }
@@ -72,7 +70,6 @@ export class Prayer {
   public phoneNumber?: string;
   public email?: string;
   public notes?: string;
-  public aliyot: AliyaEvent[];
   public events: PrayerEvent[];
   public donations: PrayerDonation[];
   public createdAt: Date;
@@ -86,7 +83,6 @@ export class Prayer {
     phoneNumber?: string,
     email?: string,
     notes?: string,
-    aliyaHistory: AliyaEvent[] = [],
     events: PrayerEvent[] = [],
     donations: PrayerDonation[] = [],
     createdAt: Date = new Date(),
@@ -99,7 +95,6 @@ export class Prayer {
     this.phoneNumber = phoneNumber;
     this.email = email;
     this.notes = notes;
-    this.aliyot = aliyaHistory;
     this.events = events;
     this.donations = donations;
     this.createdAt = createdAt;
@@ -116,7 +111,6 @@ export class Prayer {
       phoneNumber: this.phoneNumber,
       email: this.email,
       notes: this.notes,
-      aliyot: this.aliyot.map(event => event.toDto()),
       events: this.events.map(event => event.toDto()),
       donations: this.donations.map(donation => donation.toDto()),
       createdAt: this.createdAt.getTime(),
@@ -134,7 +128,6 @@ export class Prayer {
       dto.phoneNumber,
       dto.email,
       dto.notes,
-      dto.aliyot.map(eventDto => AliyaEvent.fromDto(eventDto)),
       dto.events.map(eventDto => PrayerEvent.fromDto(eventDto)),
       dto.donations
         ? dto.donations.map(donationDto => PrayerDonation.fromDto(donationDto))
@@ -152,7 +145,6 @@ export class Prayer {
     phoneNumber?: string,
     email?: string,
     notes?: string,
-    aliyot?: AliyaEvent[],
     events?: PrayerEvent[],
     donations?: PrayerDonation[]
   ): Prayer {
@@ -164,7 +156,6 @@ export class Prayer {
       phoneNumber,
       email,
       notes,
-      aliyot ?? [],
       events ?? [],
       donations ?? [],
       new Date(),
@@ -182,7 +173,6 @@ export class Prayer {
       updates.phoneNumber ?? this.phoneNumber,
       updates.email ?? this.email,
       updates.notes ?? this.notes,
-      updates.aliyot ?? this.aliyot,
       updates.events ?? this.events,
       updates.donations ?? this.donations,
       this.createdAt,
@@ -195,22 +185,10 @@ export class Prayer {
     return `${this.firstName} ${this.lastName}`.trim();
   }
 
-  // Add an aliya event
-  addAliyaEvent(event: AliyaEvent): Prayer {
-    const updatedAliyaHistory = [...this.aliyot, event];
-    return this.update({ aliyot: updatedAliyaHistory });
-  }
-
   // Add a prayer event
   addPrayerEvent(event: PrayerEvent): Prayer {
     const updatedEvents = [...this.events, event];
     return this.update({ events: updatedEvents });
-  }
-
-  // Remove an aliya event by index
-  removeAliyaEvent(index: number): Prayer {
-    const updatedAliyaHistory = this.aliyot.filter((_, i) => i !== index);
-    return this.update({ aliyot: updatedAliyaHistory });
   }
 
   // Remove a prayer event by index

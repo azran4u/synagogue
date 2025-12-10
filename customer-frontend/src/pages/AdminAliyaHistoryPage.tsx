@@ -26,6 +26,7 @@ import { useAliyaTypeCategories } from "../hooks/useAliyaTypeCategories";
 import { usePrayerEventTypes } from "../hooks/usePrayerEventTypes";
 import { useUser } from "../hooks/useUser";
 import { Prayer, PrayerCard } from "../model/Prayer";
+import { getAliyotForPrayer } from "../utils/aliyaAssignments";
 import { AliyaTypeCategory } from "../model/AliyaTypeCategory";
 import { HebrewDate } from "../model/HebrewDate";
 import { WithLogin } from "../components/WithLogin";
@@ -153,11 +154,15 @@ const AdminAliyaHistoryContent: React.FC = () => {
           });
         });
         let overallLastAliyaDate: HebrewDate | null = null;
-        let totalAliyot = card.prayer.aliyot.length;
+        const prayerAliyot = getAliyotForPrayer(
+          card.prayer.id,
+          aliyaGroups || []
+        );
+        let totalAliyot = prayerAliyot.length;
 
         // Process each aliya and group by category
         // For each aliya, we need to add it to ALL categories that contain its type
-        card.prayer.aliyot.forEach(aliya => {
+        prayerAliyot.forEach(aliya => {
           const group = aliyaGroupMap.get(aliya.aliyaGroupId);
           if (group) {
             const groupDate = group.hebrewDate;
@@ -226,11 +231,12 @@ const AdminAliyaHistoryContent: React.FC = () => {
             });
           });
           let overallLastAliyaDate: HebrewDate | null = null;
-          let totalAliyot = child.aliyot.length;
+          const childAliyot = getAliyotForPrayer(child.id, aliyaGroups || []);
+          let totalAliyot = childAliyot.length;
 
           // Process each aliya and group by category
           // For each aliya, we need to add it to ALL categories that contain its type
-          child.aliyot.forEach(aliya => {
+          childAliyot.forEach(aliya => {
             const group = aliyaGroupMap.get(aliya.aliyaGroupId);
             if (group) {
               const groupDate = group.hebrewDate;

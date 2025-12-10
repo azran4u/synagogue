@@ -26,6 +26,7 @@ import { usePrayerEventTypes } from "../hooks/usePrayerEventTypes";
 import { useAliyaTypes } from "../hooks/useAliyaTypes";
 import { useAliyaGroups } from "../hooks/useAliyaGroups";
 import { useSynagogueNavigate } from "../hooks/useSynagogueNavigate";
+import { getAliyotForPrayer } from "../utils/aliyaAssignments";
 import { PrayerCardEditDialog } from "../components/PrayerCardEditDialog";
 import { useSelectedSynagogue } from "../hooks/useSynagogueId";
 import { formatCurrency } from "../utils/donationStats";
@@ -665,14 +666,18 @@ const PrayerCardContent: React.FC = () => {
           <Card>
             <CardContent>
               {(() => {
+                if (!aliyaGroups) return null;
+
                 const allAliyot = [
-                  ...prayerCard.prayer.aliyot.map(aliya => ({
-                    aliya,
-                    person: prayerCard.prayer,
-                    isChild: false,
-                  })),
+                  ...getAliyotForPrayer(prayerCard.prayer.id, aliyaGroups).map(
+                    aliya => ({
+                      aliya,
+                      person: prayerCard.prayer,
+                      isChild: false,
+                    })
+                  ),
                   ...prayerCard.children.flatMap(child =>
-                    child.aliyot.map(aliya => ({
+                    getAliyotForPrayer(child.id, aliyaGroups).map(aliya => ({
                       aliya,
                       person: child,
                       isChild: true,

@@ -35,13 +35,13 @@ import { Prayer } from "../model/Prayer";
 import { PrayerCard } from "../model/Prayer";
 import { AliyaGroup } from "../model/AliyaGroup";
 import { useAliyaTypes } from "../hooks/useAliyaTypes";
-import { useAliyaGroups } from "../hooks/useAliyaGroups";
+import { useAliyaGroups, useUpdateAliyaGroup } from "../hooks/useAliyaGroups";
 import { useDeleteAliyaGroup } from "../hooks/useAliyaGroups";
 import { useAllPrayerCards } from "../hooks/usePrayerCard";
 import { useUser } from "../hooks/useUser";
 import { useSynagogueNavigate } from "../hooks/useSynagogueNavigate";
-import { useUpdatePrayerCard } from "../hooks/usePrayerCard";
 import { CreateAliyaGroupDialog } from "../components/CreateAliyaGroupDialog";
+import { getAllAliyot } from "../utils/aliyaAssignments";
 
 interface EditGroupFormValues {
   aliyaGroupId: string;
@@ -91,7 +91,7 @@ const AdminAliyaAssignmentContent = () => {
   const { data: aliyaGroups, isLoading: aliyaGroupsLoading } = useAliyaGroups();
   const { data: prayerCards, isLoading: prayerCardsLoading } =
     useAllPrayerCards();
-  const updatePrayerCardMutation = useUpdatePrayerCard();
+  const updateAliyaGroupMutation = useUpdateAliyaGroup();
   const deleteAliyaGroupMutation = useDeleteAliyaGroup();
 
   // Initial form values
@@ -108,7 +108,7 @@ const AdminAliyaAssignmentContent = () => {
 
     return {
       aliyaGroupId: editingGroup.id,
-      assignments: {},
+      assignments: { ...editingGroup.assignments },
       deletions: [],
     };
   };
@@ -148,44 +148,21 @@ const AdminAliyaAssignmentContent = () => {
     return prayers;
   }, [prayerCards]);
 
-  // Get all aliyot from all prayers with prayer card info
+  // Get all aliyot from all groups with prayer card info
   const allAliyot = React.useMemo(() => {
-    if (!prayerCards) return [];
+    if (!prayerCards || !aliyaGroups) return [];
 
-    const aliyot: Array<{
-      aliya: AliyaEvent;
-      prayer: Prayer;
-      prayerCard: PrayerCard;
-      isChild: boolean;
-      parentName?: string;
-    }> = [];
+    const aliyot = getAllAliyot(aliyaGroups, prayerCards);
 
-    prayerCards.forEach(card => {
-      // Add aliyot from main prayer
-      card.prayer.aliyot.forEach(aliya => {
-        aliyot.push({
-          aliya,
-          prayer: card.prayer,
-          prayerCard: card,
-          isChild: false,
-        });
-      });
+    // Add parentName for children
+    const aliyotWithParentName = aliyot.map(item => ({
+      ...item,
+      parentName: item.isChild
+        ? `${item.prayerCard.prayer.firstName} ${item.prayerCard.prayer.lastName}`
+        : undefined,
+    }));
 
-      // Add aliyot from children
-      card.children.forEach(child => {
-        child.aliyot.forEach(aliya => {
-          aliyot.push({
-            aliya,
-            prayer: child,
-            prayerCard: card,
-            isChild: true,
-            parentName: `${card.prayer.firstName} ${card.prayer.lastName}`,
-          });
-        });
-      });
-    });
-
-    return aliyot.sort((a, b) => {
+    return aliyotWithParentName.sort((a, b) => {
       // Sort by aliya type display order
       const aliyaTypeA = aliyaTypes?.find(
         type => type.id === a.aliya.aliyaType
@@ -199,7 +176,7 @@ const AdminAliyaAssignmentContent = () => {
 
       return orderA - orderB;
     });
-  }, [prayerCards, aliyaTypes]);
+  }, [prayerCards, aliyaGroups, aliyaTypes]);
 
   // Get groups with aliyot counts
   const groupsWithCounts = React.useMemo(() => {
@@ -228,41 +205,22 @@ const AdminAliyaAssignmentContent = () => {
   const handleDeleteAliya = async (aliyaData: (typeof allAliyot)[0]) => {
     if (window.confirm("האם אתה בטוח שברצונך למחוק את העלייה?")) {
       try {
-        // Remove aliya from prayer
-        let updatedPrayerCard = aliyaData.prayerCard;
-
-        if (aliyaData.prayerCard.prayer.id === aliyaData.prayer.id) {
-          // Remove from main prayer
-          const updatedPrayer = aliyaData.prayer.update({
-            aliyot: aliyaData.prayer.aliyot.filter(a => a !== aliyaData.aliya),
-          });
-          updatedPrayerCard = new PrayerCard(
-            aliyaData.prayerCard.id,
-            updatedPrayer,
-            aliyaData.prayerCard.children
-          );
-        } else {
-          // Remove from child
-          const updatedChildren = aliyaData.prayerCard.children.map(child => {
-            if (child.id === aliyaData.prayer.id) {
-              return child.update({
-                aliyot: child.aliyot.filter(a => a !== aliyaData.aliya),
-              });
-            }
-            return child;
-          });
-          updatedPrayerCard = new PrayerCard(
-            aliyaData.prayerCard.id,
-            aliyaData.prayerCard.prayer,
-            updatedChildren
-          );
+        // Find the group and remove the assignment
+        const group = aliyaGroups?.find(
+          g => g.id === aliyaData.aliya.aliyaGroupId
+        );
+        if (!group) {
+          throw new Error("Aliya group not found");
         }
 
-        // Update in database
-        await updatePrayerCardMutation.mutateAsync(updatedPrayerCard);
+        // Remove assignment from group
+        const updatedGroup = group.removeAssignment(aliyaData.aliya.aliyaType);
 
-        // Invalidate prayer cards cache to refresh the UI
-        await queryClient.invalidateQueries({ queryKey: ["prayerCards"] });
+        // Update the group in database
+        await updateAliyaGroupMutation.mutateAsync(updatedGroup);
+
+        // Invalidate aliya groups cache to refresh the UI
+        await queryClient.invalidateQueries({ queryKey: ["aliyaGroups"] });
       } catch (error) {
         console.error("Error deleting aliya:", error);
       }
@@ -281,61 +239,15 @@ const AdminAliyaAssignmentContent = () => {
   const handleDeleteAliyaGroup = async (group: AliyaGroup) => {
     if (
       window.confirm(
-        `האם אתה בטוח שברצונך למחוק את הקבוצה "${group.label}"? כל העליות הקשורות לקבוצה זו יימחקו מכל כרטיסי המתפללים.`
+        `האם אתה בטוח שברצונך למחוק את הקבוצה "${group.label}"? כל העליות הקשורות לקבוצה זו יימחקו.`
       )
     ) {
       try {
-        // First, remove all aliya events with this group ID from all prayer cards
-        if (prayerCards) {
-          for (const prayerCard of prayerCards) {
-            let updatedPrayer = prayerCard.prayer;
-            let updatedChildren = prayerCard.children;
-
-            // Remove aliyot from main prayer
-            const filteredMainAliyot = prayerCard.prayer.aliyot.filter(
-              aliya => aliya.aliyaGroupId !== group.id
-            );
-            if (filteredMainAliyot.length !== prayerCard.prayer.aliyot.length) {
-              updatedPrayer = prayerCard.prayer.update({
-                aliyot: filteredMainAliyot,
-              });
-            }
-
-            // Remove aliyot from children
-            updatedChildren = prayerCard.children.map(child => {
-              const filteredChildAliyot = child.aliyot.filter(
-                aliya => aliya.aliyaGroupId !== group.id
-              );
-              if (filteredChildAliyot.length !== child.aliyot.length) {
-                return child.update({
-                  aliyot: filteredChildAliyot,
-                });
-              }
-              return child;
-            });
-
-            // Update prayer card if any aliyot were removed
-            if (
-              updatedPrayer !== prayerCard.prayer ||
-              updatedChildren.some(
-                (child, index) => child !== prayerCard.children[index]
-              )
-            ) {
-              const updatedPrayerCard = new PrayerCard(
-                prayerCard.id,
-                updatedPrayer,
-                updatedChildren
-              );
-              await updatePrayerCardMutation.mutateAsync(updatedPrayerCard);
-            }
-          }
-        }
-
-        // Then delete the aliya group
+        // Delete the aliya group (assignments are stored in the group, so they'll be deleted with it)
         await deleteAliyaGroupMutation.mutateAsync(group.id);
 
-        // Invalidate prayer cards cache to refresh the UI
-        await queryClient.invalidateQueries({ queryKey: ["prayerCards"] });
+        // Invalidate aliya groups cache to refresh the UI
+        await queryClient.invalidateQueries({ queryKey: ["aliyaGroups"] });
       } catch (error) {
         console.error("Error deleting aliya group:", error);
       }
@@ -352,222 +264,39 @@ const AdminAliyaAssignmentContent = () => {
     { setSubmitting }: FormikHelpers<EditGroupFormValues>
   ) => {
     try {
-      // Collect all aliya types we're working with (assignments + deletions)
-      const allAliyaTypesToProcess = new Set([
-        ...Object.keys(values.assignments),
-        ...values.deletions,
-      ]);
-
-      // First, collect all prayer cards that need removals
-      // Group by prayer card to apply all removals at once
-      const prayerCardRemovals = new Map<
-        string,
-        {
-          prayerCard: PrayerCard;
-          aliyaTypesToRemove: Set<string>; // aliyaTypeIds to remove from this card
-        }
-      >();
-
-      // Find all prayer cards that need removals
-      for (const aliyaTypeId of allAliyaTypesToProcess) {
-        const affectedPrayerCards = prayerCards?.filter(card => {
-          // Check if main prayer has this aliya
-          const mainHasAliya = card.prayer.aliyot.some(
-            aliya =>
-              aliya.aliyaGroupId === values.aliyaGroupId &&
-              aliya.aliyaType === aliyaTypeId
-          );
-
-          // Check if any child has this aliya
-          const childHasAliya = card.children.some(child =>
-            child.aliyot.some(
-              aliya =>
-                aliya.aliyaGroupId === values.aliyaGroupId &&
-                aliya.aliyaType === aliyaTypeId
-            )
-          );
-
-          return mainHasAliya || childHasAliya;
-        });
-
-        // Mark these cards for removal of this aliya type
-        if (affectedPrayerCards) {
-          for (const prayerCard of affectedPrayerCards) {
-            if (!prayerCardRemovals.has(prayerCard.id)) {
-              prayerCardRemovals.set(prayerCard.id, {
-                prayerCard,
-                aliyaTypesToRemove: new Set(),
-              });
-            }
-            prayerCardRemovals
-              .get(prayerCard.id)!
-              .aliyaTypesToRemove.add(aliyaTypeId);
-          }
-        }
+      // Find the group to update
+      const group = aliyaGroups?.find(g => g.id === values.aliyaGroupId);
+      if (!group) {
+        throw new Error("Aliya group not found");
       }
 
-      // Apply all removals to each prayer card at once
-      for (const removal of prayerCardRemovals.values()) {
-        // Remove from main prayer - filter out all aliyot matching any of the types to remove
-        const updatedMainPrayer = removal.prayerCard.prayer.update({
-          aliyot: removal.prayerCard.prayer.aliyot.filter(
-            aliya =>
-              !(
-                aliya.aliyaGroupId === values.aliyaGroupId &&
-                removal.aliyaTypesToRemove.has(aliya.aliyaType)
-              )
-          ),
-        });
+      // Start with current assignments
+      const newAssignments = { ...group.assignments };
 
-        // Remove from children - filter out all aliyot matching any of the types to remove
-        const updatedChildren = removal.prayerCard.children.map(child =>
-          child.update({
-            aliyot: child.aliyot.filter(
-              aliya =>
-                !(
-                  aliya.aliyaGroupId === values.aliyaGroupId &&
-                  removal.aliyaTypesToRemove.has(aliya.aliyaType)
-                )
-            ),
-          })
-        );
+      // Remove assignments marked for deletion
+      values.deletions.forEach(aliyaTypeId => {
+        delete newAssignments[aliyaTypeId];
+      });
 
-        const updatedPrayerCard = new PrayerCard(
-          removal.prayerCard.id,
-          updatedMainPrayer,
-          updatedChildren
-        );
+      // Update/add new assignments
+      Object.assign(newAssignments, values.assignments);
 
-        await updatePrayerCardMutation.mutateAsync(updatedPrayerCard);
-      }
+      // Update the group with new assignments
+      const updatedGroup = group.update({
+        assignments: newAssignments,
+      });
 
-      // Then, collect all new assignments grouped by prayer card
-      // This ensures we apply all changes to each card at once
-      const prayerCardUpdates = new Map<
-        string,
-        {
-          prayerCard: PrayerCard;
-          mainPrayerAliyot: AliyaEvent[];
-          childAliyot: Map<string, AliyaEvent[]>; // childId -> aliyot to add
-        }
-      >();
+      // Update the group in database
+      await updateAliyaGroupMutation.mutateAsync(updatedGroup);
 
-      for (const [aliyaTypeId, assignedPrayerId] of Object.entries(
-        values.assignments
-      )) {
-        // Find the prayer card containing the target prayer
-        const targetPrayerCard = prayerCards?.find(
-          card =>
-            card.prayer.id === assignedPrayerId ||
-            card.children.some(child => child.id === assignedPrayerId)
-        );
-
-        if (!targetPrayerCard) {
-          throw new Error(
-            `Prayer card not found for prayer ${assignedPrayerId}`
-          );
-        }
-
-        // Create new aliya event
-        const newAliya = AliyaEvent.create(values.aliyaGroupId, aliyaTypeId);
-
-        // Get or create update entry for this prayer card
-        if (!prayerCardUpdates.has(targetPrayerCard.id)) {
-          prayerCardUpdates.set(targetPrayerCard.id, {
-            prayerCard: targetPrayerCard,
-            mainPrayerAliyot: [],
-            childAliyot: new Map(),
-          });
-        }
-
-        const update = prayerCardUpdates.get(targetPrayerCard.id)!;
-
-        if (targetPrayerCard.prayer.id === assignedPrayerId) {
-          // Assign to main prayer
-          update.mainPrayerAliyot.push(newAliya);
-        } else {
-          // Assign to child
-          if (!update.childAliyot.has(assignedPrayerId)) {
-            update.childAliyot.set(assignedPrayerId, []);
-          }
-          update.childAliyot.get(assignedPrayerId)!.push(newAliya);
-        }
-      }
-
-      // Apply all collected changes to each prayer card and update once
-      for (const update of prayerCardUpdates.values()) {
-        let updatedPrayer = update.prayerCard.prayer;
-        let updatedChildren = update.prayerCard.children;
-
-        // Add aliyot to main prayer if any
-        if (update.mainPrayerAliyot.length > 0) {
-          updatedPrayer = update.prayerCard.prayer.update({
-            aliyot: [
-              ...update.prayerCard.prayer.aliyot,
-              ...update.mainPrayerAliyot,
-            ],
-          });
-        }
-
-        // Add aliyot to children if any
-        if (update.childAliyot.size > 0) {
-          updatedChildren = update.prayerCard.children.map(child => {
-            const childAliyotToAdd = update.childAliyot.get(child.id);
-            if (childAliyotToAdd && childAliyotToAdd.length > 0) {
-              return child.update({
-                aliyot: [...child.aliyot, ...childAliyotToAdd],
-              });
-            }
-            return child;
-          });
-        }
-
-        // Only update if there were changes
-        if (
-          updatedPrayer !== update.prayerCard.prayer ||
-          updatedChildren.some(
-            (child, index) => child !== update.prayerCard.children[index]
-          )
-        ) {
-          const updatedPrayerCard = new PrayerCard(
-            update.prayerCard.id,
-            updatedPrayer,
-            updatedChildren
-          );
-
-          function removeDuplicateAliyot(aliyot: AliyaEvent[]): AliyaEvent[] {
-            const uniqueAliyot = new Map<string, AliyaEvent>();
-            aliyot.forEach(aliya => {
-              const key = aliya.aliyaGroupId + "-" + aliya.aliyaType;
-              if (!uniqueAliyot.has(key)) {
-                uniqueAliyot.set(key, aliya);
-              }
-            });
-            return Array.from(uniqueAliyot.values()).map(aliya =>
-              aliya.clone()
-            );
-          }
-          // remove duplicate aliyot
-          updatedPrayerCard.prayer.aliyot = removeDuplicateAliyot(
-            updatedPrayerCard.prayer.aliyot
-          );
-
-          updatedPrayerCard.children.forEach(child => {
-            child.aliyot = removeDuplicateAliyot(child.aliyot);
-          });
-          // Update in database
-          await updatePrayerCardMutation.mutateAsync(updatedPrayerCard);
-        }
-      }
-
-      // Invalidate prayer cards cache to refresh the UI
-      await queryClient.invalidateQueries({ queryKey: ["prayerCards"] });
+      // Invalidate aliya groups cache to refresh the UI
+      await queryClient.invalidateQueries({ queryKey: ["aliyaGroups"] });
 
       setShowEditGroupDialog(false);
       setEditingGroup(null);
       setSubmitting(false);
     } catch (error) {
-      console.error("Error adding aliyot to group:", error);
+      console.error("Error updating aliya group assignments:", error);
       setSubmitting(false);
     }
   };
@@ -964,6 +693,9 @@ const AdminAliyaAssignmentContent = () => {
                                                 prayer,
                                                 prayerCard,
                                                 isChild,
+                                                parentName: isChild
+                                                  ? `${prayerCard.prayer.firstName} ${prayerCard.prayer.lastName}`
+                                                  : undefined,
                                               })
                                             }
                                             color="error"
@@ -1350,10 +1082,10 @@ const AdminAliyaAssignmentContent = () => {
                       type="submit"
                       variant="contained"
                       disabled={
-                        isSubmitting || updatePrayerCardMutation.isPending
+                        isSubmitting || updateAliyaGroupMutation.isPending
                       }
                     >
-                      {isSubmitting || updatePrayerCardMutation.isPending
+                      {isSubmitting || updateAliyaGroupMutation.isPending
                         ? "שומר..."
                         : "שמור שינויים"}
                     </Button>

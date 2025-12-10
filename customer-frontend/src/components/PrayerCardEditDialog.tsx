@@ -147,7 +147,6 @@ export const PrayerCardEditDialog: React.FC<PrayerCardEditDialogProps> = ({
           mainPrayer.phoneNumber,
           mainPrayer.email,
           mainPrayer.notes,
-          mainPrayer.aliyot,
           events
         );
       } else {
@@ -160,7 +159,6 @@ export const PrayerCardEditDialog: React.FC<PrayerCardEditDialogProps> = ({
           values.phoneNumber ?? undefined,
           values.email ?? undefined,
           values.notes ?? undefined,
-          [], // aliyaHistory
           events
         );
       }

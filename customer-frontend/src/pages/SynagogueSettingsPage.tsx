@@ -29,9 +29,11 @@ import {
   Delete as DeleteIcon,
   Add as AddIcon,
   PersonAdd as PersonAddIcon,
+  Download as DownloadIcon,
 } from "@mui/icons-material";
 import { Formik, Form } from "formik";
 import * as Yup from "yup";
+import { useQueryClient } from "@tanstack/react-query";
 import { useSelectedSynagogue } from "../hooks/useSynagogueId";
 import { useUpdateSynagogue, useDeleteSynagogue } from "../hooks/useSynagogues";
 import { Synagogue } from "../model/Synagogue";
@@ -39,6 +41,10 @@ import { useGabaim, useAddGabai, useRemoveGabai } from "../hooks/useGabaim";
 import { useAuth } from "../hooks/useAuth";
 import { useState } from "react";
 import { useSynagogueNavigate } from "../hooks/useSynagogueNavigate";
+import { useAllPrayerCards } from "../hooks/usePrayerCard";
+import { useAliyaGroups, useUpdateAliyaGroup } from "../hooks/useAliyaGroups";
+import { useAliyaTypes } from "../hooks/useAliyaTypes";
+import { downloadAliyotBackup } from "../utils/backupAliyot";
 
 // Validation schemas
 const synagogueNameSchema = Yup.object({
@@ -73,6 +79,7 @@ const donationTrackingSchema = Yup.object({
 const SynagogueSettingsPage: React.FC = () => {
   const { synagogueId } = useParams<{ synagogueId: string }>();
   const navigate = useSynagogueNavigate();
+  const queryClient = useQueryClient();
   const { data: synagogue, isLoading } = useSelectedSynagogue();
   const updateSynagogueMutation = useUpdateSynagogue();
   const deleteSynagogueMutation = useDeleteSynagogue();
@@ -82,11 +89,23 @@ const SynagogueSettingsPage: React.FC = () => {
   const addGabaiMutation = useAddGabai();
   const removeGabaiMutation = useRemoveGabai();
 
+  // Data export
+  const { data: prayerCards, isLoading: isLoadingPrayerCards } =
+    useAllPrayerCards();
+  const { data: aliyaGroups, isLoading: isLoadingAliyaGroups } =
+    useAliyaGroups();
+  const { data: aliyaTypes, isLoading: isLoadingAliyaTypes } = useAliyaTypes();
+
   // Dialog states
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showAddGabaiDialog, setShowAddGabaiDialog] = useState(false);
   const [showRemoveGabaiDialog, setShowRemoveGabaiDialog] = useState(false);
   const [gabaiToRemove, setGabaiToRemove] = useState<string | null>(null);
+
+  // Migration state
+  const [isMigrating, setIsMigrating] = useState(false);
+  const [migrationStatus, setMigrationStatus] = useState<string | null>(null);
+  const updateAliyaGroupMutation = useUpdateAliyaGroup();
 
   const handleBackClick = () => {
     navigate(``);
@@ -593,6 +612,53 @@ const SynagogueSettingsPage: React.FC = () => {
               </Form>
             )}
           </Formik>
+        </CardContent>
+      </Card>
+
+      {/* Data Export */}
+      <Card sx={{ mb: 3 }}>
+        <CardContent>
+          <Typography variant="h6" gutterBottom>
+            ייצוא נתונים
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            ייצא את כל נתוני העליות לבית הכנסת כקובץ JSON. הקובץ יכלול את כל
+            העליות, המתפללים, הקבוצות והתאריכים.
+          </Typography>
+          <Button
+            variant="outlined"
+            startIcon={<DownloadIcon />}
+            onClick={() => {
+              if (
+                synagogue &&
+                prayerCards &&
+                aliyaGroups &&
+                aliyaTypes &&
+                !isLoadingPrayerCards &&
+                !isLoadingAliyaGroups &&
+                !isLoadingAliyaTypes
+              ) {
+                downloadAliyotBackup(
+                  prayerCards,
+                  aliyaGroups,
+                  aliyaTypes,
+                  synagogue.id,
+                  synagogue.name
+                );
+              }
+            }}
+            disabled={
+              !synagogue ||
+              !prayerCards ||
+              !aliyaGroups ||
+              !aliyaTypes ||
+              isLoadingPrayerCards ||
+              isLoadingAliyaGroups ||
+              isLoadingAliyaTypes
+            }
+          >
+            ייצא נתוני עליות
+          </Button>
         </CardContent>
       </Card>
 
