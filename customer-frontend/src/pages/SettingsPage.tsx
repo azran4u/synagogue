@@ -7,7 +7,6 @@ import {
   CardContent,
   Button,
   Avatar,
-  Grid,
   List,
   ListItem,
   ListItemButton,
@@ -308,65 +307,72 @@ const SettingsPage: React.FC = () => {
             >
               הגדרות ניהול
             </Typography>
-            <Grid container spacing={2} justifyContent="center">
+            <Box
+              sx={{
+                display: "grid",
+                gridTemplateColumns: {
+                  xs: "repeat(2, 1fr)",
+                  sm: "repeat(3, 1fr)",
+                  md: "repeat(3, 1fr)",
+                },
+                gap: 2,
+                justifyContent: "center",
+                maxWidth: {
+                  xs: "100%",
+                  sm: "600px",
+                  md: "900px",
+                },
+                mx: "auto",
+              }}
+            >
               {gabaiSettingsCategories.map(category => (
-                <Grid
-                  item
-                  xs={6}
-                  sm={4}
-                  md={3}
+                <Card
                   key={category.id}
                   sx={{
+                    width: "100%",
                     display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    p: 3,
+                    cursor: "pointer",
+                    transition:
+                      "transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out",
+                    "&:hover": {
+                      transform: "translateY(-4px)",
+                      boxShadow: 4,
+                    },
                   }}
+                  elevation={2}
+                  onClick={() => handleCategoryClick(category)}
                 >
-                  <Card
+                  <Box
                     sx={{
-                      width: "100%",
+                      color: "primary.main",
                       display: "flex",
-                      flexDirection: "column",
                       alignItems: "center",
                       justifyContent: "center",
-                      p: 3,
-                      cursor: "pointer",
-                      transition:
-                        "transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out",
-                      "&:hover": {
-                        transform: "translateY(-4px)",
-                        boxShadow: 4,
+                      mb: 1,
+                      "& svg": {
+                        fontSize: 48,
                       },
                     }}
-                    elevation={2}
-                    onClick={() => handleCategoryClick(category)}
                   >
-                    <Box
-                      sx={{
-                        color: "primary.main",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        mb: 1,
-                        "& svg": {
-                          fontSize: 48,
-                        },
-                      }}
-                    >
-                      {category.icon}
-                    </Box>
-                    <Typography
-                      variant="body1"
-                      sx={{
-                        fontWeight: 600,
-                        textAlign: "center",
-                        color: "text.primary",
-                      }}
-                    >
-                      {category.title}
-                    </Typography>
-                  </Card>
-                </Grid>
+                    {category.icon}
+                  </Box>
+                  <Typography
+                    variant="body1"
+                    sx={{
+                      fontWeight: 600,
+                      textAlign: "center",
+                      color: "text.primary",
+                    }}
+                  >
+                    {category.title}
+                  </Typography>
+                </Card>
               ))}
-            </Grid>
+            </Box>
             <CategoryOptionsDrawer
               open={categoryDrawer.open}
               onClose={handleCloseDrawer}

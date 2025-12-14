@@ -27,10 +27,7 @@ export const Sidebar: React.FC = () => {
 
   return (
     <>
-      <AppToolBar
-        onDrawerToggle={handleDrawerToggle}
-        onLogoClick={() => handleLinkClick("/")}
-      />
+      <AppToolBar onLogoClick={() => handleLinkClick("/")} />
       <AppSideBar
         isOpen={isSidebarOpen}
         onClose={handleDrawerToggle}
