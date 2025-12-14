@@ -1,6 +1,11 @@
-import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
-import Footer from "./components/Footer";
-import { Sidebar } from "./components/Sidebar";
+import {
+  BrowserRouter as Router,
+  Route,
+  Routes,
+  useLocation,
+} from "react-router-dom";
+import { AppToolBar } from "./components/AppToolBar";
+import { MobileFooterNav } from "./components/MobileFooterNav";
 import Box from "@mui/material/Box";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
@@ -28,10 +33,12 @@ import PrayerTimesPage from "./pages/PrayerTimesPage";
 import ToraLessonsPage from "./pages/ToraLessonsPage";
 import FinancialReportsPage from "./pages/FinancialReportsPage";
 import DonationsPage from "./pages/DonationsPage";
+import SettingsPage from "./pages/SettingsPage";
 import { FrontendErrorServiceProvider } from "./components/FrontendErrorServiceProvider";
 import { SynagogueThemeProvider } from "./components/SynagogueThemeProvider";
 import { useEffect } from "react";
 import { useSelectedSynagogue } from "./hooks/useSynagogueId";
+import { useSynagogueNavigate } from "./hooks/useSynagogueNavigate";
 
 const DocumentTitleUpdater: React.FC = () => {
   const { data: synagogue } = useSelectedSynagogue();
@@ -42,6 +49,140 @@ const DocumentTitleUpdater: React.FC = () => {
   }, [synagogue?.name]);
 
   return null;
+};
+
+const AppContent: React.FC = () => {
+  const navigate = useSynagogueNavigate();
+  const { data: synagogue } = useSelectedSynagogue();
+  const location = useLocation();
+
+  const handleLogoClick = () => {
+    navigate("");
+  };
+
+  // Only show footer nav when a synagogue is selected (not on /synagogues page)
+  const shouldShowFooterNav =
+    synagogue !== null && !location.pathname.includes("/synagogues");
+
+  return (
+    <>
+      <AppToolBar onLogoClick={handleLogoClick} />
+      <Box
+        sx={{
+          flex: 1,
+          marginTop: "4rem",
+          marginBottom: shouldShowFooterNav ? "64px" : 0, // Space for footer nav
+          overflow: "auto",
+        }}
+      >
+        <Routes>
+          <Route path="/synagogues" element={<SynagoguesPage />} />
+          <Route
+            path="/"
+            element={
+              <SynagogueThemeProvider>
+                <SynagogueHomePage />
+              </SynagogueThemeProvider>
+            }
+          />
+          <Route
+            path="/synagogue/*"
+            element={
+              <Routes>
+                <Route path="/" element={<SynagogueHomePage />} />
+                <Route path="/:synagogueId" element={<SynagogueHomePage />} />
+                <Route
+                  path="/:synagogueId/prayer-card"
+                  element={<PrayerCardPage />}
+                />
+                <Route
+                  path="/:synagogueId/settings"
+                  element={<SettingsPage />}
+                />
+                <Route
+                  path="/:synagogueId/admin/settings"
+                  element={<SynagogueSettingsPage />}
+                />
+                <Route
+                  path="/:synagogueId/prayer-event-types"
+                  element={<PrayerEventTypesPage />}
+                />
+                <Route
+                  path="/:synagogueId/admin/prayer-event-types"
+                  element={<AdminPrayerEventTypesPage />}
+                />
+                <Route
+                  path="/:synagogueId/admin/aliya-types"
+                  element={<AdminAliyaTypesPage />}
+                />
+                <Route
+                  path="/:synagogueId/admin/aliya-type-categories"
+                  element={<AdminAliyaTypeCategoriesPage />}
+                />
+                <Route
+                  path="/:synagogueId/admin/aliya-assignment"
+                  element={<AdminAliyaAssignmentPage />}
+                />
+                <Route
+                  path="/:synagogueId/admin/aliya-history"
+                  element={<AdminAliyaHistoryPage />}
+                />
+                <Route
+                  path="/:synagogueId/admin/prayer-cards"
+                  element={<AdminPrayerCardsPage />}
+                />
+                <Route
+                  path="/:synagogueId/admin/frontend-errors"
+                  element={<AdminFrontendErrorsPage />}
+                />
+                <Route
+                  path="/:synagogueId/admin/prayer-times"
+                  element={<AdminPrayerTimesPage />}
+                />
+                <Route
+                  path="/:synagogueId/admin/tora-lessons"
+                  element={<AdminToraLessonsPage />}
+                />
+                <Route
+                  path="/:synagogueId/admin/financial-reports"
+                  element={<AdminFinancialReportsPage />}
+                />
+                <Route
+                  path="/:synagogueId/admin/donations"
+                  element={<AdminDonationsPage />}
+                />
+                <Route
+                  path="/:synagogueId/admin/prayer-donations"
+                  element={<AdminPrayerDonationsPage />}
+                />
+                <Route
+                  path="/:synagogueId/admin/upcoming-events"
+                  element={<AdminUpcomingEventsPage />}
+                />
+                <Route
+                  path="/:synagogueId/tora-lessons"
+                  element={<ToraLessonsPage />}
+                />
+                <Route
+                  path="/:synagogueId/prayer-times"
+                  element={<PrayerTimesPage />}
+                />
+                <Route
+                  path="/:synagogueId/financial-reports"
+                  element={<FinancialReportsPage />}
+                />
+                <Route
+                  path="/:synagogueId/donations"
+                  element={<DonationsPage />}
+                />
+              </Routes>
+            }
+          />
+        </Routes>
+      </Box>
+      <MobileFooterNav />
+    </>
+  );
 };
 
 export const App: React.FC = () => {
@@ -59,113 +200,7 @@ export const App: React.FC = () => {
             <DocumentTitleUpdater />
             <SynagogueThemeProvider>
               <FrontendErrorServiceProvider>
-                <Sidebar />
-                <Box sx={{ flex: 1, marginTop: "4rem" }}>
-                  <Routes>
-                    <Route path="/synagogues" element={<SynagoguesPage />} />
-                    <Route
-                      path="/"
-                      element={
-                        <SynagogueThemeProvider>
-                          <SynagogueHomePage />
-                        </SynagogueThemeProvider>
-                      }
-                    />
-                    <Route
-                      path="/synagogue/*"
-                      element={
-                        <Routes>
-                          <Route path="/" element={<SynagogueHomePage />} />
-                          <Route
-                            path="/:synagogueId"
-                            element={<SynagogueHomePage />}
-                          />
-                          <Route
-                            path="/:synagogueId/prayer-card"
-                            element={<PrayerCardPage />}
-                          />
-                          <Route
-                            path="/:synagogueId/admin/settings"
-                            element={<SynagogueSettingsPage />}
-                          />
-                          <Route
-                            path="/:synagogueId/prayer-event-types"
-                            element={<PrayerEventTypesPage />}
-                          />
-                          <Route
-                            path="/:synagogueId/admin/prayer-event-types"
-                            element={<AdminPrayerEventTypesPage />}
-                          />
-                          <Route
-                            path="/:synagogueId/admin/aliya-types"
-                            element={<AdminAliyaTypesPage />}
-                          />
-                          <Route
-                            path="/:synagogueId/admin/aliya-type-categories"
-                            element={<AdminAliyaTypeCategoriesPage />}
-                          />
-                          <Route
-                            path="/:synagogueId/admin/aliya-assignment"
-                            element={<AdminAliyaAssignmentPage />}
-                          />
-                          <Route
-                            path="/:synagogueId/admin/aliya-history"
-                            element={<AdminAliyaHistoryPage />}
-                          />
-                          <Route
-                            path="/:synagogueId/admin/prayer-cards"
-                            element={<AdminPrayerCardsPage />}
-                          />
-                          <Route
-                            path="/:synagogueId/admin/frontend-errors"
-                            element={<AdminFrontendErrorsPage />}
-                          />
-                          <Route
-                            path="/:synagogueId/admin/prayer-times"
-                            element={<AdminPrayerTimesPage />}
-                          />
-                          <Route
-                            path="/:synagogueId/admin/tora-lessons"
-                            element={<AdminToraLessonsPage />}
-                          />
-                          <Route
-                            path="/:synagogueId/admin/financial-reports"
-                            element={<AdminFinancialReportsPage />}
-                          />
-                          <Route
-                            path="/:synagogueId/admin/donations"
-                            element={<AdminDonationsPage />}
-                          />
-                          <Route
-                            path="/:synagogueId/admin/prayer-donations"
-                            element={<AdminPrayerDonationsPage />}
-                          />
-                          <Route
-                            path="/:synagogueId/admin/upcoming-events"
-                            element={<AdminUpcomingEventsPage />}
-                          />
-                          <Route
-                            path="/:synagogueId/tora-lessons"
-                            element={<ToraLessonsPage />}
-                          />
-                          <Route
-                            path="/:synagogueId/prayer-times"
-                            element={<PrayerTimesPage />}
-                          />
-                          <Route
-                            path="/:synagogueId/financial-reports"
-                            element={<FinancialReportsPage />}
-                          />
-                          <Route
-                            path="/:synagogueId/donations"
-                            element={<DonationsPage />}
-                          />
-                        </Routes>
-                      }
-                    />
-                  </Routes>
-                </Box>
-                <Footer />
+                <AppContent />
               </FrontendErrorServiceProvider>
             </SynagogueThemeProvider>
           </SynagogueProvider>
