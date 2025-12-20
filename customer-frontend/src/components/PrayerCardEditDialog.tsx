@@ -39,6 +39,7 @@ interface PrayerCardFormValues {
   email: string;
   notes: string;
   children: {
+    id?: string;
     firstName: string;
     lastName: string;
     hebrewBirthDate: HebrewDate | null;
@@ -163,17 +164,35 @@ export const PrayerCardEditDialog: React.FC<PrayerCardEditDialogProps> = ({
         );
       }
 
-      // Create children prayers
-      const childrenPrayers = values.children.map(child =>
-        Prayer.create(
+      // Create or update children prayers - preserve existing IDs
+      const childrenPrayers = values.children.map(child => {
+        if (child.id && prayerCard) {
+          // Find existing child to preserve all properties
+          const existingChild = prayerCard.children.find(
+            c => c.id === child.id
+          );
+          if (existingChild) {
+            // Update existing child with new values
+            return existingChild.update({
+              firstName: child.firstName,
+              lastName: child.lastName,
+              hebrewBirthDate: child.hebrewBirthDate || undefined,
+              phoneNumber: child.phoneNumber || undefined,
+              email: child.email || undefined,
+              notes: child.notes || undefined,
+            });
+          }
+        }
+        // Create new child (no ID or ID not found in existing children)
+        return Prayer.create(
           child.firstName,
           child.lastName,
           child.hebrewBirthDate || undefined,
           child.phoneNumber || undefined,
           child.email || undefined,
           child.notes
-        )
-      );
+        );
+      });
 
       // Create prayer card
       const prayerCardToSave = PrayerCard.create(mainPrayer, childrenPrayers);
@@ -189,13 +208,14 @@ export const PrayerCardEditDialog: React.FC<PrayerCardEditDialogProps> = ({
 
   // Simple helper functions for form manipulation
   const addChild = (setFieldValue: any, children: any[]) => {
-    const newChild = {
+    const newChild: PrayerCardFormValues["children"][0] = {
       firstName: "",
       lastName: "",
       hebrewBirthDate: null,
       phoneNumber: "",
       email: "",
       notes: "",
+      // id is undefined for new children
     };
     setFieldValue("children", [...children, newChild]);
   };
@@ -225,30 +245,33 @@ export const PrayerCardEditDialog: React.FC<PrayerCardEditDialogProps> = ({
       <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
         <DialogTitle>{title}</DialogTitle>
         <DialogContent>
-          <Formik
-            initialValues={{
-              firstName: prayerCard?.prayer.firstName || "",
-              lastName: prayerCard?.prayer.lastName || "",
-              hebrewBirthDate: prayerCard?.prayer.hebrewBirthDate || null,
-              phoneNumber: prayerCard?.prayer.phoneNumber || "",
-              email: prayerCard?.prayer.email || "",
-              notes: prayerCard?.prayer.notes || "",
-              children:
-                prayerCard?.children.map(child => ({
-                  firstName: child.firstName || "",
-                  lastName: child.lastName || "",
-                  hebrewBirthDate: child.hebrewBirthDate || null,
-                  phoneNumber: child.phoneNumber || "",
-                  email: child.email || "",
-                  notes: child.notes || "",
-                })) || [],
-              events:
-                prayerCard?.prayer.events.map(event => ({
-                  eventTypeId: event.type,
-                  hebrewDate: event.hebrewDate,
-                  notes: event.notes || "",
-                })) || [],
-            }}
+          <Formik<PrayerCardFormValues>
+            initialValues={
+              {
+                firstName: prayerCard?.prayer.firstName || "",
+                lastName: prayerCard?.prayer.lastName || "",
+                hebrewBirthDate: prayerCard?.prayer.hebrewBirthDate || null,
+                phoneNumber: prayerCard?.prayer.phoneNumber || "",
+                email: prayerCard?.prayer.email || "",
+                notes: prayerCard?.prayer.notes || "",
+                children:
+                  prayerCard?.children.map(child => ({
+                    id: child.id, // Preserve existing child ID
+                    firstName: child.firstName || "",
+                    lastName: child.lastName || "",
+                    hebrewBirthDate: child.hebrewBirthDate || null,
+                    phoneNumber: child.phoneNumber || "",
+                    email: child.email || "",
+                    notes: child.notes || "",
+                  })) || [],
+                events:
+                  prayerCard?.prayer.events.map(event => ({
+                    eventTypeId: event.type,
+                    hebrewDate: event.hebrewDate,
+                    notes: event.notes || "",
+                  })) || [],
+              } as PrayerCardFormValues
+            }
             validationSchema={prayerCardValidationSchema}
             onSubmit={handleSubmit}
           >
