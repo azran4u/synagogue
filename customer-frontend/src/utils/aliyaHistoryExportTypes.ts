@@ -6,7 +6,6 @@
 export interface ColumnDefinition {
   id: string; // categoryId or aliyaTypeId
   name: string; // Display name (category name or AliyaType displayName)
-  isCategory: boolean; // true if this is a category, false if uncategorized AliyaType
   displayOrder?: number; // Sort order (lower values first)
 }
 
@@ -25,7 +24,6 @@ export interface CategoryColumnDataInternal {
 
 export interface ExportPrayerRow {
   prayerName: string; // Already formatted: "משה כהן בן של דוד כהן" or "דוד כהן"
-  isChild: boolean;
   categoryData: Map<string, CategoryColumnData>; // key: columnId
 }
 

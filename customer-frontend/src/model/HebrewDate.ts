@@ -195,4 +195,12 @@ export class HebrewDate {
       return "שגיאה בחישוב פרשה";
     }
   }
+
+  weeksSince(other: HebrewDate | null): number {
+    if (!other) return 0;
+    return Math.floor(
+      (this.toGregorianDate().getTime() - other.toGregorianDate().getTime()) /
+        (1000 * 60 * 60 * 24 * 7)
+    );
+  }
 }

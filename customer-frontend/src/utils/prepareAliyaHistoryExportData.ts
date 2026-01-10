@@ -9,7 +9,7 @@ import {
   AliyaHistoryExportData,
   CategoryColumnData,
 } from "./aliyaHistoryExportTypes";
-import type { UpcomingItem } from "./prayerUtils";
+import type { AliyaHistory, UpcomingItem } from "./prayerUtils";
 
 /**
  * Internal representation of prayer with aliya history
@@ -41,85 +41,40 @@ interface PrayerWithAliyaHistory {
  * @returns Prepared export data
  */
 export const prepareAliyaHistoryExportData = (
-  prayersWithHistory: PrayerWithAliyaHistory[],
-  allColumns: Map<string, { name: string; isCategory: boolean }>,
+  AliyaHistory: AliyaHistory,
   upcomingItems: UpcomingItem[],
-  eventTypeMap: Map<string, string>,
-  categories: AliyaTypeCategory[] = [],
-  earliestAliyaDate: HebrewDate | null = null
+  eventTypeMap: Map<string, string>
 ): AliyaHistoryExportData => {
-  // 1. Convert columns map to ordered array and sort by displayOrder
-  const categoryDisplayOrderMap = new Map<string, number>();
-  categories.forEach(category => {
-    categoryDisplayOrderMap.set(category.id, category.displayOrder ?? Infinity);
-  });
-
-  const columns: ColumnDefinition[] = Array.from(allColumns.entries())
-    .map(([id, col]) => ({
-      id,
-      name: col.name,
-      isCategory: col.isCategory,
-      displayOrder: col.isCategory
-        ? (categoryDisplayOrderMap.get(id) ?? Infinity)
-        : Infinity,
-    }))
-    .sort((a, b) => {
-      // Categories first (sorted by displayOrder), then uncategorized types
-      if (a.isCategory !== b.isCategory) {
-        return a.isCategory ? -1 : 1;
-      }
-      // Within categories, sort by displayOrder (lower values first)
-      return a.displayOrder - b.displayOrder;
+  const columnMap = new Map<string, ColumnDefinition>();
+  Array.from(AliyaHistory.entries()).forEach(([prayerId, history]) => {
+    history.categoryData.forEach((categoryData, categoryId) => {
+      columnMap.set(categoryId, {
+        id: categoryId,
+        name: categoryData.categoryName,
+        displayOrder: categoryData.categoryDisplayOrder,
+      });
     });
-
+  });
+  const columns: ColumnDefinition[] = Array.from(columnMap.values()).sort(
+    (a, b) => (a.displayOrder ?? Infinity) - (b.displayOrder ?? Infinity)
+  );
   // 2. Prepare prayer rows
   // Format prayer names ONCE here: "משה כהן בן של דוד כהן" for children
-  const prayerRows: ExportPrayerRow[] = prayersWithHistory
-    .map(prayer => {
-      const prayerName = prayer.isChild
-        ? `${prayer.prayer.fullName} בן של ${prayer.prayerCard.prayer.fullName}`
-        : prayer.prayer.fullName;
-
-      // Convert internal category columns to export format
-      // Calculate weeks since last aliya
-      const categoryData = new Map<string, CategoryColumnData>();
-      prayer.categoryColumns.forEach((value, key) => {
-        let weeksSinceLastAliya = -1;
-
-        if (earliestAliyaDate) {
-          const currentDate = HebrewDate.now();
-          const weeksSinceEarliest = Math.floor(
-            (currentDate.toGregorianDate().getTime() -
-              earliestAliyaDate.toGregorianDate().getTime()) /
-              (1000 * 60 * 60 * 24 * 7)
-          );
-
-          if (value.lastParashaDate) {
-            // If there's a last aliya date for this category, calculate the difference
-            const lastAliyaDate = value.lastParashaDate as HebrewDate;
-            const weeksSinceLastAliyaDate = Math.floor(
-              (currentDate.toGregorianDate().getTime() -
-                lastAliyaDate.toGregorianDate().getTime()) /
-                (1000 * 60 * 60 * 24 * 7)
-            );
-
-            weeksSinceLastAliya = weeksSinceEarliest - weeksSinceLastAliyaDate;
-          } else {
-            // If no aliya in this category, count all weeks since earliest
-            weeksSinceLastAliya = weeksSinceEarliest;
-          }
-        }
-
-        categoryData.set(key, {
-          count: value.count,
-          weeksSinceLastAliya,
-        });
-      });
-
+  const prayerRows: ExportPrayerRow[] = Array.from(AliyaHistory.entries())
+    .map(([prayerId, history]) => {
       return {
-        prayerName,
-        isChild: prayer.isChild,
-        categoryData,
+        prayerName: history.prayerName,
+        categoryData: new Map(
+          Array.from(history.categoryData.entries()).map(
+            ([categoryId, categoryData]) => [
+              categoryId,
+              {
+                weeksSinceLastAliya: categoryData.weeksSinceLastAliya,
+                count: categoryData.count,
+              },
+            ]
+          )
+        ),
       };
     })
     .sort((a, b) => {
