@@ -12,22 +12,6 @@ import {
 import type { AliyaHistory, UpcomingItem } from "./prayerUtils";
 
 /**
- * Internal representation of prayer with aliya history
- * Used in AdminAliyaHistoryPage for processing
- */
-interface PrayerWithAliyaHistory {
-  prayer: Prayer;
-  prayerCard: PrayerCard;
-  isChild: boolean;
-  categoryColumns: Map<
-    string,
-    { lastParashaDate: any; lastParasha: string | null; count: number }
-  >;
-  overallLastAliyaDate: HebrewDate | null;
-  totalAliyot: number;
-}
-
-/**
  * Prepare aliya history export data.
  * This is the SINGLE SOURCE OF TRUTH for formatting all export data.
  * Both PDF and XLSX exporters consume this prepared data.
@@ -108,7 +92,10 @@ export const prepareAliyaHistoryExportData = (
             item.event?.type ||
             "אירוע",
       age: item.age || "-",
-      notes: item.event?.notes || "-",
+      notes:
+        item.type === "birthday"
+          ? item.hebrewDate.toString()
+          : item.event?.notes || "-",
     };
   });
 

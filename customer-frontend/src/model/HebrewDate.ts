@@ -106,12 +106,7 @@ export class HebrewDate {
   }
 
   isAfter(other: HebrewDate): boolean {
-    if (this.year > other.year) return true;
-    if (this.year < other.year) return false;
-    if (this.month > other.month) return true;
-    if (this.month < other.month) return false;
-    if (this.day > other.day) return true;
-    return false;
+    return this.toGregorianDate() > other.toGregorianDate();
   }
 
   toString(): string {

@@ -21,6 +21,7 @@ import AdminAliyaTypesPage from "./pages/AdminAliyaTypesPage";
 import AdminAliyaTypeCategoriesPage from "./pages/AdminAliyaTypeCategoriesPage";
 import AdminAliyaAssignmentPage from "./pages/AdminAliyaAssignmentPage";
 import AdminAliyaHistoryPage from "./pages/AdminAliyaHistoryPage";
+import AdminAliyaHistoryDebug from "./pages/AdminAliyaHistoryDebug";
 import AdminPrayerCardsPage from "./pages/AdminPrayerCardsPage";
 import AdminFrontendErrorsPage from "./pages/AdminFrontendErrorsPage";
 import AdminPrayerTimesPage from "./pages/AdminPrayerTimesPage";
@@ -126,6 +127,10 @@ const AppContent: React.FC = () => {
                 <Route
                   path="/:synagogueId/admin/aliya-history"
                   element={<AdminAliyaHistoryPage />}
+                />
+                <Route
+                  path="/:synagogueId/admin/aliya-history-debug"
+                  element={<AdminAliyaHistoryDebug />}
                 />
                 <Route
                   path="/:synagogueId/admin/prayer-cards"

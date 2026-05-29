@@ -5,7 +5,6 @@ import {
   CardContent,
   Typography,
   Stack,
-  Chip,
   Alert,
   CircularProgress,
   Button,
@@ -14,7 +13,6 @@ import {
 import {
   SwapVert as SortIcon,
   Person as PersonIcon,
-  Event as EventIcon,
   AccessTime as TimeIcon,
   PictureAsPdf as PdfIcon,
   TableChart as TableChartIcon,
@@ -25,12 +23,8 @@ import { useAliyaTypes } from "../hooks/useAliyaTypes";
 import { useAliyaTypeCategories } from "../hooks/useAliyaTypeCategories";
 import { usePrayerEventTypes } from "../hooks/usePrayerEventTypes";
 import { useUser } from "../hooks/useUser";
-import { Prayer, PrayerCard } from "../model/Prayer";
-import { getAliyotForPrayer } from "../utils/aliyaAssignments";
-import { HebrewDate } from "../model/HebrewDate";
 import { WithLogin } from "../components/WithLogin";
 import {
-  isEligibleForAliya,
   calculateUpcomingItems,
   calculateAliyaHistory,
   AliyaHistory,
