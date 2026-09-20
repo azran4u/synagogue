@@ -28,6 +28,7 @@ import { HebrewDate } from "../model/HebrewDate";
 import { PrayerCardEditDialog } from "../components/PrayerCardEditDialog";
 import { useAliyaGroups } from "../hooks/useAliyaGroups";
 import { getAliyotForPrayer } from "../utils/aliyaAssignments";
+import { useSynagogueNavigate } from "../hooks/useSynagogueNavigate";
 
 // Helper function to check if prayer is eligible for aliya (13+ or no birthdate)
 const isEligibleForAliya = (prayer: Prayer): boolean => {
@@ -43,6 +44,7 @@ const isEligibleForAliya = (prayer: Prayer): boolean => {
 const AdminPrayerCardsPage: React.FC = () => {
   const { data: prayerCards, isLoading } = useAllPrayerCards();
   const { data: aliyaGroups } = useAliyaGroups();
+  const navigate = useSynagogueNavigate();
 
   const createPrayerMutation = useCreatePrayerCard();
   const deletePrayerMutation = useDeletePrayerCard();
@@ -217,25 +219,10 @@ const AdminPrayerCardsPage: React.FC = () => {
       {/* Prayer Cards List */}
       <Stack spacing={2}>
         {filteredPrayerCards.map((prayerCard: PrayerCard) => {
-          // Get all aliyot from main prayer and children using new model
-          const allAliyot = aliyaGroups
-            ? [
-                ...getAliyotForPrayer(prayerCard.prayer.id, aliyaGroups).map(
-                  aliya => ({
-                    aliya,
-                    person: prayerCard.prayer,
-                    isChild: false,
-                  })
-                ),
-                ...prayerCard.children.flatMap(child =>
-                  getAliyotForPrayer(child.id, aliyaGroups).map(aliya => ({
-                    aliya,
-                    person: child,
-                    isChild: true,
-                  }))
-                ),
-              ]
-            : [];
+          // Count only this prayer's aliyot (matches aliya-history?prayerId=...)
+          const aliyotCount = aliyaGroups
+            ? getAliyotForPrayer(prayerCard.prayer.id, aliyaGroups).length
+            : 0;
 
           return (
             <Card key={prayerCard.id} variant="outlined">
@@ -289,9 +276,15 @@ const AdminPrayerCardsPage: React.FC = () => {
                   />
                   <Chip
                     icon={<GroupIcon />}
-                    label={`${allAliyot.length} עליות`}
+                    label={`${aliyotCount} עליות`}
                     size="small"
                     variant="outlined"
+                    clickable
+                    onClick={() =>
+                      navigate(
+                        `admin/aliya-history?prayerId=${prayerCard.prayer.id}`
+                      )
+                    }
                   />
                 </Box>
 

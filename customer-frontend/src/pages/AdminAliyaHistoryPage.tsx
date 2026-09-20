@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from "react";
+import { useSearchParams } from "react-router-dom";
 import {
   Box,
   Card,
@@ -16,6 +17,7 @@ import {
   AccessTime as TimeIcon,
   PictureAsPdf as PdfIcon,
   TableChart as TableChartIcon,
+  Clear as ClearIcon,
 } from "@mui/icons-material";
 import { useAllPrayerCards } from "../hooks/usePrayerCard";
 import { useAliyaGroups } from "../hooks/useAliyaGroups";
@@ -24,11 +26,13 @@ import { useAliyaTypeCategories } from "../hooks/useAliyaTypeCategories";
 import { usePrayerEventTypes } from "../hooks/usePrayerEventTypes";
 import { useUser } from "../hooks/useUser";
 import { WithLogin } from "../components/WithLogin";
+import { useSynagogueNavigate } from "../hooks/useSynagogueNavigate";
 import {
   calculateUpcomingItems,
   calculateAliyaHistory,
   AliyaHistory,
 } from "../utils/prayerUtils";
+import { getAliyotForPrayer } from "../utils/aliyaAssignments";
 import { generateAliyaHistoryPdf } from "../utils/aliyaHistoryPdfExport";
 import { prepareAliyaHistoryExportData } from "../utils/prepareAliyaHistoryExportData";
 import { generateAliyaHistoryXlsx } from "../utils/aliyaHistoryXlsxExport";
@@ -40,6 +44,11 @@ const AdminAliyaHistoryContent: React.FC = () => {
   const { data: categories } = useAliyaTypeCategories();
   const { data: prayerEventTypes } = usePrayerEventTypes();
   const { isGabaiOrHigher } = useUser();
+  const [searchParams] = useSearchParams();
+  const navigate = useSynagogueNavigate();
+
+  const prayerIdFilter = searchParams.get("prayerId");
+  const isSinglePrayer = Boolean(prayerIdFilter);
 
   const [sortNewestFirst, setSortNewestFirst] = useState(false);
 
@@ -78,6 +87,21 @@ const AdminAliyaHistoryContent: React.FC = () => {
     );
   }, [prayerCards, aliyaGroups, aliyaTypes, categories]);
 
+  const displayedAliyaHistory = useMemo(() => {
+    if (!prayerIdFilter) return prayersAliyaHistory;
+    const filtered = new Map() as AliyaHistory;
+    const item = prayersAliyaHistory.get(prayerIdFilter);
+    if (item) {
+      filtered.set(prayerIdFilter, item);
+    }
+    return filtered;
+  }, [prayersAliyaHistory, prayerIdFilter]);
+
+  const filteredPrayerName = useMemo(() => {
+    if (!prayerIdFilter) return null;
+    return displayedAliyaHistory.get(prayerIdFilter)?.prayerName ?? null;
+  }, [prayerIdFilter, displayedAliyaHistory]);
+
   async function exportData(type: "pdf" | "xls") {
     const exportData = prepareAliyaHistoryExportData(
       prayersAliyaHistory,
@@ -98,20 +122,21 @@ const AdminAliyaHistoryContent: React.FC = () => {
     return calculateUpcomingItems(prayerCards, 14);
   }, [prayerCards]);
 
-  // Statistics
+  // Statistics — use raw assignment counts (same as prayer-cards chip)
   const statistics = useMemo(() => {
-    const prayers = Array.from(prayersAliyaHistory.values());
-    const totalAliyot = prayers.reduce(
-      (sum, p) =>
-        sum + p.categoryData.values().reduce((sum, c) => sum + c.count, 0),
-      0
-    );
+    const prayers = Array.from(displayedAliyaHistory.values());
+    const totalAliyot = aliyaGroups
+      ? prayers.reduce(
+          (sum, p) => sum + getAliyotForPrayer(p.prayerId, aliyaGroups).length,
+          0
+        )
+      : 0;
 
     return {
       total: prayers.length,
       totalAliyot,
     };
-  }, [prayersAliyaHistory]);
+  }, [displayedAliyaHistory, aliyaGroups]);
 
   // Check permissions
   if (!isGabaiOrHigher) {
@@ -146,29 +171,48 @@ const AdminAliyaHistoryContent: React.FC = () => {
           mb: 3,
         }}
       >
-        <Typography variant="h4">היסטוריית עליות</Typography>
+        <Box>
+          <Typography variant="h4">היסטוריית עליות</Typography>
+          {filteredPrayerName && (
+            <Typography variant="subtitle1" color="text.secondary">
+              {filteredPrayerName}
+            </Typography>
+          )}
+        </Box>
         <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
-          <Button
-            variant="contained"
-            startIcon={<PdfIcon />}
-            onClick={() => exportData("pdf")}
-          >
-            ייצא ל-PDF
-          </Button>
-          <Button
-            variant="contained"
-            startIcon={<TableChartIcon />}
-            onClick={() => exportData("xls")}
-          >
-            ייצא ל-Excel
-          </Button>
-          <Button
-            variant="outlined"
-            startIcon={<SortIcon />}
-            onClick={() => setSortNewestFirst(!sortNewestFirst)}
-          >
-            {sortNewestFirst ? "החדש ביותר ראשון" : "הישן ביותר ראשון"}
-          </Button>
+          {isSinglePrayer ? (
+            <Button
+              variant="outlined"
+              startIcon={<ClearIcon />}
+              onClick={() => navigate("admin/aliya-history")}
+            >
+              הצג את כל המתפללים
+            </Button>
+          ) : (
+            <>
+              <Button
+                variant="contained"
+                startIcon={<PdfIcon />}
+                onClick={() => exportData("pdf")}
+              >
+                ייצא ל-PDF
+              </Button>
+              <Button
+                variant="contained"
+                startIcon={<TableChartIcon />}
+                onClick={() => exportData("xls")}
+              >
+                ייצא ל-Excel
+              </Button>
+              <Button
+                variant="outlined"
+                startIcon={<SortIcon />}
+                onClick={() => setSortNewestFirst(!sortNewestFirst)}
+              >
+                {sortNewestFirst ? "החדש ביותר ראשון" : "הישן ביותר ראשון"}
+              </Button>
+            </>
+          )}
         </Box>
       </Box>
 
@@ -185,14 +229,16 @@ const AdminAliyaHistoryContent: React.FC = () => {
                 gap: 2,
               }}
             >
-              <Box sx={{ textAlign: "center" }}>
-                <Typography variant="h4" color="primary">
-                  {statistics.total}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  מתפללים מעל גיל 13
-                </Typography>
-              </Box>
+              {!isSinglePrayer && (
+                <Box sx={{ textAlign: "center" }}>
+                  <Typography variant="h4" color="primary">
+                    {statistics.total}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    מתפללים מעל גיל 13
+                  </Typography>
+                </Box>
+              )}
 
               <Box sx={{ textAlign: "center" }}>
                 <Typography variant="h4" color="primary">
@@ -208,21 +254,23 @@ const AdminAliyaHistoryContent: React.FC = () => {
       </Box>
 
       {/* Prayers List */}
-      {prayersAliyaHistory.size === 0 ? (
+      {displayedAliyaHistory.size === 0 ? (
         <Card>
           <CardContent sx={{ textAlign: "center", py: 8 }}>
             <PersonIcon sx={{ fontSize: 80, color: "text.secondary", mb: 2 }} />
             <Typography variant="h6" gutterBottom>
-              אין מתפללים
+              {isSinglePrayer ? "מתפלל לא נמצא" : "אין מתפללים"}
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              אין מתפללים מעל גיל 13 במערכת
+              {isSinglePrayer
+                ? "לא נמצאה היסטוריית עליות עבור מתפלל זה"
+                : "אין מתפללים מעל גיל 13 במערכת"}
             </Typography>
           </CardContent>
         </Card>
       ) : (
         <Stack spacing={2}>
-          {Array.from(prayersAliyaHistory.values()).map((item, index) => (
+          {Array.from(displayedAliyaHistory.values()).map((item, index) => (
             <Card key={`${item.prayerId}-${index}`} elevation={2}>
               <CardContent>
                 <Box
@@ -323,9 +371,9 @@ const AdminAliyaHistoryContent: React.FC = () => {
                   {/* Total Aliyot */}
                   <Box sx={{ textAlign: "center", minWidth: 80 }}>
                     <Typography variant="h5" color="primary">
-                      {item.categoryData
-                        .values()
-                        .reduce((sum, c) => sum + c.count, 0)}
+                      {aliyaGroups
+                        ? getAliyotForPrayer(item.prayerId, aliyaGroups).length
+                        : 0}
                     </Typography>
                   </Box>
                 </Box>
