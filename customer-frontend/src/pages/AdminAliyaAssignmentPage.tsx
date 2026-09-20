@@ -42,6 +42,7 @@ import { useUser } from "../hooks/useUser";
 import { useSynagogueNavigate } from "../hooks/useSynagogueNavigate";
 import { CreateAliyaGroupDialog } from "../components/CreateAliyaGroupDialog";
 import { getAllAliyot } from "../utils/aliyaAssignments";
+import { isEligibleForAliya } from "../utils/prayerUtils";
 
 interface EditGroupFormValues {
   aliyaGroupId: string;
@@ -54,17 +55,6 @@ const editGroupValidationSchema = Yup.object({
   assignments: Yup.object(),
   deletions: Yup.array(),
 });
-
-// Helper function to check if prayer is eligible for aliya (13+ or no birthdate)
-const isEligibleForAliya = (prayer: Prayer): boolean => {
-  // If no birthdate, include them
-  if (!prayer.hebrewBirthDate) {
-    return true;
-  }
-
-  // Check if 13 years or older
-  return prayer.hebrewBirthDate.isOlderThan(13);
-};
 
 const AdminAliyaAssignmentContent = () => {
   const navigate = useSynagogueNavigate();
@@ -133,9 +123,9 @@ const AdminAliyaAssignmentContent = () => {
         });
       }
 
-      // Add children if eligible (13+ or no birthdate)
+      // Add children if eligible (active, parent active, 13+ or no birthdate)
       card.children.forEach(child => {
-        if (isEligibleForAliya(child)) {
+        if (isEligibleForAliya(child, card.prayer)) {
           prayers.push({
             prayer: child,
             isChild: true,

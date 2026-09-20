@@ -13,11 +13,12 @@ import {
   Card,
   CardContent,
   Divider,
+  FormControlLabel,
+  Switch,
 } from "@mui/material";
 import {
   Delete as DeleteIcon,
   Add as AddIcon,
-  Edit as EditIcon,
 } from "@mui/icons-material";
 import { Formik, Form, FormikHelpers } from "formik";
 import * as Yup from "yup";
@@ -38,6 +39,7 @@ interface PrayerCardFormValues {
   phoneNumber: string;
   email: string;
   notes: string;
+  isActive: boolean;
   children: {
     id?: string;
     firstName: string;
@@ -46,6 +48,7 @@ interface PrayerCardFormValues {
     phoneNumber: string;
     email: string;
     notes: string;
+    isActive: boolean;
   }[];
   events: {
     eventTypeId: string;
@@ -130,7 +133,7 @@ export const PrayerCardEditDialog: React.FC<PrayerCardEditDialogProps> = ({
       // Create main prayer
       let mainPrayer: Prayer;
       if (prayerCard) {
-        // Edit mode - update existing prayer
+        // Edit mode - update existing prayer (preserves donations, etc.)
         mainPrayer = prayerCard.prayer.update({
           firstName: values.firstName,
           lastName: values.lastName,
@@ -138,18 +141,9 @@ export const PrayerCardEditDialog: React.FC<PrayerCardEditDialogProps> = ({
           phoneNumber: values.phoneNumber ?? undefined,
           email: values.email ?? undefined,
           notes: values.notes ?? undefined,
+          isActive: values.isActive,
+          events,
         });
-        // Update events
-        mainPrayer = new Prayer(
-          mainPrayer.id,
-          mainPrayer.firstName,
-          mainPrayer.lastName,
-          mainPrayer.hebrewBirthDate,
-          mainPrayer.phoneNumber,
-          mainPrayer.email,
-          mainPrayer.notes,
-          events
-        );
       } else {
         // Create mode - create new prayer
         mainPrayer = new Prayer(
@@ -160,7 +154,9 @@ export const PrayerCardEditDialog: React.FC<PrayerCardEditDialogProps> = ({
           values.phoneNumber ?? undefined,
           values.email ?? undefined,
           values.notes ?? undefined,
-          events
+          events,
+          [],
+          values.isActive
         );
       }
 
@@ -180,6 +176,7 @@ export const PrayerCardEditDialog: React.FC<PrayerCardEditDialogProps> = ({
               phoneNumber: child.phoneNumber || undefined,
               email: child.email || undefined,
               notes: child.notes || undefined,
+              isActive: child.isActive,
             });
           }
         }
@@ -190,7 +187,10 @@ export const PrayerCardEditDialog: React.FC<PrayerCardEditDialogProps> = ({
           child.hebrewBirthDate || undefined,
           child.phoneNumber || undefined,
           child.email || undefined,
-          child.notes
+          child.notes,
+          undefined,
+          undefined,
+          child.isActive
         );
       });
 
@@ -215,6 +215,7 @@ export const PrayerCardEditDialog: React.FC<PrayerCardEditDialogProps> = ({
       phoneNumber: "",
       email: "",
       notes: "",
+      isActive: true,
       // id is undefined for new children
     };
     setFieldValue("children", [...children, newChild]);
@@ -254,6 +255,7 @@ export const PrayerCardEditDialog: React.FC<PrayerCardEditDialogProps> = ({
                 phoneNumber: prayerCard?.prayer.phoneNumber || "",
                 email: prayerCard?.prayer.email || "",
                 notes: prayerCard?.prayer.notes || "",
+                isActive: prayerCard?.prayer.isActive !== false,
                 children:
                   prayerCard?.children.map(child => ({
                     id: child.id, // Preserve existing child ID
@@ -263,6 +265,7 @@ export const PrayerCardEditDialog: React.FC<PrayerCardEditDialogProps> = ({
                     phoneNumber: child.phoneNumber || "",
                     email: child.email || "",
                     notes: child.notes || "",
+                    isActive: child.isActive !== false,
                   })) || [],
                 events:
                   prayerCard?.prayer.events.map(event => ({
@@ -364,6 +367,22 @@ export const PrayerCardEditDialog: React.FC<PrayerCardEditDialogProps> = ({
                         rows={2}
                         fullWidth
                       />
+                      <FormControlLabel
+                        control={
+                          <Switch
+                            checked={values.isActive !== false}
+                            onChange={(_, checked) =>
+                              setFieldValue("isActive", checked)
+                            }
+                            name="isActive"
+                          />
+                        }
+                        label="פעיל"
+                      />
+                      <Typography variant="caption" color="text.secondary">
+                        מתפלל לא פעיל לא יופיע בהיסטוריית עליות, בדוחות ובהקצאת
+                        עליות. גם ילדיו ייחשבו לא פעילים.
+                      </Typography>
                     </Stack>
                   </Box>
 
@@ -539,6 +558,30 @@ export const PrayerCardEditDialog: React.FC<PrayerCardEditDialogProps> = ({
                                 size="small"
                                 fullWidth
                               />
+                              <FormControlLabel
+                                control={
+                                  <Switch
+                                    checked={child.isActive !== false}
+                                    onChange={(_, checked) =>
+                                      setFieldValue(
+                                        `children.${index}.isActive`,
+                                        checked
+                                      )
+                                    }
+                                    name={`children.${index}.isActive`}
+                                    disabled={values.isActive === false}
+                                  />
+                                }
+                                label="פעיל"
+                              />
+                              {values.isActive === false && (
+                                <Typography
+                                  variant="caption"
+                                  color="text.secondary"
+                                >
+                                  הילד לא פעיל כי ההורה לא פעיל
+                                </Typography>
+                              )}
                             </Stack>
                           </CardContent>
                         </Card>

@@ -13,6 +13,7 @@ export interface PrayerDto {
   phoneNumber?: string;
   email?: string;
   notes?: string;
+  isActive?: boolean;
   createdAt: number;
   updatedAt: number;
   events: PrayerEventDto[];
@@ -70,6 +71,7 @@ export class Prayer {
   public phoneNumber?: string;
   public email?: string;
   public notes?: string;
+  public isActive: boolean;
   public events: PrayerEvent[];
   public donations: PrayerDonation[];
   public createdAt: Date;
@@ -85,6 +87,7 @@ export class Prayer {
     notes?: string,
     events: PrayerEvent[] = [],
     donations: PrayerDonation[] = [],
+    isActive: boolean = true,
     createdAt: Date = new Date(),
     updatedAt: Date = new Date()
   ) {
@@ -95,6 +98,7 @@ export class Prayer {
     this.phoneNumber = phoneNumber;
     this.email = email;
     this.notes = notes;
+    this.isActive = isActive !== false;
     this.events = events;
     this.donations = donations;
     this.createdAt = createdAt;
@@ -111,6 +115,7 @@ export class Prayer {
       phoneNumber: this.phoneNumber,
       email: this.email,
       notes: this.notes,
+      isActive: this.isActive !== false,
       events: this.events.map(event => event.toDto()),
       donations: this.donations.map(donation => donation.toDto()),
       createdAt: this.createdAt.getTime(),
@@ -132,6 +137,7 @@ export class Prayer {
       dto.donations
         ? dto.donations.map(donationDto => PrayerDonation.fromDto(donationDto))
         : [],
+      dto.isActive !== false,
       new Date(dto.createdAt),
       new Date(dto.updatedAt)
     );
@@ -146,7 +152,8 @@ export class Prayer {
     email?: string,
     notes?: string,
     events?: PrayerEvent[],
-    donations?: PrayerDonation[]
+    donations?: PrayerDonation[],
+    isActive: boolean = true
   ): Prayer {
     return new Prayer(
       uuidv4(),
@@ -158,6 +165,7 @@ export class Prayer {
       notes,
       events ?? [],
       donations ?? [],
+      isActive,
       new Date(),
       new Date()
     );
@@ -175,6 +183,7 @@ export class Prayer {
       updates.notes ?? this.notes,
       updates.events ?? this.events,
       updates.donations ?? this.donations,
+      updates.isActive ?? this.isActive,
       this.createdAt,
       new Date() // updatedAt
     );

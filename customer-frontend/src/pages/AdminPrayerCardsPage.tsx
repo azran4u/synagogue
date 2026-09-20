@@ -23,23 +23,12 @@ import {
 import { useAllPrayerCards } from "../hooks/usePrayerCard";
 import { useCreatePrayerCard } from "../hooks/usePrayerCard";
 import { useDeletePrayerCard } from "../hooks/usePrayerCard";
-import { PrayerCard, Prayer } from "../model/Prayer";
-import { HebrewDate } from "../model/HebrewDate";
+import { PrayerCard } from "../model/Prayer";
 import { PrayerCardEditDialog } from "../components/PrayerCardEditDialog";
 import { useAliyaGroups } from "../hooks/useAliyaGroups";
 import { getAliyotForPrayer } from "../utils/aliyaAssignments";
 import { useSynagogueNavigate } from "../hooks/useSynagogueNavigate";
-
-// Helper function to check if prayer is eligible for aliya (13+ or no birthdate)
-const isEligibleForAliya = (prayer: Prayer): boolean => {
-  // If no birthdate, include them
-  if (!prayer.hebrewBirthDate) {
-    return true;
-  }
-
-  // Check if 13 years or older
-  return prayer.hebrewBirthDate.isOlderThan(13);
-};
+import { isEligibleForAliya } from "../utils/prayerUtils";
 
 const AdminPrayerCardsPage: React.FC = () => {
   const { data: prayerCards, isLoading } = useAllPrayerCards();
@@ -70,9 +59,9 @@ const AdminPrayerCardsPage: React.FC = () => {
         count++;
       }
 
-      // Add children if eligible (13+ or no birthdate)
+      // Add children if eligible (active, parent active, 13+ or no birthdate)
       card.children.forEach(child => {
-        if (isEligibleForAliya(child)) {
+        if (isEligibleForAliya(child, card.prayer)) {
           count++;
         }
       });
@@ -237,9 +226,27 @@ const AdminPrayerCardsPage: React.FC = () => {
                   }}
                 >
                   <Box>
-                    <Typography variant="h6">
-                      {prayerCard.prayer.firstName} {prayerCard.prayer.lastName}
-                    </Typography>
+                    <Box
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 1,
+                        flexWrap: "wrap",
+                      }}
+                    >
+                      <Typography variant="h6">
+                        {prayerCard.prayer.firstName}{" "}
+                        {prayerCard.prayer.lastName}
+                      </Typography>
+                      {prayerCard.prayer.isActive === false && (
+                        <Chip
+                          label="לא פעיל"
+                          size="small"
+                          color="default"
+                          variant="filled"
+                        />
+                      )}
+                    </Box>
                     <Typography variant="body2" color="text.secondary">
                       {prayerCard.prayer.email}
                     </Typography>
@@ -299,15 +306,24 @@ const AdminPrayerCardsPage: React.FC = () => {
                       ילדים:
                     </Typography>
                     <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
-                      {prayerCard.children.map((child: any, index: number) => (
-                        <Chip
-                          key={index}
-                          label={`${child.firstName} ${child.lastName}`}
-                          size="small"
-                          variant="outlined"
-                          color="secondary"
-                        />
-                      ))}
+                      {prayerCard.children.map((child, index) => {
+                        const childInactive =
+                          child.isActive === false ||
+                          prayerCard.prayer.isActive === false;
+                        return (
+                          <Chip
+                            key={child.id || index}
+                            label={
+                              childInactive
+                                ? `${child.firstName} ${child.lastName} (לא פעיל)`
+                                : `${child.firstName} ${child.lastName}`
+                            }
+                            size="small"
+                            variant="outlined"
+                            color={childInactive ? "default" : "secondary"}
+                          />
+                        );
+                      })}
                     </Box>
                   </Box>
                 )}

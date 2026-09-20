@@ -6,8 +6,21 @@ import { AliyaType } from "../model/AliyaType";
 import { AliyaTypeCategory } from "../model/AliyaTypeCategory";
 import { PrayerEventType } from "../model/PrayerEventType";
 
-// Helper function to check if prayer is eligible (13+ or no birthdate)
-export const isEligibleForAliya = (prayer: Prayer): boolean => {
+// Eligible for aliya surfaces: active (default), parent active (if child), and 13+ or no birthdate
+export const isPrayerActive = (
+  prayer: Prayer,
+  parent?: Prayer
+): boolean => {
+  if (prayer.isActive === false) return false;
+  if (parent && parent.isActive === false) return false;
+  return true;
+};
+
+export const isEligibleForAliya = (
+  prayer: Prayer,
+  parent?: Prayer
+): boolean => {
+  if (!isPrayerActive(prayer, parent)) return false;
   if (!prayer.hebrewBirthDate) {
     return true;
   }
@@ -81,6 +94,8 @@ export const calculateAliyaHistory = (
   const aliyaHistory: AliyaHistory = new Map();
 
   prayerCards.forEach(card => {
+    // Main prayers: include when active (age filter not applied to mains, matching prior behavior)
+    if (!isPrayerActive(card.prayer)) return;
     aliyaHistory.set(card.prayer.id, {
       prayerId: card.prayer.id,
       prayerName: card.prayer.fullName,
@@ -89,7 +104,7 @@ export const calculateAliyaHistory = (
   });
   prayerCards.forEach(card => {
     card.children.forEach(child => {
-      if (!isEligibleForAliya(child)) return;
+      if (!isEligibleForAliya(child, card.prayer)) return;
       aliyaHistory.set(child.id, {
         prayerId: child.id,
         prayerName: `${child.fullName} בן של ${card.prayer.fullName}`,
@@ -216,7 +231,7 @@ export const calculateUpcomingItems = (
 
     // Process children
     card.children.forEach(child => {
-      if (isEligibleForAliya(child)) {
+      if (isEligibleForAliya(child, card.prayer)) {
         // Add birthday if exists
         if (child.hebrewBirthDate) {
           const nextBirthday = getNextBirthdayOccurrence(child.hebrewBirthDate);
