@@ -176,7 +176,7 @@ export const PrayerCardEditDialog: React.FC<PrayerCardEditDialogProps> = ({
               phoneNumber: child.phoneNumber || undefined,
               email: child.email || undefined,
               notes: child.notes || undefined,
-              isActive: child.isActive,
+              isActive: child.isActive !== false,
             });
           }
         }
@@ -190,7 +190,7 @@ export const PrayerCardEditDialog: React.FC<PrayerCardEditDialogProps> = ({
           child.notes,
           undefined,
           undefined,
-          child.isActive
+          child.isActive !== false
         );
       });
 
@@ -247,6 +247,8 @@ export const PrayerCardEditDialog: React.FC<PrayerCardEditDialogProps> = ({
         <DialogTitle>{title}</DialogTitle>
         <DialogContent>
           <Formik<PrayerCardFormValues>
+            key={prayerCard?.id ?? "new-prayer-card"}
+            enableReinitialize
             initialValues={
               {
                 firstName: prayerCard?.prayer.firstName || "",
@@ -419,26 +421,61 @@ export const PrayerCardEditDialog: React.FC<PrayerCardEditDialogProps> = ({
                                 justifyContent: "space-between",
                                 alignItems: "center",
                                 mb: 2,
+                                gap: 1,
+                                flexWrap: "wrap",
                               }}
                             >
                               <Typography variant="subtitle1">
                                 ילד {index + 1}
                               </Typography>
-                              <IconButton
-                                type="button"
-                                onClick={() =>
-                                  removeChild(
-                                    setFieldValue,
-                                    values.children,
-                                    index
-                                  )
-                                }
-                                color="error"
-                                size="small"
+                              <Box
+                                sx={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: 1,
+                                }}
                               >
-                                <DeleteIcon />
-                              </IconButton>
+                                <FormControlLabel
+                                  control={
+                                    <Switch
+                                      checked={child.isActive !== false}
+                                      onChange={(_, checked) =>
+                                        setFieldValue(
+                                          `children.${index}.isActive`,
+                                          checked
+                                        )
+                                      }
+                                      name={`children.${index}.isActive`}
+                                      disabled={values.isActive === false}
+                                    />
+                                  }
+                                  label="פעיל"
+                                />
+                                <IconButton
+                                  type="button"
+                                  onClick={() =>
+                                    removeChild(
+                                      setFieldValue,
+                                      values.children,
+                                      index
+                                    )
+                                  }
+                                  color="error"
+                                  size="small"
+                                >
+                                  <DeleteIcon />
+                                </IconButton>
+                              </Box>
                             </Box>
+                            {values.isActive === false && (
+                              <Typography
+                                variant="caption"
+                                color="text.secondary"
+                                sx={{ display: "block", mb: 1 }}
+                              >
+                                הילד לא פעיל כי ההורה לא פעיל
+                              </Typography>
+                            )}
                             <Stack spacing={2}>
                               <Stack
                                 direction={{ xs: "column", sm: "row" }}
@@ -558,30 +595,6 @@ export const PrayerCardEditDialog: React.FC<PrayerCardEditDialogProps> = ({
                                 size="small"
                                 fullWidth
                               />
-                              <FormControlLabel
-                                control={
-                                  <Switch
-                                    checked={child.isActive !== false}
-                                    onChange={(_, checked) =>
-                                      setFieldValue(
-                                        `children.${index}.isActive`,
-                                        checked
-                                      )
-                                    }
-                                    name={`children.${index}.isActive`}
-                                    disabled={values.isActive === false}
-                                  />
-                                }
-                                label="פעיל"
-                              />
-                              {values.isActive === false && (
-                                <Typography
-                                  variant="caption"
-                                  color="text.secondary"
-                                >
-                                  הילד לא פעיל כי ההורה לא פעיל
-                                </Typography>
-                              )}
                             </Stack>
                           </CardContent>
                         </Card>
